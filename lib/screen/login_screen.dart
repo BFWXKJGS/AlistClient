@@ -3,7 +3,7 @@ import 'package:alist/generated/images.dart';
 import 'package:alist/generated/l10n.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/util/constant.dart';
-import 'package:alist/util/router_path.dart';
+import 'package:alist/util/named_router.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:dio/dio.dart';
 import 'package:flustars/flustars.dart';
@@ -125,7 +125,7 @@ class _LoginPageState extends State<LoginPageContainer> {
     SpUtil.putString(Constant.address, address);
     SpUtil.putBool(Constant.guest, true);
 
-    context.go(RoutePath.home);
+    context.goNamed(NamedRouter.home);
   }
 
   void _tryEntryDefaultServer(BuildContext context) {
@@ -159,7 +159,7 @@ class _LoginPageState extends State<LoginPageContainer> {
     _login(
       onSuccess: () {
         SmartDialog.dismiss();
-        context.go(RoutePath.home);
+        context.goNamed(NamedRouter.home);
       },
       onFailure: (code, message) {
         SmartDialog.dismiss();

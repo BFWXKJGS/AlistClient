@@ -6,7 +6,7 @@ import 'package:alist/generated/l10n.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_type_utils.dart';
-import 'package:alist/util/router_path.dart';
+import 'package:alist/util/named_router.dart';
 import 'package:alist/util/widget_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:dio/dio.dart';
@@ -133,22 +133,22 @@ class _FileListScreenState extends State<FileListScreen>
 
     switch (fileType) {
       case FileType.folder:
-        context.push(Uri(
-                path: RoutePath.fileList,
-                queryParameters: {'path': file.getCompletePath(widget.path)})
-            .toString());
+        context.pushNamed(
+          NamedRouter.fileList,
+          queryParameters: {"path": file.getCompletePath(widget.path)},
+        );
         break;
       case FileType.video:
-        context.push(Uri(
-                path: RoutePath.videoPlayer,
-                queryParameters: {'path': file.getCompletePath(widget.path)})
-            .toString());
+        context.pushNamed(
+          NamedRouter.videoPlayer,
+          queryParameters: {"path": file.getCompletePath(widget.path)},
+        );
         break;
       case FileType.audio:
-        context.push(Uri(
-                path: RoutePath.audioPlayer,
-                queryParameters: {'path': file.getCompletePath(widget.path)})
-            .toString());
+        context.pushNamed(
+          NamedRouter.audioPlayer,
+          queryParameters: {"path": file.getCompletePath(widget.path)},
+        );
         break;
       case FileType.image:
         List<String> paths = [];
@@ -160,19 +160,19 @@ class _FileListScreenState extends State<FileListScreen>
         }
         final index = paths.indexOf(currentPath);
 
-        context
-            .push(RoutePath.gallery, extra: {"paths": paths, "index": index});
+        context.pushNamed(
+          NamedRouter.gallery,
+          extra: {"paths": paths, "index": index},
+        );
         break;
       case FileType.txt:
       case FileType.word:
       case FileType.pdf:
       case FileType.code:
       case FileType.apk:
-        context.push(
-          Uri(
-                  path: RoutePath.fileReader,
-                  queryParameters: {'path': file.getCompletePath(widget.path)})
-              .toString(),
+        context.pushNamed(
+          NamedRouter.fileReader,
+          queryParameters: {"path": file.getCompletePath(widget.path)},
           extra: {"fileType": fileType},
         );
         break;

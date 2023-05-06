@@ -1,7 +1,7 @@
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/net/intercept.dart';
 import 'package:alist/util/constant.dart';
-import 'package:alist/util/router_path.dart';
+import 'package:alist/util/named_router.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -32,9 +32,9 @@ class _SplashScreenState extends State<SplashScreen> {
     }
     if ((token == null || token.isEmpty) &&
         SpUtil.getBool(Constant.guest) != true) {
-      _context?.go(RoutePath.login);
+      _context?.goNamed(NamedRouter.login);
     } else {
-      _context?.go(RoutePath.home);
+      _context?.goNamed(NamedRouter.home);
     }
   }
 

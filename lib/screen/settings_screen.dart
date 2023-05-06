@@ -1,6 +1,6 @@
 import 'package:alist/generated/images.dart';
 import 'package:alist/util/constant.dart';
-import 'package:alist/util/router_path.dart';
+import 'package:alist/util/named_router.dart';
 import 'package:alist/util/widget_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:flustars/flustars.dart';
@@ -21,12 +21,12 @@ class SettingsScreen extends StatelessWidget {
           menuId: MenuId.donate,
           name: S.of(context).settingsScreen_item_donate,
           icon: Images.settingsPageDonate,
-          route: RoutePath.donate),
+          route: NamedRouter.donate),
       SettingsMenu(
         menuId: MenuId.about,
         name: S.of(context).settingsScreen_item_about,
         icon: Images.settingsPageAbout,
-        route: RoutePath.about,
+        route: NamedRouter.about,
       ),
     ];
     if (SpUtil.getBool(Constant.guest) == true) {
@@ -56,14 +56,14 @@ class SettingsScreen extends StatelessWidget {
             return ListTile(
               onTap: () {
                 if (settingsMenu.route?.isNotEmpty == true) {
-                  context.push(settingsMenu.route!);
+                  context.pushNamed(settingsMenu.route!);
                 } else {
                   if (settingsMenu.menuId == MenuId.account) {
                     _showAccountDialog(context);
                   } else if (settingsMenu.menuId == MenuId.signIn) {
                     SpUtil.remove(Constant.guest);
                     SpUtil.remove(Constant.token);
-                    context.go(RoutePath.login);
+                    context.goNamed(NamedRouter.login);
                   }
                 }
               },
@@ -72,8 +72,7 @@ class SettingsScreen extends StatelessWidget {
                   Theme.of(context).colorScheme.background.withAlpha(125),
               minVerticalPadding: 15,
               leading: Image.asset(
-                settingsMenu.icon,
-                color: isDarkMode ? Colors.white : null,
+                settingsMenu.icon
               ),
               title: Text(settingsMenu.name),
               trailing: Image.asset(
@@ -112,7 +111,7 @@ class SettingsScreen extends StatelessWidget {
                       SpUtil.remove(Constant.guest);
                       SpUtil.remove(Constant.token);
                       SmartDialog.dismiss();
-                      context.go(RoutePath.login);
+                      context.goNamed(NamedRouter.login);
                     },
                     child: Text(S.of(context).logout),
                   ),
