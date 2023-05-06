@@ -7,6 +7,8 @@ class Constant {
   static bool isDriverTest = false;
   static bool isUnitTest = false;
 
+  static const String defaultServerUrl = 'https://www.geektang.cn/alist/';
+
   static const String data = 'data';
   static const String message = 'message';
   static const String code = 'code';
@@ -16,6 +18,7 @@ class Constant {
   static const String username = 'username';
   static const String password = 'password';
   static const String token = 'token';
+  static const String guest = 'guest';
 
   static const String locale = 'locale';
 }

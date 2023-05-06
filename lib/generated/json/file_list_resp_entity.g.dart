@@ -28,7 +28,7 @@ FileListRespEntity $FileListRespEntityFromJson(Map<String, dynamic> json) {
 
 Map<String, dynamic> $FileListRespEntityToJson(FileListRespEntity entity) {
 	final Map<String, dynamic> data = <String, dynamic>{};
-	data['content'] =  entity.content.map((v) => v.toJson()).toList();
+	data['content'] =  entity.content?.map((v) => v.toJson()).toList();
 	data['total'] = entity.total;
 	data['readme'] = entity.readme;
 	data['write'] = entity.write;

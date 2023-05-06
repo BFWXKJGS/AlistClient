@@ -35,14 +35,45 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
+  # http request
   dio: ^5.1.1
+  # key value
   shared_preferences: ^2.1.0
   flustars: ^2.0.1
   # https://github.com/Sky24n/sp_util
   # sp_util分拆成单独的库，可以直接引用
   sp_util: ^2.0.3
   sprintf: ^7.0.0
-  video_player: ^2.6.1
+  # video player
+  flutter_aliplayer:
+    git:
+      url: https://github.com/GeekTR/flutter_aliplayer.git
+      ref: feature/5.4.9.1
+  # screen orientation controller
+  auto_orientation: ^2.3.1
+  # router
+  go_router: ^7.0.0
+  # Dialog
+  flutter_smart_dialog: ^4.9.0+6
+  # package info in android、ios...
+  package_info_plus: ^3.1.2
+  # image loader
+  extended_image: ^7.0.2
+  # screen hibernation control
+  wakelock: ^0.6.2
+  # database
+  drift: ^2.7.0
+  sqlite3_flutter_libs: ^0.5.0
+  path_provider: ^2.0.0
+  path: ^1.8.2
+  # md5 ...
+  crypto: ^3.0.2
+  # open file
+  open_file: ^3.3.1
+  # permission
+  permission_handler: ^10.2.0
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:
@@ -54,6 +85,9 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
+  # 数据库
+  drift_dev: ^2.7.0
+  build_runner: ^2.3.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -96,3 +130,8 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+  assets:
+    - assets/images/
+
+flutter_intl:
+  enabled: true

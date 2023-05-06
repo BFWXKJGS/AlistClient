@@ -4,7 +4,7 @@ import 'dart:convert';
 
 @JsonSerializable()
 class FileListRespEntity {
-	late List<FileListRespContent> content;
+	List<FileListRespContent>? content;
 	late int total;
 	late String readme;
 	late bool write;

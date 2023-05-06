@@ -39,6 +39,10 @@ class DioUtils {
   factory DioUtils() => _singleton;
 
   DioUtils._() {
+    _dioInit();
+  }
+
+  void _dioInit() {
     final BaseOptions options = BaseOptions(
       connectTimeout: _connectTimeout,
       receiveTimeout: _receiveTimeout,
@@ -51,20 +55,9 @@ class DioUtils {
         return true;
       },
       baseUrl: _baseUrl,
-//      contentType: Headers.formUrlEncodedContentType, // 适用于post form表单提交
+      //      contentType: Headers.formUrlEncodedContentType, // 适用于post form表单提交
     );
     _dio = Dio(options);
-
-    /// Fiddler抓包代理配置 https://www.jianshu.com/p/d831b1f7c45b
-//    (_dio.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate =
-//        (HttpClient client) {
-//      client.findProxy = (uri) {
-//        //proxy all request to localhost:8888
-//        return 'PROXY 10.41.0.132:8888';
-//      };
-//      client.badCertificateCallback =
-//          (X509Certificate cert, String host, int port) => true;
-//    };
 
     /// 添加拦截器
     void addInterceptor(Interceptor interceptor) {
@@ -75,6 +68,7 @@ class DioUtils {
   }
 
   static final DioUtils _singleton = DioUtils._();
+  final Dio _downloadDio = Dio();
 
   static DioUtils get instance => DioUtils();
 
@@ -115,6 +109,13 @@ class DioUtils {
     }
   }
 
+  void configBaseUrlAgain(String baseUrl) {
+    if (_baseUrl != baseUrl) {
+      _baseUrl = baseUrl;
+      _dioInit();
+    }
+  }
+
   Options _checkOptions(String method, Options? options) {
     options ??= Options();
     options.method = method;
@@ -139,16 +140,45 @@ class DioUtils {
       options: options,
       cancelToken: cancelToken,
     ).then<void>((BaseEntity<T> result) {
-      if (result.code == 200) {
-        onSuccess?.call(result.data);
-      } else {
-        _onError(result.code, result.message, onError);
+      if (cancelToken?.isCancelled != true) {
+        if (result.code == 200) {
+          onSuccess?.call(result.data);
+        } else {
+          _onError(result.code, result.message, onError);
+        }
       }
     }, onError: (dynamic e) {
-      _cancelLogPrint(e, url);
-      final NetError error = ExceptionHandle.handleException(e);
-      _onError(error.code, error.msg, onError);
+      if (cancelToken?.isCancelled != true) {
+        final NetError error = ExceptionHandle.handleException(e);
+        _onError(error.code, error.msg, onError);
+      } else {
+        _cancelLogPrint(e, url);
+      }
     });
+  }
+
+  Future<Response> download(
+    String urlPath,
+    dynamic savePath, {
+    ProgressCallback? onReceiveProgress,
+    Map<String, dynamic>? queryParameters,
+    CancelToken? cancelToken,
+    bool deleteOnError = true,
+    String lengthHeader = Headers.contentLengthHeader,
+    Object? data,
+    Options? options,
+  }) {
+    return _downloadDio.download(
+      urlPath,
+      savePath,
+      onReceiveProgress: onReceiveProgress,
+      queryParameters: queryParameters,
+      cancelToken: cancelToken,
+      deleteOnError: deleteOnError,
+      lengthHeader: lengthHeader,
+      data: data,
+      options: options,
+    );
   }
 
   /// 统一处理(onSuccess返回T对象，onSuccessList返回 List<T>)
@@ -170,17 +200,22 @@ class DioUtils {
       options: options,
       cancelToken: cancelToken,
     )).asBroadcastStream().listen((result) {
-      if (result.code == 200) {
-        if (onSuccess != null) {
-          onSuccess(result.data);
+      if (cancelToken?.isCancelled != true) {
+        if (result.code == 200) {
+          if (onSuccess != null) {
+            onSuccess(result.data);
+          }
+        } else {
+          _onError(result.code, result.message, onError);
         }
-      } else {
-        _onError(result.code, result.message, onError);
       }
     }, onError: (dynamic e) {
-      _cancelLogPrint(e, url);
-      final NetError error = ExceptionHandle.handleException(e);
-      _onError(error.code, error.msg, onError);
+      if (cancelToken?.isCancelled != true) {
+        final NetError error = ExceptionHandle.handleException(e);
+        _onError(error.code, error.msg, onError);
+      } else {
+        _cancelLogPrint(e, url);
+      }
     });
   }
 
