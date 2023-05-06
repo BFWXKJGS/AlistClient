@@ -167,9 +167,12 @@ class _FileListScreenState extends State<FileListScreen>
         break;
       case FileType.txt:
       case FileType.word:
+      case FileType.excel:
+      case FileType.ppt:
       case FileType.pdf:
       case FileType.code:
       case FileType.apk:
+      case FileType.compress:
         context.pushNamed(
           NamedRouter.fileReader,
           queryParameters: {"path": file.getCompletePath(widget.path)},

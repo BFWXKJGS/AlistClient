@@ -21,4 +21,5 @@ enum FileType {
   folder,
   file,
   apk,
+  markdown
 }

@@ -15,6 +15,8 @@ extension FileListRespContentExtensions on FileListRespContent {
     switch (ext) {
       case "apk":
         return FileType.apk;
+      case "md":
+        return FileType.markdown;
       case "mp3":
       case "m4a":
       case "m4r":
@@ -183,16 +185,32 @@ extension FileListRespContentExtensions on FileListRespContent {
         return Images.fileTypeImage;
       case FileType.video:
         return Images.fileTypeVideo;
-      case FileType.numbers:
+      case FileType.apk:
+        return Images.fileTypeApk;
       case FileType.word:
+        return Images.fileTypeWord;
+      case FileType.numbers:
+      case FileType.excel:
+        return Images.fileTypeExcel;
+      case FileType.ppt:
+      case FileType.keynote:
+        return Images.fileTypePpt;
       case FileType.txt:
         return Images.fileTypeDocment;
+      case FileType.code:
+        return Images.fileTypeCode;
+      case FileType.pdf:
+        return Images.fileTypePdf;
+      case FileType.compress:
+        return Images.fileTypeZip;
+      case FileType.markdown:
+        return Images.fileTypeMd;
       default:
         return Images.loginPageServerUrl;
     }
   }
 
-  String getCompletePath(String? parentPath){
+  String getCompletePath(String? parentPath) {
     var path = '';
     if (parentPath == '/' || parentPath == null) {
       path = "/$name";

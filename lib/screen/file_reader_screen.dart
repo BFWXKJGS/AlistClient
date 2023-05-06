@@ -84,7 +84,9 @@ class _FileReaderContainerState extends State<_FileReaderContainer> {
   }
 
   Widget buildOpenFileMessage() {
-    if (_downloadProgress < 100) {
+    if (failedMessage != null) {
+      return Text(failedMessage ?? "");
+    } else if (_downloadProgress < 100) {
       return Text("$_downloadProgress%");
     } else if (!_isOpenSuccessfully && failedMessage == null) {
       return Text("$_downloadProgress%");
@@ -167,6 +169,10 @@ class _FileReaderContainerState extends State<_FileReaderContainer> {
 
       LogUtil.d("open file $name", tag: "FileReaderScreen");
       _openFile(cacheFilePath);
+    }).catchError((e) {
+      setState(() {
+        failedMessage = e.toString();
+      });
     });
   }
 
