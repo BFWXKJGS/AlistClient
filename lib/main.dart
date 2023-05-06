@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:alist/generated/l10n.dart';
 import 'package:alist/screen/aboute_screen.dart';
 import 'package:alist/screen/audio_player_screen.dart';
@@ -118,7 +120,18 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      builder: FlutterSmartDialog.init(),
+      builder: (context, widget) {
+        final smartDialogInit = FlutterSmartDialog.init();
+        // limit text scale factor, >=0.9 && <=1.1
+        final originalTextScaleFactor = MediaQuery.of(context).textScaleFactor;
+        var newTextScaleFactor = min(originalTextScaleFactor, 1.1);
+        newTextScaleFactor = max(newTextScaleFactor, 0.9);
+
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaleFactor: newTextScaleFactor),
+          child: smartDialogInit(context, widget),
+        );
+      },
       routerConfig: _router,
       localizationsDelegates: const [
         S.delegate,
