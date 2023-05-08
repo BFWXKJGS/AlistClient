@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:alist/generated/l10n.dart';
+import 'package:alist/util/log_utils.dart';
 import 'package:alist/widget/slider.dart';
 import 'package:auto_orientation/auto_orientation.dart';
 import 'package:flustars/flustars.dart';
@@ -53,13 +54,16 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
 
   // Total video length of this
   Duration _duration = const Duration();
+
   // The current playing time of this video
   Duration _currentPos = const Duration();
+
   // The current cache length of this video
   Duration _bufferPos = const Duration();
 
   // is wakelock enable
   bool _wakelockEnable = false;
+
   // whether the video is playing in full screen
   bool _fullscreen = false;
   bool _playing = false;
@@ -87,6 +91,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       FlutterAliplayer.enableMix(true);
     }
     _player.setOnInfo((infoCode, extraValue, extraMsg, playerId) {
+      Log.d(
+          "OnInfo infoCode=$infoCode extraValue=$extraValue extraMsg=$extraMsg",
+          tag: tag);
       if (infoCode == FlutterAvpdef.CURRENTPOSITION) {
         setState(() {
           _currentPos = Duration(milliseconds: extraValue!);
@@ -97,6 +104,22 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         });
       }
     });
+
+    _player.setOnVideoSizeChanged((width, height, rotation, playerId) {
+      Log.d("width=$width height=$height rotation=$rotation", tag: tag);
+    });
+
+    _player.setOnLoadingStatusListener(
+      loadingBegin: (String playerId) {
+        Log.d("loadingBegin", tag: tag);
+      },
+      loadingProgress: (int percent, double? netSpeed, String playerId) {
+        Log.d("loadingBegin percent=$percent netSpeed=$netSpeed", tag: tag);
+      },
+      loadingEnd: (String playerId) {
+        Log.d("loadingEnd", tag: tag);
+      },
+    );
 
     _player.setOnStateChanged((newState, _) async {
       switch (newState) {
@@ -134,7 +157,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     });
 
     _player.setOnError((errorCode, errorExtra, errorMsg, playerId) {
-      LogUtil.d("errorCode=$errorCode errorMsg=$errorMsg", tag: tag);
+      Log.d("errorCode=$errorCode errorMsg=$errorMsg", tag: tag);
       _setPlaying(false, exception: errorMsg);
     });
   }
@@ -331,13 +354,15 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async {
-        if (_fullscreen) {
-          _exitFullScreen();
-          return false;
-        }
-        return true;
-      },
+      onWillPop: !_fullscreen
+          ? null
+          : () async {
+              if (_fullscreen) {
+                _exitFullScreen();
+                return false;
+              }
+              return true;
+            },
       child: SafeArea(
         child: _exception == null
             ? _buildContainer(context)
@@ -365,8 +390,11 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
               FilledButton(
                 onPressed: () {
                   if (!_playing) {
-                    _exception = null;
-                    widget.retryCallback();
+                    setState(() {
+                      _exception = null;
+                      _playing = true;
+                    });
+                    _player.reload();
                   }
                 },
                 style: FilledButton.styleFrom(
@@ -411,6 +439,10 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         style: const TextStyle(
           color: Colors.white,
         ),
+      ),
+      systemOverlayStyle: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
       ),
     );
   }

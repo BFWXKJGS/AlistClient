@@ -1,6 +1,7 @@
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/net/intercept.dart';
 import 'package:alist/util/constant.dart';
+import 'package:alist/util/global.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -30,6 +31,12 @@ class _SplashScreenState extends State<SplashScreen> {
     while (_context == null) {
       await Future.delayed(const Duration(milliseconds: 17));
     }
+    Locale currentLocal = Localizations.localeOf(_context!);
+    if ("zh" == currentLocal.toString()) {
+      Global.configServerHost = "alistc.geektang.cn";
+      Global.demoServerBaseUrl = "https://www.geektang.cn/alist/";
+    }
+
     if ((token == null || token.isEmpty) &&
         SpUtil.getBool(Constant.guest) != true) {
       _context?.goNamed(NamedRouter.login);
@@ -62,6 +69,9 @@ class _SplashScreenState extends State<SplashScreen> {
     }
 
     var baseUrl = SpUtil.getString(Constant.baseUrl);
+    if (baseUrl == null || baseUrl.isEmpty) {
+      baseUrl = Global.demoServerBaseUrl;
+    }
     configDio(
       baseUrl: baseUrl,
       interceptors: interceptors,

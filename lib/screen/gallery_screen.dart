@@ -1,22 +1,28 @@
 import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/net/dio_utils.dart';
+import 'package:alist/net/net_error_getter.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class GalleryScreen extends StatelessWidget {
   const GalleryScreen(
-      {Key? key, required this.paths, required this.initializedIndex})
+      {Key? key,
+      required this.paths,
+      required this.urls,
+      required this.initializedIndex})
       : super(key: key);
 
-  final List<String> paths;
+  final List<String>? urls;
+  final List<String>? paths;
   final int initializedIndex;
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        _ImagesContainer(paths: paths, initialPage: initializedIndex),
+        _ImagesContainer(
+            paths: paths, urls: urls, initialPage: initializedIndex),
         Positioned(
             left: 0,
             top: 0,
@@ -36,10 +42,15 @@ class GalleryScreen extends StatelessWidget {
 }
 
 class _ImagesContainer extends StatefulWidget {
-  const _ImagesContainer(
-      {super.key, required this.paths, required this.initialPage});
+  const _ImagesContainer({
+    super.key,
+    required this.paths,
+    required this.urls,
+    required this.initialPage,
+  });
 
-  final List<String> paths;
+  final List<String>? paths;
+  final List<String>? urls;
   final int initialPage;
 
   @override
@@ -61,13 +72,15 @@ class _ImagesContainerState extends State<_ImagesContainer> {
     return ExtendedImageGesturePageView.builder(
       itemBuilder: (context, index) {
         return _ImageContainer(
-          path: widget.paths[index],
+          path: widget.paths?[index],
+          url: widget.urls?[index],
           imageUrlMap: imageUrlMap,
         );
       },
       controller: controller,
-      itemCount: widget.paths.length,
+      itemCount: widget.paths?.length ?? widget.urls?.length ?? 0,
       scrollDirection: Axis.horizontal,
+      preloadPagesCount: 1,
     );
   }
 }
@@ -76,17 +89,20 @@ class _ImageContainer extends StatefulWidget {
   const _ImageContainer({
     super.key,
     required this.path,
+    required this.url,
     required this.imageUrlMap,
   });
 
   final Map<String, String> imageUrlMap;
-  final String path;
+  final String? path;
+  final String? url;
 
   @override
   State<_ImageContainer> createState() => _ImageContainerState();
 }
 
-class _ImageContainerState extends State<_ImageContainer> {
+class _ImageContainerState extends State<_ImageContainer>
+    with NetErrorGetterMixin {
   late GestureConfig gestureConfig;
   String? imageUrl;
   String? sign;
@@ -106,15 +122,19 @@ class _ImageContainerState extends State<_ImageContainer> {
       initialAlignment: InitialAlignment.center,
     );
 
-    String? imageUrl = widget.imageUrlMap[widget.path];
-    if (imageUrl != null) {
-      this.imageUrl = imageUrl;
+    if (widget.path != null) {
+      String? imageUrl = widget.imageUrlMap[widget.path];
+      if (imageUrl != null) {
+        this.imageUrl = imageUrl;
+      } else {
+        _requestImageUrl();
+      }
     } else {
-      requestImageUrl();
+      imageUrl = widget.url;
     }
   }
 
-  requestImageUrl() async {
+  _requestImageUrl() async {
     var path = widget.path;
     var body = {
       "path": path,
@@ -124,14 +144,14 @@ class _ImageContainerState extends State<_ImageContainer> {
         params: body, onSuccess: (data) {
       var url = data?.rawUrl;
       if (url != null) {
-        widget.imageUrlMap[widget.path] = url;
+        widget.imageUrlMap[widget.path ?? ""] = url;
       }
       setState(() {
         imageUrl = url;
         sign = data?.sign;
       });
-    }, onError: (code, message) {
-      print("code:$code,message:$message");
+    }, onError: (code, message, error) {
+      print("code:$code,message:$message,error=$error");
     });
   }
 

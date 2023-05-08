@@ -66,6 +66,10 @@ FileListRespContent $FileListRespContentFromJson(Map<String, dynamic> json) {
 	if (type != null) {
 		fileListRespContent.type = type;
 	}
+	final String? readme = jsonConvert.convert<String>(json['readme']);
+	if (readme != null) {
+		fileListRespContent.readme = readme;
+	}
 	return fileListRespContent;
 }
 
@@ -78,5 +82,6 @@ Map<String, dynamic> $FileListRespContentToJson(FileListRespContent entity) {
 	data['sign'] = entity.sign;
 	data['thumb'] = entity.thumb;
 	data['type'] = entity.type;
+	data['readme'] = entity.readme;
 	return data;
 }

@@ -1,5 +1,8 @@
 import 'package:alist/generated/images.dart';
+import 'package:alist/generated/l10n.dart';
 import 'package:alist/util/constant.dart';
+import 'package:alist/util/global.dart';
+import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/widget_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
@@ -7,15 +10,94 @@ import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:go_router/go_router.dart';
-
-import 'package:alist/generated/l10n.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    return AlistScaffold(
+        appbarTitle: Text(S.of(context).screenName_settings),
+        body: const _SettingsContainer());
+  }
+}
+
+class _SettingsContainer extends StatefulWidget {
+  const _SettingsContainer({Key? key}) : super(key: key);
+
+  @override
+  State<_SettingsContainer> createState() => _SettingsContainerState();
+}
+
+class _SettingsContainerState extends State<_SettingsContainer> {
+  PackageInfo? packageInfo;
+
+  @override
+  void initState() {
+    super.initState();
+    _initPackageInfo();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     bool isDarkMode = WidgetUtils.isDarkMode(context);
+    List<SettingsMenu> settingsMenus = _buildSettingsMenuItems(context);
+
+    return ListView.separated(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        itemBuilder: (child, index) {
+          var settingsMenu = settingsMenus[index];
+          return _buildListItem(settingsMenu, context, isDarkMode);
+        },
+        separatorBuilder: (child, index) {
+          return const Divider();
+        },
+        itemCount: settingsMenus.length);
+  }
+
+  ListTile _buildListItem(
+      SettingsMenu settingsMenu, BuildContext context, bool isDarkMode) {
+    return ListTile(
+      onTap: () {
+        if (settingsMenu.route?.isNotEmpty == true) {
+          context.pushNamed(settingsMenu.route!);
+        } else {
+          if (settingsMenu.menuId == MenuId.account) {
+            _showAccountDialog(context);
+          } else if (settingsMenu.menuId == MenuId.signIn) {
+            SpUtil.remove(Constant.guest);
+            SpUtil.remove(Constant.token);
+            context.goNamed(NamedRouter.login);
+          } else if (settingsMenu.menuId == MenuId.about) {
+            Locale currentLocal = Localizations.localeOf(context);
+            final url =
+                "https://${Global.configServerHost}/alist_h5/declaration?version=${packageInfo?.version ?? ""}&lang=$currentLocal";
+            Log.d("url:$url");
+            context.pushNamed(NamedRouter.web, queryParameters: {
+              "url": url,
+              "title": S.of(context).screenName_about
+            });
+          }
+        }
+      },
+      horizontalTitleGap: 2,
+      tileColor: Theme.of(context).colorScheme.background.withAlpha(125),
+      minVerticalPadding: 15,
+      leading: Image.asset(settingsMenu.icon),
+      title: Text(settingsMenu.name),
+      trailing: Image.asset(
+        Images.iconArrowRight,
+        color: isDarkMode ? Colors.white : null,
+      ),
+    );
+  }
+
+  _initPackageInfo() async {
+    packageInfo = await PackageInfo.fromPlatform();
+  }
+
+  List<SettingsMenu> _buildSettingsMenuItems(BuildContext context) {
     final settingsMenus = [
       SettingsMenu(
           menuId: MenuId.donate,
@@ -26,7 +108,7 @@ class SettingsScreen extends StatelessWidget {
         menuId: MenuId.about,
         name: S.of(context).settingsScreen_item_about,
         icon: Images.settingsPageAbout,
-        route: NamedRouter.about,
+        // route: NamedRouter.about,
       ),
     ];
     if (SpUtil.getBool(Constant.guest) == true) {
@@ -46,46 +128,7 @@ class SettingsScreen extends StatelessWidget {
             icon: Images.settingsPageAccount,
           ));
     }
-
-    return AlistScaffold(
-      appbarTitle: Text(S.of(context).screenName_settings),
-      body: ListView.separated(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          itemBuilder: (child, index) {
-            var settingsMenu = settingsMenus[index];
-            return ListTile(
-              onTap: () {
-                if (settingsMenu.route?.isNotEmpty == true) {
-                  context.pushNamed(settingsMenu.route!);
-                } else {
-                  if (settingsMenu.menuId == MenuId.account) {
-                    _showAccountDialog(context);
-                  } else if (settingsMenu.menuId == MenuId.signIn) {
-                    SpUtil.remove(Constant.guest);
-                    SpUtil.remove(Constant.token);
-                    context.goNamed(NamedRouter.login);
-                  }
-                }
-              },
-              horizontalTitleGap: 2,
-              tileColor:
-                  Theme.of(context).colorScheme.background.withAlpha(125),
-              minVerticalPadding: 15,
-              leading: Image.asset(
-                settingsMenu.icon
-              ),
-              title: Text(settingsMenu.name),
-              trailing: Image.asset(
-                Images.iconArrowRight,
-                color: isDarkMode ? Colors.white : null,
-              ),
-            );
-          },
-          separatorBuilder: (child, index) {
-            return const Divider();
-          },
-          itemCount: settingsMenus.length),
-    );
+    return settingsMenus;
   }
 
   void _showAccountDialog(BuildContext context) {

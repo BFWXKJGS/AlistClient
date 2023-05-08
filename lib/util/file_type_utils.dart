@@ -206,7 +206,7 @@ extension FileListRespContentExtensions on FileListRespContent {
       case FileType.markdown:
         return Images.fileTypeMd;
       default:
-        return Images.loginPageServerUrl;
+        return Images.fileTypeUnknow;
     }
   }
 

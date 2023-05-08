@@ -329,6 +329,136 @@ class S {
       args: [],
     );
   }
+
+  /// `Directory password`
+  String get directoryPasswordDialog_title {
+    return Intl.message(
+      'Directory password',
+      name: 'directoryPasswordDialog_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `ok`
+  String get directoryPasswordDialog_btn_ok {
+    return Intl.message(
+      'ok',
+      name: 'directoryPasswordDialog_btn_ok',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `cancel`
+  String get directoryPasswordDialog_btn_cancel {
+    return Intl.message(
+      'cancel',
+      name: 'directoryPasswordDialog_btn_cancel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Password is empty!`
+  String get directoryPasswordDialog_tips_passwordEmpty {
+    return Intl.message(
+      'Password is empty!',
+      name: 'directoryPasswordDialog_tips_passwordEmpty',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Network error`
+  String get net_error_net_error {
+    return Intl.message(
+      'Network error',
+      name: 'net_error_net_error',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Data parsing exceptions`
+  String get net_error_parse_error {
+    return Intl.message(
+      'Data parsing exceptions',
+      name: 'net_error_parse_error',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Network error`
+  String get net_error_socket_error {
+    return Intl.message(
+      'Network error',
+      name: 'net_error_socket_error',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Server error, please try again later`
+  String get net_error_http_error {
+    return Intl.message(
+      'Server error, please try again later',
+      name: 'net_error_http_error',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connection timeout`
+  String get net_error_connect_timeout_error {
+    return Intl.message(
+      'Connection timeout',
+      name: 'net_error_connect_timeout_error',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Request timeout`
+  String get net_error_send_timeout_error {
+    return Intl.message(
+      'Request timeout',
+      name: 'net_error_send_timeout_error',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Response timeout`
+  String get net_error_receive_timeout_error {
+    return Intl.message(
+      'Response timeout',
+      name: 'net_error_receive_timeout_error',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Request cancelled`
+  String get net_error_cancel_error {
+    return Intl.message(
+      'Request cancelled',
+      name: 'net_error_cancel_error',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `bad certificate`
+  String get net_error_certificate_error {
+    return Intl.message(
+      'bad certificate',
+      name: 'net_error_certificate_error',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

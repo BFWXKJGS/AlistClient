@@ -2,15 +2,14 @@ import 'dart:io';
 
 import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/net/dio_utils.dart';
-import 'package:alist/util/constant.dart';
+import 'package:alist/util/download_utils.dart';
 import 'package:alist/util/file_type.dart';
-import 'package:alist/util/string_utils.dart';
+import 'package:alist/net/net_error_getter.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:dio/dio.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 
 class FileReaderScreen extends StatelessWidget {
@@ -42,7 +41,8 @@ class _FileReaderContainer extends StatefulWidget {
   State<_FileReaderContainer> createState() => _FileReaderContainerState();
 }
 
-class _FileReaderContainerState extends State<_FileReaderContainer> {
+class _FileReaderContainerState extends State<_FileReaderContainer>
+    with NetErrorGetterMixin {
   String? _localPath;
   int _downloadProgress = 0;
   final _cancelToken = CancelToken();
@@ -128,8 +128,8 @@ class _FileReaderContainerState extends State<_FileReaderContainer> {
           _download(data?.name ?? "", data!.size, url);
         }
       },
-      onError: (code, message) {
-        SmartDialog.showToast(message);
+      onError: (code, message, error) {
+        SmartDialog.showToast(message ?? netErrorToMessage(error));
         debugPrint("code:$code,message:$message");
       },
     );
@@ -137,7 +137,7 @@ class _FileReaderContainerState extends State<_FileReaderContainer> {
 
   Future<void> _download(String name, int fileSize, String url) async {
     LogUtil.d("start download $name", tag: "FileReaderScreen");
-    Directory downloadDir = await findDownloadDir();
+    Directory downloadDir = await DownloadUtils.findDownloadDir("Download");
     LogUtil.d("downloadDir=$downloadDir", tag: "FileReaderScreen");
     final cacheFilePath = '${downloadDir.path}/$name';
     final cacheFile = File(cacheFilePath);
@@ -165,7 +165,7 @@ class _FileReaderContainerState extends State<_FileReaderContainer> {
       }),
     )
         .then((value) async {
-      downloadTmpFile.rename(cacheFilePath);
+      await downloadTmpFile.rename(cacheFilePath);
 
       LogUtil.d("open file $name", tag: "FileReaderScreen");
       _openFile(cacheFilePath);
@@ -174,33 +174,6 @@ class _FileReaderContainerState extends State<_FileReaderContainer> {
         failedMessage = e.toString();
       });
     });
-  }
-
-  Future<Directory> findDownloadDir() async {
-    Directory downloadDir;
-    if (Platform.isAndroid) {
-      final dirs = await getExternalStorageDirectory();
-      if (dirs != null) {
-        downloadDir = dirs;
-      } else {
-        downloadDir = await getTemporaryDirectory();
-      }
-    } else {
-      downloadDir = await getTemporaryDirectory();
-    }
-    String subPath = SpUtil.getString(Constant.baseUrl).md5String();
-    if (SpUtil.getBool(Constant.guest) == true) {
-      subPath = "$subPath/guest";
-    } else {
-      final username = SpUtil.getString(Constant.username);
-      subPath = "$subPath/$username";
-    }
-
-    downloadDir = Directory("${downloadDir.path}/$subPath/Download");
-    if (!await downloadDir.exists()) {
-      await downloadDir.create(recursive: true);
-    }
-    return downloadDir;
   }
 
   _openFile(String? filePath) {

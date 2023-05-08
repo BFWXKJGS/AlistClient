@@ -9,13 +9,14 @@ import 'package:alist/screen/login_screen.dart';
 import 'package:alist/screen/settings_screen.dart';
 import 'package:alist/screen/splash_screen.dart';
 import 'package:alist/screen/video_player_screen.dart';
+import 'package:alist/screen/web_screen.dart';
 import 'package:alist/util/named_router.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:go_router/go_router.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey =
-GlobalKey<NavigatorState>(debugLabel: 'root');
+    GlobalKey<NavigatorState>(debugLabel: 'root');
 
 final GoRouter router = GoRouter(
   navigatorKey: _rootNavigatorKey,
@@ -26,7 +27,7 @@ final GoRouter router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/',
       name: NamedRouter.root,
-      pageBuilder: (context, state) => AlistTransitionPage<void>(
+      pageBuilder: (context, state) => CupertinoPage<void>(
         key: state.pageKey,
         restorationId: state.pageKey.value,
         child: SplashScreen(key: state.pageKey),
@@ -36,7 +37,7 @@ final GoRouter router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/login',
       name: NamedRouter.login,
-      pageBuilder: (context, state) => AlistTransitionPage<void>(
+      pageBuilder: (context, state) => CupertinoPage<void>(
         key: state.pageKey,
         restorationId: state.pageKey.value,
         child: LoginScreen(key: state.pageKey),
@@ -46,7 +47,7 @@ final GoRouter router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/home',
       name: NamedRouter.home,
-      pageBuilder: (context, state) => AlistTransitionPage<void>(
+      pageBuilder: (context, state) => CupertinoPage<void>(
         key: state.pageKey,
         restorationId: state.pageKey.value,
         child: HomeScreen(
@@ -57,7 +58,7 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/fileList',
       name: NamedRouter.fileList,
-      pageBuilder: (context, state) => AlistTransitionPage<void>(
+      pageBuilder: (context, state) => CupertinoPage(
         key: state.pageKey,
         restorationId: state.pageKey.value,
         child: FileListScreen(
@@ -69,7 +70,7 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/settings',
       name: NamedRouter.settings,
-      pageBuilder: (context, state) => AlistTransitionPage<void>(
+      pageBuilder: (context, state) => CupertinoPage<void>(
         key: state.pageKey,
         restorationId: state.pageKey.value,
         child: SettingsScreen(key: state.pageKey),
@@ -79,7 +80,7 @@ final GoRouter router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/videoPlayer',
       name: NamedRouter.videoPlayer,
-      pageBuilder: (context, state) => AlistTransitionPage<void>(
+      pageBuilder: (context, state) => CupertinoPage<void>(
         key: state.pageKey,
         restorationId: state.pageKey.value,
         child: VideoPlayerScreen(path: state.queryParameters['path'] ?? ''),
@@ -89,7 +90,7 @@ final GoRouter router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/audioPlayer',
       name: NamedRouter.audioPlayer,
-      pageBuilder: (context, state) => AlistTransitionPage<void>(
+      pageBuilder: (context, state) => CupertinoPage<void>(
         key: state.pageKey,
         restorationId: state.pageKey.value,
         child: AudioPlayerScreen(path: state.queryParameters['path'] ?? ''),
@@ -99,7 +100,7 @@ final GoRouter router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/donate',
       name: NamedRouter.donate,
-      pageBuilder: (context, state) => AlistTransitionPage<void>(
+      pageBuilder: (context, state) => CupertinoPage<void>(
         key: state.pageKey,
         restorationId: state.pageKey.value,
         child: const DonateScreen(),
@@ -109,7 +110,7 @@ final GoRouter router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/about',
       name: NamedRouter.about,
-      pageBuilder: (context, state) => AlistTransitionPage<void>(
+      pageBuilder: (context, state) => CupertinoPage<void>(
         key: state.pageKey,
         restorationId: state.pageKey.value,
         child: const AboutScreen(),
@@ -121,56 +122,44 @@ final GoRouter router = GoRouter(
       name: NamedRouter.gallery,
       pageBuilder: (context, state) {
         final extras = state.extra as Map<String, dynamic>;
-        return AlistTransitionPage<void>(
+        return CupertinoPage<void>(
           key: state.pageKey,
           restorationId: state.pageKey.value,
           child: GalleryScreen(
             paths: extras["paths"],
+            urls: extras["urls"],
             initializedIndex: extras["index"] ?? 0,
           ),
         );
       },
     ),
     GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '/fileReader',
+        name: NamedRouter.fileReader,
+        pageBuilder: (context, state) {
+          final extras = state.extra as Map<String, dynamic>;
+          return CupertinoPage(
+              key: state.pageKey,
+              restorationId: state.pageKey.value,
+              child: FileReaderScreen(
+                path: state.queryParameters['path'] ?? '',
+                fileType: extras["fileType"],
+              ));
+        }),
+    GoRoute(
       parentNavigatorKey: _rootNavigatorKey,
-      path: '/fileReader',
-      name: NamedRouter.fileReader,
+      path: '/web',
+      name: NamedRouter.web,
       pageBuilder: (context, state) {
-        final extras = state.extra as Map<String, dynamic>;
-        return AlistTransitionPage<void>(
+        return CupertinoPage(
           key: state.pageKey,
           restorationId: state.pageKey.value,
-          child: FileReaderScreen(
-            path: state.queryParameters['path'] ?? '',
-            fileType: extras["fileType"],
-          ),
+          child: WebScreen(
+              firstPageUrl: state.queryParameters['url'] ?? '',
+              firstPageTitle: state.queryParameters['title']),
         );
       },
     ),
   ],
 );
-
-class AlistTransitionPage<T> extends CustomTransitionPage<T> {
-  AlistTransitionPage({
-    required super.child,
-    super.key,
-    super.name,
-    super.arguments,
-    super.restorationId,
-  }) : super(
-    transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-        FadeTransition(
-            opacity: CurveTween(curve: Curves.easeIn).animate(animation),
-            child: SlideTransition(
-              position: animation.drive(
-                Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                ).chain(
-                  CurveTween(curve: Curves.easeIn),
-                ),
-              ),
-              child: child,
-            )),
-  );
-}

@@ -32,6 +32,7 @@ class FileListRespContent {
 	late String sign;
 	late String thumb;
 	late int type;
+	String? readme;
 
 	FileListRespContent();
 

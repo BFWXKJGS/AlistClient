@@ -24,6 +24,14 @@ class MessageLookup extends MessageLookupByLibrary {
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "alipay": MessageLookupByLibrary.simpleMessage("支付宝"),
         "appName": MessageLookupByLibrary.simpleMessage("Alist"),
+        "directoryPasswordDialog_btn_cancel":
+            MessageLookupByLibrary.simpleMessage("取消"),
+        "directoryPasswordDialog_btn_ok":
+            MessageLookupByLibrary.simpleMessage("确认"),
+        "directoryPasswordDialog_tips_passwordEmpty":
+            MessageLookupByLibrary.simpleMessage("密码不能为空!"),
+        "directoryPasswordDialog_title":
+            MessageLookupByLibrary.simpleMessage("请输入目录密码"),
         "guestModeDialog_btn_cancel":
             MessageLookupByLibrary.simpleMessage("我只是手滑了"),
         "guestModeDialog_btn_ok": MessageLookupByLibrary.simpleMessage("是的"),
@@ -43,6 +51,22 @@ class MessageLookup extends MessageLookupByLibrary {
         "loginScreen_tips_usernameOrPasswordEmpty":
             MessageLookupByLibrary.simpleMessage("用户名/密码为空"),
         "logout": MessageLookupByLibrary.simpleMessage("退出登录"),
+        "net_error_cancel_error": MessageLookupByLibrary.simpleMessage("请求已取消"),
+        "net_error_certificate_error":
+            MessageLookupByLibrary.simpleMessage("SSL证书错误"),
+        "net_error_connect_timeout_error":
+            MessageLookupByLibrary.simpleMessage("连接超时"),
+        "net_error_http_error":
+            MessageLookupByLibrary.simpleMessage("服务器异常，请稍后重试"),
+        "net_error_net_error":
+            MessageLookupByLibrary.simpleMessage("网络异常，请检查你的网络"),
+        "net_error_parse_error": MessageLookupByLibrary.simpleMessage("数据解析异常"),
+        "net_error_receive_timeout_error":
+            MessageLookupByLibrary.simpleMessage("响应超时"),
+        "net_error_send_timeout_error":
+            MessageLookupByLibrary.simpleMessage("请求超时"),
+        "net_error_socket_error":
+            MessageLookupByLibrary.simpleMessage("网络异常，请检查你的网络"),
         "photo_load_failed": MessageLookupByLibrary.simpleMessage("图片加载失败"),
         "playerSkin_tips_playVideoFailed":
             MessageLookupByLibrary.simpleMessage("播放失败，点我重试"),

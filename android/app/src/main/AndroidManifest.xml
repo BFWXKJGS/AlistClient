@@ -36,5 +36,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <meta-data
+            android:name="com.aliyun.alivc_license.licensefile"
+            android:value="assets/license.crt" />
     </application>
 </manifest>

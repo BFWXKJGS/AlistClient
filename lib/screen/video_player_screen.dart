@@ -1,5 +1,6 @@
 import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/net/dio_utils.dart';
+import 'package:alist/net/net_error_getter.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/widget/player_skin.dart';
 import 'package:dio/dio.dart';
@@ -7,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_aliplayer/flutter_aliplayer.dart';
 import 'package:flutter_aliplayer/flutter_aliplayer_factory.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String path;
@@ -17,7 +19,8 @@ class VideoPlayerScreen extends StatefulWidget {
   State createState() => _VideoPlayerScreenState();
 }
 
-class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
+class _VideoPlayerScreenState extends State<VideoPlayerScreen>
+    with NetErrorGetterMixin {
   final CancelToken _cancelToken = CancelToken();
   final FlutterAliplayer fAliplayer = FlutterAliPlayerFactory.createAliPlayer();
   String? _videoTitle;
@@ -31,6 +34,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     _loadVideoInfoAndPlay();
   }
 
+  // 1、 load video download url from AList server
+  // 2、 use this url to play video
   void _loadVideoInfoAndPlay() {
     var path = widget.path;
     var body = {
@@ -51,8 +56,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           _videoTitle = data?.name.substringBeforeLast(".") ?? "";
         });
       },
-      onError: (code, message) {
-        debugPrint("code:$code,message:$message");
+      onError: (code, message, error) {
+        SmartDialog.showToast(message ?? netErrorToMessage(error));
       },
     );
   }
@@ -100,6 +105,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   void _releasePlayer() {
-    fAliplayer.stop().then((value) => fAliplayer.destroy());
+    fAliplayer.destroy();
   }
 }

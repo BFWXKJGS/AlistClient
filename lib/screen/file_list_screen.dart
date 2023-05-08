@@ -6,11 +6,13 @@ import 'package:alist/generated/l10n.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_type_utils.dart';
+import 'package:alist/util/global.dart';
+import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
+import 'package:alist/net/net_error_getter.dart';
 import 'package:alist/util/widget_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:dio/dio.dart';
-import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:go_router/go_router.dart';
@@ -20,6 +22,10 @@ typedef FileItemClickCallback = Function(
   BuildContext context,
   List<FileListRespContent> files,
   FileListRespContent file,
+);
+
+typedef DirectorPasswordCallback = Function(
+  String password,
 );
 
 class FileListScreen extends StatefulWidget {
@@ -32,75 +38,114 @@ class FileListScreen extends StatefulWidget {
 }
 
 class _FileListScreenState extends State<FileListScreen>
-    with AutomaticKeepAliveClientMixin {
-  FileListRespEntity? data;
+    with AutomaticKeepAliveClientMixin, NetErrorGetterMixin {
+  static const String tag = "_FileListScreenState";
+  FileListRespEntity? _data;
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
   final CancelToken _cancelToken = CancelToken();
-  String? pageName;
+  String? _pageName;
+  String? _password;
+  bool _passwordRetrying = false;
 
   @override
   void initState() {
     super.initState();
     final path = widget.path;
     if (isRootPath(path)) {
-      pageName == null;
+      _pageName == null;
     } else {
-      pageName = path!.substring(path.lastIndexOf('/') + 1);
+      _pageName = path!.substring(path.lastIndexOf('/') + 1);
     }
-    LogUtil.d("path=$path pageName=$pageName}", tag: "FileListPage");
+    Log.d("path=$path pageName=$_pageName}", tag: tag);
 
-    loadData();
-    LogUtil.d("initState", tag: "FileListPage");
+    _loadFilesDelay();
+    Log.d("initState", tag: tag);
   }
 
   bool isRootPath(String? path) => path == '/' || path == null || path == '';
 
-  Future<void> loadData() async {
+  // load files when ui ready
+  _loadFilesDelay() async {
+    do {
+      await Future.delayed(const Duration(milliseconds: 17));
+      final currentState = _refreshIndicatorKey.currentState;
+      if (currentState != null) {
+        Log.d("start load file", tag: tag);
+        currentState.show();
+        break;
+      }
+      Log.d("ignore load file", tag: tag);
+      if (!mounted) {
+        break;
+      }
+    } while (true);
+  }
+
+  Future<void> _loadFiles() async {
     var body = {
       "path": widget.path,
-      "password": "",
+      "password": _password ?? "",
       "page": 1,
       "per_page": 0,
       "refresh": false
     };
-    Future.delayed(const Duration(milliseconds: 50)).then((value) {
-      if (data == null && !_cancelToken.isCancelled) {
-        _refreshIndicatorKey.currentState?.show();
-        LogUtil.d(
-            "_refreshIndicatorKey.currentState=${_refreshIndicatorKey.currentState}");
-      }
-    });
+
     return DioUtils.instance.requestNetwork<FileListRespEntity>(
         Method.post, "fs/list", cancelToken: _cancelToken, params: body,
         onSuccess: (data) {
-      setState(() {
-        this.data = data;
-      });
-    }, onError: (code, msg) {
-      SmartDialog.showToast(msg);
+      setState(
+        () {
+          _data = data;
+        },
+      );
+    }, onError: (code, msg, error) {
+      if (code != null && code == 403) {
+        _showDirectorPasswordDialog();
+        if(_passwordRetrying){
+          SmartDialog.showToast(msg ?? netErrorToMessage(error));
+        }
+      } else {
+        SmartDialog.showToast(msg ?? netErrorToMessage(error));
+      }
       debugPrint(msg);
     });
+  }
+
+  Future<dynamic> _showDirectorPasswordDialog() {
+    return SmartDialog.show(
+        clickMaskDismiss: false,
+        backDismiss: false,
+        builder: (context) {
+          return DirectorPasswordDialog(
+            directorPasswordCallback: (password) {
+              _password = password;
+              _passwordRetrying = true;
+              _refreshIndicatorKey.currentState?.show();
+            },
+          );
+        });
   }
 
   @override
   void dispose() {
     super.dispose();
     _cancelToken.cancel();
-    LogUtil.d("dispose", tag: "FileListPage");
+    Log.d("dispose", tag: tag);
   }
 
   @override
   Widget build(BuildContext context) {
-    final files = data?.content ?? [];
+    final files = _data?.content ?? [];
 
     return AlistScaffold(
-      appbarTitle: Text(pageName ?? S.of(context).screenName_fileListRoot),
+      appbarTitle: Text(_pageName ?? S.of(context).screenName_fileListRoot),
       body: RefreshIndicator(
           key: _refreshIndicatorKey,
-          onRefresh: () => loadData(),
+          onRefresh: () => _loadFiles(),
           child: _FileListView(
             path: widget.path,
+            readme: _data?.readme,
             files: files,
             onFileItemClick: _onFileTap,
           )),
@@ -193,34 +238,68 @@ class _FileListView extends StatelessWidget {
     Key? key,
     required this.files,
     required this.path,
+    required this.readme,
     required this.onFileItemClick,
   }) : super(key: key);
   final String? path;
+  final String? readme;
   final List<FileListRespContent> files;
   final FileItemClickCallback onFileItemClick;
 
   @override
   Widget build(BuildContext context) {
+    var itemCount = files.length;
+    if (readme != null && readme!.isNotEmpty) {
+      itemCount++;
+    }
+
     return ListView.separated(
-      itemCount: files.length,
+      itemCount: itemCount,
       separatorBuilder: (context, index) => const Padding(
           padding: EdgeInsets.symmetric(horizontal: 18), child: Divider()),
       itemBuilder: (context, index) {
-        final file = files[index];
-        return _FileListItem(
-          file: file,
-          onTap: () => onFileItemClick(context, files, file),
-        );
+        if (index == files.length) {
+          // it's readme
+          String readMeUrl = Uri(
+              scheme: "https",
+              host: Global.configServerHost,
+              path: "alist_h5/showMarkDown",
+              queryParameters: {
+                "markdownUrl": readme,
+                "title": "README.md",
+              }).toString();
+          return _FileListItem(
+            icon: Images.fileTypeMd,
+            fileName: "README.md",
+            onTap: () => context.pushNamed(
+              NamedRouter.web,
+              queryParameters: {"url": readMeUrl, "title": "README.md"},
+            ),
+          );
+        } else {
+          // it's file
+          final file = files[index];
+          return _FileListItem(
+            icon: file.getFileIcon(),
+            fileName: file.name,
+            onTap: () => onFileItemClick(context, files, file),
+          );
+        }
       },
     );
   }
 }
 
 class _FileListItem extends StatelessWidget {
-  const _FileListItem({Key? key, required this.file, required this.onTap})
-      : super(key: key);
+  const _FileListItem({
+    Key? key,
+    required this.icon,
+    required this.fileName,
+    required this.onTap,
+  }) : super(key: key);
   final GestureTapCallback onTap;
-  final FileListRespContent file;
+  final String icon;
+  final String fileName;
 
   @override
   Widget build(BuildContext context) {
@@ -228,19 +307,76 @@ class _FileListItem extends StatelessWidget {
     return ListTile(
       horizontalTitleGap: 6,
       minVerticalPadding: 12,
-      leading: Image.asset(
-        file.getFileIcon(),
-      ),
+      leading: Image.asset(icon),
       trailing: Image.asset(
         Images.iconArrowRight,
         color: isDarkMode ? Colors.white : null,
       ),
       title: Text(
-        file.name,
+        fileName,
         overflow: TextOverflow.ellipsis,
         maxLines: 2,
       ),
       onTap: onTap,
     );
+  }
+}
+
+class DirectorPasswordDialog extends StatefulWidget {
+  const DirectorPasswordDialog(
+      {Key? key, required this.directorPasswordCallback})
+      : super(key: key);
+  final DirectorPasswordCallback directorPasswordCallback;
+
+  @override
+  State<DirectorPasswordDialog> createState() => _DirectorPasswordDialogState();
+}
+
+class _DirectorPasswordDialogState extends State<DirectorPasswordDialog> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(S.of(context).directoryPasswordDialog_title),
+      content: TextField(
+        controller: _controller,
+        obscureText: true,
+        decoration: const InputDecoration(
+          border: OutlineInputBorder(),
+          isCollapsed: true,
+          isDense: true,
+          contentPadding: EdgeInsets.symmetric(horizontal: 11, vertical: 12),
+        ),
+      ),
+      actions: [
+        TextButton(
+            onPressed: () {
+              SmartDialog.dismiss();
+            },
+            child: Text(
+              S.of(context).directoryPasswordDialog_btn_cancel,
+              style: TextStyle(color: Theme.of(context).colorScheme.secondary),
+            )),
+        TextButton(
+            onPressed: () {
+              _onConfirm(context);
+            },
+            child: Text(
+              S.of(context).directoryPasswordDialog_btn_ok,
+            ))
+      ],
+    );
+  }
+
+  void _onConfirm(BuildContext context) {
+    String password = _controller.text;
+    if (password.isEmpty) {
+      SmartDialog.showToast(
+          S.of(context).directoryPasswordDialog_tips_passwordEmpty);
+      return;
+    }
+    widget.directorPasswordCallback(password);
+    SmartDialog.dismiss();
   }
 }

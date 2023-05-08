@@ -31,4 +31,7 @@ class NamedRouter {
 
   // file reader
   static const fileReader = "fileReader";
+
+  // web
+  static const web = "web";
 }

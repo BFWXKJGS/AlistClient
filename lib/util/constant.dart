@@ -7,8 +7,6 @@ class Constant {
   static bool isDriverTest = false;
   static bool isUnitTest = false;
 
-  static const String defaultServerUrl = 'https://www.geektang.cn/alist/';
-
   static const String data = 'data';
   static const String message = 'message';
   static const String code = 'code';

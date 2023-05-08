@@ -1,12 +1,12 @@
 import 'dart:convert';
 
-import 'package:alist/net/intercept.dart';
-import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:alist/net/json_parse_error.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/log_utils.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+
 import 'base_entity.dart';
-import 'error_handle.dart';
 
 /// 默认dio配置
 Duration _connectTimeout = const Duration(seconds: 15);
@@ -32,7 +32,7 @@ void configDio({
 
 typedef NetSuccessCallback<T> = Function(T data);
 typedef NetSuccessListCallback<T> = Function(List<T> data);
-typedef NetErrorCallback = Function(int code, String msg);
+typedef NetErrorCallback = Function(int? code, String? msg, dynamic exception);
 
 /// @weilu https://github.com/simplezhli
 class DioUtils {
@@ -92,20 +92,22 @@ class DioUtils {
       options: _checkOptions(method, options),
       cancelToken: cancelToken,
     );
+
     try {
-      final String data = response.data.toString();
+      final String responseData = response.data.toString();
 
       /// 集成测试无法使用 isolate https://github.com/flutter/flutter/issues/24703
       /// 使用compute条件：数据大于10KB（粗略使用10 * 1024）且当前不是集成测试（后面可能会根据Web环境进行调整）
       /// 主要目的减少不必要的性能开销
-      final bool isCompute = !Constant.isDriverTest && data.length > 10 * 1024;
-      debugPrint('isCompute:$isCompute');
-      final Map<String, dynamic> map =
-          isCompute ? await compute(parseData, data) : parseData(data);
+      final bool isCompute =
+          !Constant.isDriverTest && responseData.length > 10 * 1024;
+      Log.d('isCompute:$isCompute');
+      final Map<String, dynamic> map = isCompute
+          ? await compute(parseData, responseData)
+          : parseData(responseData);
       return BaseEntity<T>.fromJson(map);
     } catch (e) {
-      debugPrint(e.toString());
-      return BaseEntity<T>(ExceptionHandle.parse_error, '数据解析错误！', null);
+      throw JsonParseException(e.toString());
     }
   }
 
@@ -144,15 +146,18 @@ class DioUtils {
         if (result.code == 200) {
           onSuccess?.call(result.data);
         } else {
-          _onError(result.code, result.message, onError);
+          _onError(result.code, result.message, null, onError);
         }
       }
     }, onError: (dynamic e) {
       if (cancelToken?.isCancelled != true) {
-        final NetError error = ExceptionHandle.handleException(e);
-        _onError(error.code, error.msg, onError);
+        _onError(null, null, e, onError);
       } else {
         _cancelLogPrint(e, url);
+      }
+    }).catchError((e) {
+      if (cancelToken?.isCancelled != true) {
+        _onError(null, null, e, onError);
       }
     });
   }
@@ -206,13 +211,12 @@ class DioUtils {
             onSuccess(result.data);
           }
         } else {
-          _onError(result.code, result.message, onError);
+          _onError(result.code, result.message, null, onError);
         }
       }
     }, onError: (dynamic e) {
       if (cancelToken?.isCancelled != true) {
-        final NetError error = ExceptionHandle.handleException(e);
-        _onError(error.code, error.msg, onError);
+        _onError(null, null, e, onError);
       } else {
         _cancelLogPrint(e, url);
       }
@@ -221,17 +225,14 @@ class DioUtils {
 
   void _cancelLogPrint(dynamic e, String url) {
     if (e is DioError && CancelToken.isCancel(e)) {
-      Log.e('取消请求接口： $url');
+      Log.e('request cancel： $url');
     }
   }
 
-  void _onError(int? code, String msg, NetErrorCallback? onError) {
-    if (code == null) {
-      code = ExceptionHandle.unknown_error;
-      msg = '未知异常';
-    }
-    Log.e('接口请求异常： code: $code, mag: $msg');
-    onError?.call(code, msg);
+  void _onError(
+      int? code, String? msg, dynamic exception, NetErrorCallback? onError) {
+    Log.e('request error： code: $code, msg: $msg');
+    onError?.call(code, msg, exception);
   }
 }
 

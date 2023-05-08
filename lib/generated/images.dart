@@ -9,6 +9,7 @@ class Images {
   static const String fileTypeMd = 'assets/images/file_type_md.png';
   static const String fileTypePdf = 'assets/images/file_type_pdf.png';
   static const String fileTypePpt = 'assets/images/file_type_ppt.png';
+  static const String fileTypeUnknow = 'assets/images/file_type_unknow.png';
   static const String fileTypeVideo = 'assets/images/file_type_video.png';
   static const String fileTypeWord = 'assets/images/file_type_word.png';
   static const String fileTypeZip = 'assets/images/file_type_zip.png';

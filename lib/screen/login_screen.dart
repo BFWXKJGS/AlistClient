@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:alist/entity/login_resp_entity.dart';
 import 'package:alist/generated/images.dart';
 import 'package:alist/generated/l10n.dart';
 import 'package:alist/net/dio_utils.dart';
+import 'package:alist/net/net_error_getter.dart';
 import 'package:alist/util/constant.dart';
+import 'package:alist/util/global.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:dio/dio.dart';
@@ -47,7 +51,8 @@ class LoginInputDecoration extends InputDecoration {
         );
 }
 
-class _LoginPageState extends State<LoginPageContainer> {
+class _LoginPageState extends State<LoginPageContainer>
+    with NetErrorGetterMixin {
   final addressController =
       TextEditingController(text: SpUtil.getString(Constant.address) ?? "");
   final usernameController =
@@ -96,7 +101,8 @@ class _LoginPageState extends State<LoginPageContainer> {
           SpUtil.putBool(Constant.guest, false);
           onSuccess();
         },
-        onError: (code, message) => onFailure(code, message));
+        onError: (code, message, error) =>
+            onFailure(code ?? -1, message ?? netErrorToMessage(error)));
   }
 
   bool _checkServerUrl(String serverUrl) {
@@ -145,7 +151,7 @@ class _LoginPageState extends State<LoginPageContainer> {
           ),
           TextButton(
             onPressed: () {
-              _enterVisitorMode(context, Constant.defaultServerUrl);
+              _enterVisitorMode(context, Global.demoServerBaseUrl);
               SmartDialog.dismiss();
             },
             child: Text(S.of(context).guestModeDialog_btn_ok),
@@ -166,6 +172,21 @@ class _LoginPageState extends State<LoginPageContainer> {
         SmartDialog.showToast(message);
       },
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (Platform.isIOS) {
+      _testNetwork();
+    }
+  }
+
+  // Used to request network access when entering the app for the first time
+  // just for IOS
+  void _testNetwork() async {
+    await Future.delayed(const Duration(seconds: 1));
+    DioUtils.instance.requestNetwork(Method.get, "/").catchError((e) {});
   }
 
   @override

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/net/dio_utils.dart';
+import 'package:alist/net/net_error_getter.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/slider.dart';
@@ -21,7 +22,7 @@ class AudioPlayerScreen extends StatefulWidget {
   State<AudioPlayerScreen> createState() => _AudioPlayerScreenState();
 }
 
-class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
+class _AudioPlayerScreenState extends State<AudioPlayerScreen> with NetErrorGetterMixin{
   final FlutterAliplayer _audioPlayer =
       FlutterAliPlayerFactory.createAliPlayer();
   final CancelToken _cancelToken = CancelToken();
@@ -38,7 +39,6 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   double _seekPos = -1.0;
   StreamSubscription? _currentPosSubs;
   StreamSubscription? _bufferPosSubs;
-
 
   @override
   void initState() {
@@ -129,8 +129,8 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           setState(() {});
         }
       },
-      onError: (code, message) {
-        SmartDialog.showToast(message);
+      onError: (code, message, error) {
+        SmartDialog.showToast(message ?? netErrorToMessage(error));
         debugPrint("code:$code,message:$message");
       },
     );

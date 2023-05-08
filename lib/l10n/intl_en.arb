@@ -27,5 +27,18 @@
   "guestModeDialog_title": "Browse as a guest",
   "guestModeDialog_content": "You have not entered the server address, do you want to access the default server as a guest?",
   "guestModeDialog_btn_ok": "Yes",
-  "guestModeDialog_btn_cancel": "No"
+  "guestModeDialog_btn_cancel": "No",
+  "directoryPasswordDialog_title": "Directory password",
+  "directoryPasswordDialog_btn_ok": "ok",
+  "directoryPasswordDialog_btn_cancel": "cancel",
+  "directoryPasswordDialog_tips_passwordEmpty": "Password is empty!",
+  "net_error_net_error": "Network error",
+  "net_error_parse_error": "Data parsing exceptions",
+  "net_error_socket_error": "Network error",
+  "net_error_http_error": "Server error, please try again later",
+  "net_error_connect_timeout_error": "Connection timeout",
+  "net_error_send_timeout_error": "Request timeout",
+  "net_error_receive_timeout_error": "Response timeout",
+  "net_error_cancel_error": "Request cancelled",
+  "net_error_certificate_error": "bad certificate"
 }
