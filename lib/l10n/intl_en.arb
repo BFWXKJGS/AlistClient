@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appName": "Alist",
+  "appName": "Alist Client",
   "screenName_login": "Sign in",
   "screenName_fileListRoot": "Root",
   "screenName_settings": "Settings",

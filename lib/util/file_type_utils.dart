@@ -115,6 +115,7 @@ extension FileListRespContentExtensions on FileListRespContent {
       case "dat":
       case "vob":
       case "flv":
+      case "ts":
         return FileType.video;
       case "doc":
       case "docx":

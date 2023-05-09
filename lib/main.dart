@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: S.delegate.supportedLocales,
-      title: "Alist",
+      title: "Alist Client",
       theme: _lightTheme(context),
       darkTheme: _dartTheme(context),
     );

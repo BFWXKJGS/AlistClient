@@ -23,7 +23,7 @@ class MessageLookup extends MessageLookupByLibrary {
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "alipay": MessageLookupByLibrary.simpleMessage("Alipay"),
-        "appName": MessageLookupByLibrary.simpleMessage("Alist"),
+        "appName": MessageLookupByLibrary.simpleMessage("Alist Client"),
         "directoryPasswordDialog_btn_cancel":
             MessageLookupByLibrary.simpleMessage("cancel"),
         "directoryPasswordDialog_btn_ok":

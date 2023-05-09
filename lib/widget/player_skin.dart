@@ -6,7 +6,6 @@ import 'package:alist/generated/l10n.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/widget/slider.dart';
 import 'package:auto_orientation/auto_orientation.dart';
-import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_aliplayer/flutter_aliplayer.dart';
@@ -69,13 +68,14 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   bool _playing = false;
   bool _prepared = false;
   String? _exception;
+  bool _locked = false;
 
   double _seekPos = -1.0;
   StreamSubscription? _currentPosSubs;
   StreamSubscription? _bufferPosSubs;
 
   Timer? _hideTimer;
-  bool _hideStuff = true;
+  bool _hideStuff = false;
 
   double _volume = 1.0;
 
@@ -138,6 +138,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
             });
           });
           _prepared = true;
+          _startHideTimer();
           break;
         case FlutterAvpdef.AVPStatus_AVPStatusStarted:
           _setPlaying(true);
@@ -254,27 +255,34 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     );
   }
 
-  AnimatedOpacity _buildBottomBar(BuildContext context) {
+  Widget _buildBottomBar(BuildContext context) {
     double duration = _duration.inMilliseconds.toDouble();
     double currentValue =
         _seekPos > 0 ? _seekPos : _currentPos.inMilliseconds.toDouble();
     currentValue = min(currentValue, duration);
     currentValue = max(currentValue, 0);
+    var screenSize = MediaQuery.of(context).size;
+    // use 'MediaQuery.of(context).orientation' or OrientationBuilder is not work for ios
+    _fullscreen = screenSize.width > screenSize.height;
+
     return AnimatedOpacity(
-      opacity: _hideStuff ? 0.0 : 0.8,
+      opacity: (_hideStuff || _locked) ? 0.0 : 0.7,
       duration: const Duration(milliseconds: 400),
       child: SizedBox(
         height: barHeight,
         child: Row(
           children: <Widget>[
             _buildVolumeButton(),
-            Padding(
-              padding: const EdgeInsets.only(right: 5.0, left: 5),
-              child: Text(
-                _duration2String(_currentPos),
-                style: const TextStyle(fontSize: 14.0, color: Colors.white),
-              ),
-            ),
+            _prepared
+                ? Padding(
+                    padding: const EdgeInsets.only(right: 5.0, left: 5),
+                    child: Text(
+                      _duration2String(_currentPos),
+                      style:
+                          const TextStyle(fontSize: 14.0, color: Colors.white),
+                    ),
+                  )
+                : const SizedBox(),
 
             _duration.inMilliseconds == 0
                 ? const Expanded(child: Center())
@@ -354,11 +362,14 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: !_fullscreen
+      onWillPop: !_locked && !_fullscreen
           ? null
           : () async {
               if (_fullscreen) {
                 _exitFullScreen();
+                return false;
+              }
+              if (_locked) {
                 return false;
               }
               return true;
@@ -412,24 +423,6 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     );
   }
 
-  Widget _buildContainer(BuildContext context) {
-    return Stack(
-      children: [
-        buildContentWithoutAppbar(context),
-        Positioned(
-          left: 0,
-          right: 0,
-          top: 0,
-          child: AnimatedOpacity(
-            opacity: _hideStuff ? 0.0 : 0.8,
-            duration: const Duration(milliseconds: 400),
-            child: _buildAppbar(),
-          ),
-        )
-      ],
-    );
-  }
-
   AppBar _buildAppbar() {
     return AppBar(
       backgroundColor: Colors.transparent,
@@ -447,59 +440,81 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     );
   }
 
-  GestureDetector buildContentWithoutAppbar(BuildContext context) {
+  GestureDetector _buildContainer(BuildContext context) {
     return GestureDetector(
       onTap: _cancelAndRestartTimer,
       child: AbsorbPointer(
         absorbing: _hideStuff,
         child: Column(
           children: <Widget>[
-            Container(height: barHeight),
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  _cancelAndRestartTimer();
-                },
-                child: Container(
-                  color: Colors.transparent,
-                  height: double.infinity,
-                  width: double.infinity,
-                  child: Center(
-                      child: _exception != null
-                          ? Text(
-                              _exception!,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 25,
-                              ),
-                            )
-                          : (_prepared)
-                              ? AnimatedOpacity(
-                                  opacity: _hideStuff ? 0.0 : 0.7,
-                                  duration: const Duration(milliseconds: 400),
-                                  child: IconButton(
-                                      iconSize: barHeight * 2,
-                                      icon: Icon(
-                                          _playing
-                                              ? Icons.pause
-                                              : Icons.play_arrow,
-                                          color: Colors.white),
-                                      padding: const EdgeInsets.only(
-                                          left: 10.0, right: 10.0),
-                                      onPressed: _playOrPause))
-                              : SizedBox(
-                                  width: barHeight * 1.5,
-                                  height: barHeight * 1.5,
-                                  child: const CircularProgressIndicator(
-                                      valueColor:
-                                          AlwaysStoppedAnimation(Colors.white)),
-                                )),
-                ),
-              ),
+            AnimatedOpacity(
+              opacity: (_hideStuff || _locked) ? 0.0 : 0.7,
+              duration: const Duration(milliseconds: 400),
+              child: _buildAppbar(),
             ),
-            _buildBottomBar(context),
+            Expanded(child: _buildContainerWithoutAppbar(context)),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildContainerWithoutAppbar(BuildContext context) {
+    return Column(
+      children: [
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              _cancelAndRestartTimer();
+            },
+            child: _buildCenter(),
+          ),
+        ),
+        _buildBottomBar(context)
+      ],
+    );
+  }
+
+  Widget _buildCenter() {
+    final Widget centerWidgetWithoutLock = Center(
+        child: _exception != null
+            ? Text(
+                _exception!,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 25,
+                ),
+              )
+            : (_prepared)
+                ? AnimatedOpacity(
+                    opacity: (_hideStuff || _locked) ? 0.0 : 0.7,
+                    duration: const Duration(milliseconds: 400),
+                    child: IconButton(
+                        iconSize: barHeight * 2,
+                        icon: Icon(_playing ? Icons.pause : Icons.play_arrow,
+                            color: Colors.white),
+                        padding: const EdgeInsets.only(left: 10.0, right: 10.0),
+                        onPressed: _playOrPause))
+                : SizedBox(
+                    width: barHeight * 1.5,
+                    height: barHeight * 1.5,
+                    child: const CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation(Colors.white)),
+                  ));
+
+    return Container(
+      color: Colors.transparent,
+      height: double.infinity,
+      width: double.infinity,
+      child: _VideoLockWrapper(
+        locked: _locked,
+        hideStuff: _hideStuff,
+        child: centerWidgetWithoutLock,
+        onTap: () {
+          setState(() {
+            _locked = !_locked;
+          });
+        },
       ),
     );
   }
@@ -537,5 +552,47 @@ class _DurationTextWidget extends StatelessWidget {
             ),
           ));
     }
+  }
+}
+
+class _VideoLockWrapper extends StatelessWidget {
+  const _VideoLockWrapper(
+      {Key? key,
+      required this.locked,
+      required this.hideStuff,
+      required this.child,
+      required this.onTap})
+      : super(key: key);
+  final bool locked;
+  final bool hideStuff;
+  final Widget child;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    IconData lockIcon = locked ? Icons.lock_outline : Icons.lock_open;
+    Widget lockBtn = AnimatedOpacity(
+      opacity: hideStuff ? 0.0 : 0.7,
+      duration: const Duration(milliseconds: 400),
+      child: IconButton(
+        style: const ButtonStyle(
+          backgroundColor: MaterialStatePropertyAll<Color?>(Color(0x70000000)),
+        ),
+        color: Colors.white,
+        onPressed: onTap,
+        icon: Icon(lockIcon),
+      ),
+    );
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        child,
+        Positioned(
+          left: 15,
+          child: lockBtn,
+        )
+      ],
+    );
   }
 }
