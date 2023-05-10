@@ -9,6 +9,8 @@ import 'package:auto_orientation/auto_orientation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_aliplayer/flutter_aliplayer.dart';
+import 'package:screen_brightness/screen_brightness.dart';
+import 'package:volume_controller/volume_controller.dart';
 import 'package:wakelock/wakelock.dart';
 
 /// Default Panel Widget
@@ -62,6 +64,17 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
 
   // is wakelock enable
   bool _wakelockEnable = false;
+
+  VerticalDragType? _verticalDragType;
+  bool _verticalDragging = false;
+  double _systemVolumeListenValue = 0;
+  double _systemVolumeDragStartValue = 0;
+  double _systemVolumeDragIndicatorValue = 0;
+  double _systemBrightnessListenValue = 0;
+  double _systemBrightnessDragStartValue = 0;
+  double _screenWidth = 0;
+  double _screenHeight = 0;
+  double _verticalDragStartY = 0;
 
   // whether the video is playing in full screen
   bool _fullscreen = false;
@@ -161,6 +174,16 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       Log.d("errorCode=$errorCode errorMsg=$errorMsg", tag: tag);
       _setPlaying(false, exception: errorMsg);
     });
+
+    VolumeController().listener((volume) {
+      setState(() {
+        Log.d("VolumeController listener volume $volume");
+        _systemVolumeListenValue = volume;
+      });
+    });
+    ScreenBrightness()
+        .current
+        .then((value) => _systemBrightnessListenValue = value);
   }
 
   void _setPlaying(bool playing, {String? exception}) {
@@ -214,6 +237,8 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     _hideTimer?.cancel();
     _disableWakelock();
 
+    ScreenBrightness().resetScreenBrightness();
+    VolumeController().removeListener();
     _currentPosSubs?.cancel();
     _bufferPosSubs?.cancel();
   }
@@ -262,6 +287,8 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     currentValue = min(currentValue, duration);
     currentValue = max(currentValue, 0);
     var screenSize = MediaQuery.of(context).size;
+    _screenWidth = screenSize.width;
+    _screenHeight = screenSize.height;
     // use 'MediaQuery.of(context).orientation' or OrientationBuilder is not work for ios
     _fullscreen = screenSize.width > screenSize.height;
 
@@ -440,9 +467,14 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     );
   }
 
-  GestureDetector _buildContainer(BuildContext context) {
-    return GestureDetector(
+  Widget _buildContainer(BuildContext context) {
+    Widget widget = GestureDetector(
       onTap: _cancelAndRestartTimer,
+      onVerticalDragDown: _onVerticalDragDown(),
+      onVerticalDragStart: _onVerticalDragStart(),
+      onVerticalDragUpdate: _onVerticalDragUpdate(),
+      onVerticalDragEnd: _onVerticalDragEnd(),
+      onVerticalDragCancel: _onVerticalDragCancel(),
       child: AbsorbPointer(
         absorbing: _hideStuff,
         child: Column(
@@ -457,6 +489,115 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         ),
       ),
     );
+    return Stack(
+      alignment: Alignment.topCenter,
+      children: [
+        widget,
+        Positioned(
+            left: 0,
+            right: 0,
+            top: 20,
+            child: BrightnessIndicator(
+              verticalDragging: _verticalDragging,
+              verticalDragType: _verticalDragType,
+              volumeIndicatorValue: _systemVolumeDragIndicatorValue,
+            ))
+      ],
+    );
+  }
+
+  GestureDragCancelCallback? _onVerticalDragCancel() {
+    return (_locked || !_fullscreen)
+        ? null
+        : () {
+            setState(() {
+              _verticalDragging  = false;
+            });
+            Log.d("onVerticalDragCancel", tag: tag);
+          };
+  }
+
+  GestureDragEndCallback? _onVerticalDragEnd() {
+    return (_locked || !_fullscreen)
+        ? null
+        : (dragDetails) {
+            setState(() {
+              _verticalDragging  = false;
+            });
+            Log.d("onVerticalDragEnd ${dragDetails.velocity}", tag: tag);
+          };
+  }
+
+  GestureDragDownCallback? _onVerticalDragDown() {
+    return (_locked || !_fullscreen)
+        ? null
+        : (dragDetails) {
+            Log.d("onVerticalDragDown ${dragDetails.localPosition.dy}",
+                tag: tag);
+          };
+  }
+
+  GestureDragUpdateCallback? _onVerticalDragUpdate() {
+    return (_locked || !_fullscreen)
+        ? null
+        : (dragDetails) {
+            Log.d("onVerticalDragUpdate ${dragDetails.localPosition.dy}",
+                tag: tag);
+            final dragStartY = _verticalDragStartY;
+            final currentY = dragDetails.localPosition.dy;
+            final ratio = (currentY - dragStartY) / _screenHeight.toDouble();
+
+            if (_verticalDragType == VerticalDragType.volume) {
+              _updateCurrentVolume(ratio);
+            } else {
+              _updateCurrentBrightness(ratio);
+            }
+          };
+  }
+
+  GestureDragStartCallback? _onVerticalDragStart() {
+    return (_locked || !_fullscreen)
+        ? null
+        : (dragDetails) {
+            Log.d("onVerticalDragStart ${dragDetails.localPosition.dy}",
+                tag: tag);
+            var dx = dragDetails.globalPosition.dx;
+            if (dx > _screenWidth / 2) {
+              _verticalDragType = VerticalDragType.volume;
+              _systemVolumeDragStartValue = _systemVolumeListenValue;
+              _systemVolumeDragIndicatorValue = _systemVolumeListenValue;
+            } else {
+              _verticalDragType = VerticalDragType.brightness;
+              _systemBrightnessDragStartValue = _systemBrightnessListenValue;
+            }
+            setState(() {
+              _verticalDragging = true;
+            });
+
+            _verticalDragStartY = dragDetails.localPosition.dy;
+          };
+  }
+
+  void _updateCurrentVolume(double ratio) {
+    final newVolumeValue =
+        min(max(_systemVolumeDragStartValue - ratio, 0.0), 1.0);
+    Log.d(
+        "lastVolume=$_systemVolumeDragStartValue ratio=$ratio _volume=$newVolumeValue",
+        tag: tag);
+    setState(() {
+      _systemVolumeDragIndicatorValue = newVolumeValue;
+    });
+    VolumeController().setVolume(newVolumeValue, showSystemUI: false);
+  }
+
+  void _updateCurrentBrightness(double ratio) {
+    final newBrightnessValue =
+        min(max(_systemBrightnessDragStartValue - ratio, 0.0), 1.0);
+    Log.d(
+        "lastBrightness=$_systemBrightnessDragStartValue ratio=$ratio _brightness=$newBrightnessValue",
+        tag: tag);
+    ScreenBrightness().setScreenBrightness(newBrightnessValue);
+    _systemBrightnessListenValue = newBrightnessValue;
   }
 
   Widget _buildContainerWithoutAppbar(BuildContext context) {
@@ -576,7 +717,7 @@ class _VideoLockWrapper extends StatelessWidget {
       duration: const Duration(milliseconds: 400),
       child: IconButton(
         style: const ButtonStyle(
-          backgroundColor: MaterialStatePropertyAll<Color?>(Color(0x70000000)),
+          backgroundColor: MaterialStatePropertyAll<Color?>(Color(0x70333333)),
         ),
         color: Colors.white,
         onPressed: onTap,
@@ -593,6 +734,72 @@ class _VideoLockWrapper extends StatelessWidget {
           child: lockBtn,
         )
       ],
+    );
+  }
+}
+
+enum VerticalDragType { brightness, volume }
+
+class BrightnessIndicator extends StatelessWidget {
+  const BrightnessIndicator({
+    Key? key,
+    required this.verticalDragging,
+    required this.verticalDragType,
+    required this.volumeIndicatorValue,
+  }) : super(key: key);
+  final VerticalDragType? verticalDragType;
+  final double volumeIndicatorValue;
+  final bool verticalDragging;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget indicator;
+    if (verticalDragType == VerticalDragType.brightness) {
+      indicator = StreamBuilder<double>(
+          stream: ScreenBrightness().onCurrentBrightnessChanged,
+          builder: (context, snapshot) {
+            return LinearProgressIndicator(
+              minHeight: 2,
+              value: snapshot.data ?? 0,
+            );
+          });
+    } else {
+      indicator = LinearProgressIndicator(
+        minHeight: 2,
+        value: volumeIndicatorValue,
+      );
+    }
+
+    final icon = verticalDragType == VerticalDragType.volume
+        ? Icons.volume_up_rounded
+        : Icons.brightness_7;
+
+    return Center(
+      child: AnimatedOpacity(
+        opacity: verticalDragging ? 0.7 : 0,
+        duration: const Duration(milliseconds: 400),
+        child: Container(
+          width: 150,
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: const BoxDecoration(
+              color: Color(0x70333333),
+              borderRadius: BorderRadius.all(Radius.circular(4))),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 5),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                ),
+              ),
+              Expanded(child: indicator)
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -4,6 +4,8 @@
 <dict>
 	<key>AlivcLicenseKey</key>
 	<string>7od4xPYaUwm4scy4t57cd70e56f2d4196aed4167e6e4174c9</string>
+    <key>AlivcLicenseFile</key>
+        <string>license.crt</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleSignature</key>

@@ -7,4 +7,14 @@
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+
+    <application>
+        <meta-data
+            android:name="com.aliyun.alivc_license.licensekey"
+            android:value="7od4xPYaUwm4scy4t57cd70e56f2d4196aed4167e6e4174c9" />
+
+        <meta-data
+            android:name="com.aliyun.alivc_license.licensefile"
+            android:value="assets/license.crt" />
+    </application>
 </manifest>

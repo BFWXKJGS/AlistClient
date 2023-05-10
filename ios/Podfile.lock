@@ -19,6 +19,8 @@ PODS:
     - FlutterMacOS
   - permission_handler_apple (9.0.4):
     - Flutter
+  - screen_brightness_ios (0.1.0):
+    - Flutter
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -37,6 +39,8 @@ PODS:
     - sqlite3/fts5
     - sqlite3/perf-threadsafe
     - sqlite3/rtree
+  - volume_controller (0.0.1):
+    - Flutter
   - wakelock (0.0.1):
     - Flutter
   - webview_flutter_wkwebview (0.0.1):
@@ -50,8 +54,10 @@ DEPENDENCIES:
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - screen_brightness_ios (from `.symlinks/plugins/screen_brightness_ios/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/ios`)
   - sqlite3_flutter_libs (from `.symlinks/plugins/sqlite3_flutter_libs/ios`)
+  - volume_controller (from `.symlinks/plugins/volume_controller/ios`)
   - wakelock (from `.symlinks/plugins/wakelock/ios`)
   - webview_flutter_wkwebview (from `.symlinks/plugins/webview_flutter_wkwebview/ios`)
 
@@ -76,10 +82,14 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/path_provider_foundation/ios"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
+  screen_brightness_ios:
+    :path: ".symlinks/plugins/screen_brightness_ios/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/ios"
   sqlite3_flutter_libs:
     :path: ".symlinks/plugins/sqlite3_flutter_libs/ios"
+  volume_controller:
+    :path: ".symlinks/plugins/volume_controller/ios"
   wakelock:
     :path: ".symlinks/plugins/wakelock/ios"
   webview_flutter_wkwebview:
@@ -93,11 +103,13 @@ SPEC CHECKSUMS:
   MJExtension: 21c5f6f8c4d5d8844b7ae8fbae08fed0b501f961
   open_file: 02eb5cb6b21264bd3a696876f5afbfb7ca4f4b7d
   package_info_plus: 6c92f08e1f853dc01228d6f553146438dafcd14e
-  path_provider_foundation: c68054786f1b4f3343858c1e1d0caaded73f0be9
+  path_provider_foundation: eaf5b3e458fc0e5fbb9940fb09980e853fe058b8
   permission_handler_apple: 44366e37eaf29454a1e7b1b7d736c2cceaeb17ce
-  shared_preferences_foundation: 986fc17f3d3251412d18b0265f9c64113a8c2472
+  screen_brightness_ios: 715ca807df953bf676d339f11464e438143ee625
+  shared_preferences_foundation: e2dae3258e06f44cc55f49d42024fd8dd03c590c
   sqlite3: d31b2b69d59bd1b4ab30e5c92eb18fd8e82fa392
   sqlite3_flutter_libs: 78f93cb854d4680595bc2c63c57209a104b2efb1
+  volume_controller: 531ddf792994285c9b17f9d8a7e4dcdd29b3eae9
   wakelock: d0fc7c864128eac40eba1617cb5264d9c940b46f
   webview_flutter_wkwebview: 2e2d318f21a5e036e2c3f26171342e95908bd60a
 

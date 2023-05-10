@@ -229,10 +229,10 @@ packages:
     dependency: "direct main"
     description:
       name: dio
-      sha256: "0894a098594263fe1caaba3520e3016d8a855caeb010a882273189cca10f11e9"
+      sha256: "347d56c26d63519552ef9a569f2a593dda99a81fdbdff13c584b7197cfe05059"
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "5.1.1"
+    version: "5.1.2"
   drift:
     dependency: "direct main"
     description:
@@ -546,10 +546,10 @@ packages:
     dependency: "direct main"
     description:
       name: path_provider
-      sha256: c7edf82217d4b2952b2129a61d3ad60f1075b9299e629e149a8d2e39c2e6aad4
+      sha256: "3087813781ab814e4157b172f1a11c46be20179fcc9bea043e0fba36bc0acaa2"
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "2.0.14"
+    version: "2.0.15"
   path_provider_android:
     dependency: transitive
     description:
@@ -562,10 +562,10 @@ packages:
     dependency: transitive
     description:
       name: path_provider_foundation
-      sha256: ad4c4d011830462633f03eb34445a45345673dfd4faf1ab0b4735fbd93b19183
+      sha256: "1995d88ec2948dac43edf8fe58eb434d35d22a2940ecee1a9fefcd62beee6eb3"
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "2.2.2"
+    version: "2.2.3"
   path_provider_linux:
     dependency: transitive
     description:
@@ -694,14 +694,62 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "4.1.0"
+  screen_brightness:
+    dependency: "direct main"
+    description:
+      name: screen_brightness
+      sha256: "62fd61a64e68b32b98b840bad7d8b6822bbc40e63c2b569a5f85528484c86b41"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.2.2"
+  screen_brightness_android:
+    dependency: transitive
+    description:
+      name: screen_brightness_android
+      sha256: "3df10961e3a9e968a5e076fe27e7f4741fa8a1d3950bdeb48cf121ed529d0caf"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.1.0+2"
+  screen_brightness_ios:
+    dependency: transitive
+    description:
+      name: screen_brightness_ios
+      sha256: "99adc3ca5490b8294284aad5fcc87f061ad685050e03cf45d3d018fe398fd9a2"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.1.0"
+  screen_brightness_macos:
+    dependency: transitive
+    description:
+      name: screen_brightness_macos
+      sha256: "64b34e7e3f4900d7687c8e8fb514246845a73ecec05ab53483ed025bd4a899fd"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.1.0+1"
+  screen_brightness_platform_interface:
+    dependency: transitive
+    description:
+      name: screen_brightness_platform_interface
+      sha256: b211d07f0c96637a15fb06f6168617e18030d5d74ad03795dd8547a52717c171
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.1.0"
+  screen_brightness_windows:
+    dependency: transitive
+    description:
+      name: screen_brightness_windows
+      sha256: "80d90ecdc63fc0823f2ecb1be323471619287937e14210650d7b25ca181abd05"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.1.1"
   shared_preferences:
     dependency: "direct main"
     description:
       name: shared_preferences
-      sha256: "858aaa72d8f61637d64e776aca82e1c67e6d9ee07979123c5d17115031c1b13b"
+      sha256: "16d3fb6b3692ad244a695c0183fca18cf81fd4b821664394a781de42386bf022"
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "2.1.0"
+    version: "2.1.1"
   shared_preferences_android:
     dependency: transitive
     description:
@@ -714,10 +762,10 @@ packages:
     dependency: transitive
     description:
       name: shared_preferences_foundation
-      sha256: "0c1c16c56c9708aa9c361541a6f0e5cc6fc12a3232d866a687a7b7db30032b07"
+      sha256: e014107bb79d6d3297196f4f2d0db54b5d1f85b8ea8ff63b8e8b391a02700feb
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "2.2.1"
+    version: "2.2.2"
   shared_preferences_linux:
     dependency: transitive
     description:
@@ -907,6 +955,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.1.4"
+  volume_controller:
+    dependency: "direct main"
+    description:
+      name: volume_controller
+      sha256: "3bcaadd0e3298286c4ef3b758a3ea44fc98a9abe24d0e7ef087bfab72a4b6924"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.0.6"
   wakelock:
     dependency: "direct main"
     description:

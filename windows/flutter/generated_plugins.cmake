@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   permission_handler_windows
+  screen_brightness_windows
   sqlite3_flutter_libs
 )
 

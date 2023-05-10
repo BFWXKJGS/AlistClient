@@ -76,6 +76,10 @@ dependencies:
   webview_flutter: ^4.2.0
   # markdown
   markdown: ^7.1.0
+  # volume_controller
+  volume_controller: ^2.0.6
+  # screen_brightness
+  screen_brightness: ^0.2.2
   flutter_localizations:
     sdk: flutter
 
