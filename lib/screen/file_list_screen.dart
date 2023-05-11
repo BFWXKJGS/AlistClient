@@ -386,13 +386,16 @@ class _DirectorPasswordDialogState extends State<DirectorPasswordDialog> {
 }
 
 class FileListNavigator extends StatefulWidget {
-  FileListNavigator({Key? key}) : super(key: key);
+  const FileListNavigator({Key? key, required this.isInFileListStack})
+      : super(key: key);
+  final bool isInFileListStack;
 
   @override
   State<FileListNavigator> createState() => _FileListNavigatorState();
 }
 
-class _FileListNavigatorState extends State<FileListNavigator> with AutomaticKeepAliveClientMixin{
+class _FileListNavigatorState extends State<FileListNavigator>
+    with AutomaticKeepAliveClientMixin {
   final GlobalKey<NavigatorState>? _key =
       Get.nestedKey(AlistRouter.fileListRouterStackId);
 
@@ -400,7 +403,8 @@ class _FileListNavigatorState extends State<FileListNavigator> with AutomaticKee
   Widget build(BuildContext context) {
     return AlistWillPopScope(
       onWillPop: () async {
-        if (_key?.currentState != null &&
+        if (widget.isInFileListStack &&
+            _key?.currentState != null &&
             _key?.currentState?.canPop() == true) {
           _key?.currentState?.pop();
           return false;

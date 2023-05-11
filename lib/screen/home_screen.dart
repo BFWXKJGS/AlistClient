@@ -31,8 +31,10 @@ class _HomeScreenState extends State<HomeScreen> {
         controller: _pageController,
         physics: const NeverScrollableScrollPhysics(),
         children: <Widget>[
-          FileListNavigator(),
-          SettingsScreen(),
+          FileListNavigator(
+            isInFileListStack: _currentPage == 0,
+          ),
+          const SettingsScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
