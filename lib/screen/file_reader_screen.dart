@@ -10,13 +10,13 @@ import 'package:dio/dio.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:get/get.dart';
 import 'package:open_file/open_file.dart';
 
 class FileReaderScreen extends StatelessWidget {
-  const FileReaderScreen({Key? key, required this.path, this.fileType})
-      : super(key: key);
-  final String path;
-  final FileType? fileType;
+  FileReaderScreen({Key? key}) : super(key: key);
+  final String path = Get.arguments["path"];
+  final FileType? fileType = Get.arguments["fileType"];
 
   @override
   Widget build(BuildContext context) {

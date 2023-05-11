@@ -5,7 +5,7 @@ import 'package:alist/util/global.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 import 'package:sp_util/sp_util.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -27,7 +27,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> init() async {
     await SpUtil.getInstance();
     initDio();
-    var token = SpUtil.getString(Constant.token);
+    var token = SpUtil.getString(AlistConstant.token);
     while (_context == null) {
       await Future.delayed(const Duration(milliseconds: 17));
     }
@@ -38,10 +38,10 @@ class _SplashScreenState extends State<SplashScreen> {
     }
 
     if ((token == null || token.isEmpty) &&
-        SpUtil.getBool(Constant.guest) != true) {
-      _context?.goNamed(NamedRouter.login);
+        SpUtil.getBool(AlistConstant.guest) != true) {
+      Get.offNamed(NamedRouter.login);
     } else {
-      _context?.goNamed(NamedRouter.home);
+      Get.offNamed(NamedRouter.home);
     }
   }
 
@@ -64,11 +64,11 @@ class _SplashScreenState extends State<SplashScreen> {
     interceptors.add(AuthInterceptor());
 
     /// 打印Log(生产模式去除)
-    if (!Constant.inProduction) {
+    if (!AlistConstant.inProduction) {
       interceptors.add(LoggingInterceptor());
     }
 
-    var baseUrl = SpUtil.getString(Constant.baseUrl);
+    var baseUrl = SpUtil.getString(AlistConstant.baseUrl);
     if (baseUrl == null || baseUrl.isEmpty) {
       baseUrl = Global.demoServerBaseUrl;
     }

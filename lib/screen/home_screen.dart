@@ -29,9 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: PageView(
         controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
         children: <Widget>[
-          FileListScreen(path: "/"),
-          const SettingsScreen(),
+          FileListNavigator(),
+          SettingsScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

@@ -18,11 +18,11 @@ class DownloadUtils {
     } else {
       downloadDir = await getTemporaryDirectory();
     }
-    String subPath = SpUtil.getString(Constant.baseUrl).md5String();
-    if (SpUtil.getBool(Constant.guest) == true) {
+    String subPath = SpUtil.getString(AlistConstant.baseUrl).md5String();
+    if (SpUtil.getBool(AlistConstant.guest) == true) {
       subPath = "$subPath/guest";
     } else {
-      final username = SpUtil.getString(Constant.username);
+      final username = SpUtil.getString(AlistConstant.username);
       subPath = "$subPath/$username";
     }
 

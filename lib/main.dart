@@ -2,20 +2,21 @@ import 'dart:math';
 
 import 'package:alist/generated/l10n.dart';
 import 'package:alist/router.dart';
-import 'package:alist/util/constant.dart';
+import 'package:alist/util/log_utils.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:get/get.dart';
 
 import 'generated/color_schemes.g.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  SpUtil.getInstance();
   // sp初始化
-  LogUtil.init(isDebug: !Constant.inProduction, maxLen: 512);
+  SpUtil.getInstance();
+  Log.init();
   runApp(const MyApp());
 }
 
@@ -24,15 +25,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
+    return GetMaterialApp(
+      initialRoute: "/",
+      getPages: AlistRouter.screens,
       builder: _routerBuilder,
-      routerConfig: router,
+      navigatorObservers: [FlutterSmartDialog.observer],
       localizationsDelegates: const [
         S.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      defaultTransition: Transition.cupertino,
       supportedLocales: S.delegate.supportedLocales,
       title: "Alist Client",
       theme: _lightTheme(context),
@@ -43,15 +47,13 @@ class MyApp extends StatelessWidget {
   Widget _routerBuilder(BuildContext context, Widget? widget) {
     final smartDialogInit = FlutterSmartDialog.init();
     // limit text scale factor, >=0.9 && <=1.1
-    final originalTextScaleFactor = MediaQuery
-        .of(context)
-        .textScaleFactor;
+    final originalTextScaleFactor = MediaQuery.of(context).textScaleFactor;
     var newTextScaleFactor = min(originalTextScaleFactor, 1.1);
     newTextScaleFactor = max(newTextScaleFactor, 0.9);
 
     return MediaQuery(
-      data: MediaQuery.of(context)
-          .copyWith(textScaleFactor: newTextScaleFactor),
+      data:
+          MediaQuery.of(context).copyWith(textScaleFactor: newTextScaleFactor),
       child: smartDialogInit(context, widget),
     );
   }

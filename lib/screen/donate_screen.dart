@@ -9,7 +9,7 @@ import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:alist/generated/l10n.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 
 class DonateScreen extends StatelessWidget {
   const DonateScreen({Key? key}) : super(key: key);
@@ -105,9 +105,9 @@ class _PageContainerState extends State<_PageContainer>
 
         return InkWell(
           onTap: () {
-            context.pushNamed(
+            Get.toNamed(
               NamedRouter.gallery,
-              extra: {"urls": imageUrls, "index": index},
+              arguments: {"urls": imageUrls, "index": index},
             );
           },
           child: _ListItem(

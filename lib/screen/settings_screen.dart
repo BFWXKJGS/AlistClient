@@ -9,7 +9,7 @@ import 'package:alist/widget/alist_scaffold.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -61,23 +61,22 @@ class _SettingsContainerState extends State<_SettingsContainer> {
     return ListTile(
       onTap: () {
         if (settingsMenu.route?.isNotEmpty == true) {
-          context.pushNamed(settingsMenu.route!);
+          Get.toNamed(settingsMenu.route!);
         } else {
           if (settingsMenu.menuId == MenuId.account) {
             _showAccountDialog(context);
           } else if (settingsMenu.menuId == MenuId.signIn) {
-            SpUtil.remove(Constant.guest);
-            SpUtil.remove(Constant.token);
-            context.goNamed(NamedRouter.login);
+            SpUtil.remove(AlistConstant.guest);
+            SpUtil.remove(AlistConstant.token);
+            Get.offNamed(NamedRouter.login);
           } else if (settingsMenu.menuId == MenuId.about) {
-            Locale currentLocal = Localizations.localeOf(context);
             final url =
-                "https://${Global.configServerHost}/alist_h5/declaration?version=${packageInfo?.version ?? ""}&lang=$currentLocal";
+                "https://${Global.configServerHost}/alist_h5/declaration?version=${packageInfo?.version ?? ""}&lang=${Get.locale}";
             Log.d("url:$url");
-            context.pushNamed(NamedRouter.web, queryParameters: {
-              "url": url,
-              "title": S.of(context).screenName_about
-            });
+            Get.toNamed(
+              NamedRouter.web,
+              arguments: {"url": url, "title": S.of(context).screenName_about},
+            );
           }
         }
       },
@@ -111,7 +110,7 @@ class _SettingsContainerState extends State<_SettingsContainer> {
         // route: NamedRouter.about,
       ),
     ];
-    if (SpUtil.getBool(Constant.guest) == true) {
+    if (SpUtil.getBool(AlistConstant.guest) == true) {
       settingsMenus.insert(
           0,
           SettingsMenu(
@@ -151,10 +150,10 @@ class _SettingsContainerState extends State<_SettingsContainer> {
                       const EdgeInsets.only(left: 20, right: 20, bottom: 20),
                   child: FilledButton(
                     onPressed: () {
-                      SpUtil.remove(Constant.guest);
-                      SpUtil.remove(Constant.token);
+                      SpUtil.remove(AlistConstant.guest);
+                      SpUtil.remove(AlistConstant.token);
                       SmartDialog.dismiss();
-                      context.goNamed(NamedRouter.login);
+                      Get.offNamed(NamedRouter.login);
                     },
                     child: Text(S.of(context).logout),
                   ),

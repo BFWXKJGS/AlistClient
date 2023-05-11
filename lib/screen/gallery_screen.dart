@@ -1,21 +1,18 @@
 import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/net/net_error_getter.dart';
+import 'package:alist/util/file_sign_utils.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 
 class GalleryScreen extends StatelessWidget {
-  const GalleryScreen(
-      {Key? key,
-      required this.paths,
-      required this.urls,
-      required this.initializedIndex})
-      : super(key: key);
+  GalleryScreen({Key? key}) : super(key: key);
 
-  final List<String>? urls;
-  final List<String>? paths;
-  final int initializedIndex;
+  final List<String>? urls = Get.arguments["urls"];
+  final List<String>? paths = Get.arguments["paths"];
+  final int initializedIndex = Get.arguments["index"];
 
   @override
   Widget build(BuildContext context) {
@@ -80,8 +77,15 @@ class _ImagesContainerState extends State<_ImagesContainer> {
       controller: controller,
       itemCount: widget.paths?.length ?? widget.urls?.length ?? 0,
       scrollDirection: Axis.horizontal,
-      preloadPagesCount: 1,
+      // Using ‘preloadPagesCount’ will cause gesture conflict
+      // preloadPagesCount: 1,
     );
+  }
+
+  @override
+  void dispose() {
+    clearGestureDetailsCache();
+    super.dispose();
   }
 }
 
@@ -106,6 +110,7 @@ class _ImageContainerState extends State<_ImageContainer>
   late GestureConfig gestureConfig;
   String? imageUrl;
   String? sign;
+  String? thumb;
 
   @override
   void initState() {
@@ -119,6 +124,7 @@ class _ImageContainerState extends State<_ImageContainer>
       inertialSpeed: 100.0,
       initialScale: 1.0,
       inPageView: true,
+      cacheGesture: true,
       initialAlignment: InitialAlignment.center,
     );
 
@@ -148,7 +154,8 @@ class _ImageContainerState extends State<_ImageContainer>
       }
       setState(() {
         imageUrl = url;
-        sign = data?.sign;
+        sign = data?.makeCacheUseSign(widget.path ?? "");
+        thumb = data?.thumb;
       });
     }, onError: (code, message, error) {
       print("code:$code,message:$message,error=$error");

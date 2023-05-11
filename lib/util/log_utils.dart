@@ -9,23 +9,23 @@ class Log {
   static const String tag = 'DEER-LOG';
 
   static void init() {
-    LogUtil.init(isDebug: !Constant.inProduction, maxLen: 512);
+    LogUtil.init(isDebug: !AlistConstant.inProduction, maxLen: 512);
   }
 
   static void d(String msg, {String tag = tag}) {
-    if (!Constant.inProduction) {
+    if (!AlistConstant.inProduction) {
       LogUtil.v(msg, tag: tag);
     }
   }
 
   static void e(String msg, {String tag = tag}) {
-    if (!Constant.inProduction) {
+    if (!AlistConstant.inProduction) {
       LogUtil.e(msg, tag: tag);
     }
   }
 
   static void json(String msg, {String tag = tag}) {
-    if (!Constant.inProduction) {
+    if (!AlistConstant.inProduction) {
       try {
         final dynamic data = convert.json.decode(msg);
         if (data is Map) {

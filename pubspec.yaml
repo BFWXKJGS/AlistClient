@@ -35,6 +35,8 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
+  # getx
+  get: ^4.6.5
   # http request
   dio: ^5.1.1
   # key value
@@ -51,8 +53,6 @@ dependencies:
       ref: feature/5.4.9.1
   # screen orientation controller
   auto_orientation: ^2.3.1
-  # router
-  go_router: ^7.0.0
   # Dialog
   flutter_smart_dialog: ^4.9.0+6
   # package info in android、ios...
@@ -62,7 +62,7 @@ dependencies:
   # screen hibernation control
   wakelock: ^0.6.2
   # database
-  drift: ^2.7.0
+  drift: ^2.8.0
   sqlite3_flutter_libs: ^0.5.0
   path_provider: ^2.0.0
   path: ^1.8.2
@@ -94,7 +94,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
   # 数据库
-  drift_dev: ^2.7.0
+  drift_dev: ^2.8.0
   build_runner: ^2.3.3
 
 # For information on the generic Dart part of this file, see the

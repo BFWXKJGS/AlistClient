@@ -13,7 +13,7 @@ import 'package:dio/dio.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 
 typedef LoginSuccessCallback = Function();
 typedef LoginFailureCallback = Function(int code, String msg);
@@ -54,11 +54,11 @@ class LoginInputDecoration extends InputDecoration {
 class _LoginPageState extends State<LoginPageContainer>
     with NetErrorGetterMixin {
   final addressController =
-      TextEditingController(text: SpUtil.getString(Constant.address) ?? "");
+      TextEditingController(text: SpUtil.getString(AlistConstant.address) ?? "");
   final usernameController =
-      TextEditingController(text: SpUtil.getString(Constant.username) ?? "");
+      TextEditingController(text: SpUtil.getString(AlistConstant.username) ?? "");
   final passwordController =
-      TextEditingController(text: SpUtil.getString(Constant.password) ?? "");
+      TextEditingController(text: SpUtil.getString(AlistConstant.password) ?? "");
   final CancelToken _cancelToken = CancelToken();
 
   Future<void> _login(
@@ -93,12 +93,12 @@ class _LoginPageState extends State<LoginPageContainer>
         },
         cancelToken: _cancelToken,
         onSuccess: (data) {
-          SpUtil.putString(Constant.address, address);
-          SpUtil.putString(Constant.baseUrl, baseUrl);
-          SpUtil.putString(Constant.username, username);
-          SpUtil.putString(Constant.password, password);
-          SpUtil.putString(Constant.token, data!.token);
-          SpUtil.putBool(Constant.guest, false);
+          SpUtil.putString(AlistConstant.address, address);
+          SpUtil.putString(AlistConstant.baseUrl, baseUrl);
+          SpUtil.putString(AlistConstant.username, username);
+          SpUtil.putString(AlistConstant.password, password);
+          SpUtil.putString(AlistConstant.token, data!.token);
+          SpUtil.putBool(AlistConstant.guest, false);
           onSuccess();
         },
         onError: (code, message, error) =>
@@ -119,7 +119,7 @@ class _LoginPageState extends State<LoginPageContainer>
     if (!address.endsWith("/")) {
       address = "$address/";
     }
-    SpUtil.remove(Constant.token);
+    SpUtil.remove(AlistConstant.token);
     if (!_checkServerUrl(address)) {
       SmartDialog.showToast(S.of(context).loginScreen_tips_serverUrlError);
       return;
@@ -127,11 +127,14 @@ class _LoginPageState extends State<LoginPageContainer>
 
     var baseUrl = "${address}api/";
     DioUtils.instance.configBaseUrlAgain(baseUrl);
-    SpUtil.putString(Constant.baseUrl, baseUrl);
-    SpUtil.putString(Constant.address, address);
-    SpUtil.putBool(Constant.guest, true);
+    SpUtil.putString(AlistConstant.baseUrl, baseUrl);
+    SpUtil.putString(AlistConstant.address, address);
+    SpUtil.remove(AlistConstant.username);
+    SpUtil.remove(AlistConstant.password);
+    SpUtil.remove(AlistConstant.token);
+    SpUtil.putBool(AlistConstant.guest, true);
 
-    context.goNamed(NamedRouter.home);
+    Get.offNamed(NamedRouter.home);
   }
 
   void _tryEntryDefaultServer(BuildContext context) {
@@ -165,7 +168,7 @@ class _LoginPageState extends State<LoginPageContainer>
     _login(
       onSuccess: () {
         SmartDialog.dismiss();
-        context.goNamed(NamedRouter.home);
+        Get.offNamed(NamedRouter.home);
       },
       onFailure: (code, message) {
         SmartDialog.dismiss();

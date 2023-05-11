@@ -9,11 +9,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_aliplayer/flutter_aliplayer.dart';
 import 'package:flutter_aliplayer/flutter_aliplayer_factory.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:get/get.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
-  final String path;
 
-  const VideoPlayerScreen({super.key, required this.path});
+  const VideoPlayerScreen({super.key});
 
   @override
   State createState() => _VideoPlayerScreenState();
@@ -21,6 +21,7 @@ class VideoPlayerScreen extends StatefulWidget {
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     with NetErrorGetterMixin {
+  final String path = Get.arguments["path"];
   final CancelToken _cancelToken = CancelToken();
   final FlutterAliplayer fAliplayer = FlutterAliPlayerFactory.createAliPlayer();
   String? _videoTitle;
@@ -37,7 +38,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   // 1、 load video download url from AList server
   // 2、 use this url to play video
   void _loadVideoInfoAndPlay() {
-    var path = widget.path;
+    var path = this.path;
     var body = {
       "path": path,
       "password": "",

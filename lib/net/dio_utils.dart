@@ -100,7 +100,7 @@ class DioUtils {
       /// 使用compute条件：数据大于10KB（粗略使用10 * 1024）且当前不是集成测试（后面可能会根据Web环境进行调整）
       /// 主要目的减少不必要的性能开销
       final bool isCompute =
-          !Constant.isDriverTest && responseData.length > 10 * 1024;
+          !AlistConstant.isDriverTest && responseData.length > 10 * 1024;
       Log.d('isCompute:$isCompute');
       final Map<String, dynamic> map = isCompute
           ? await compute(parseData, responseData)

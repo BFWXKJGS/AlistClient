@@ -4,18 +4,20 @@ import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/generated/images.dart';
 import 'package:alist/generated/l10n.dart';
 import 'package:alist/net/dio_utils.dart';
+import 'package:alist/net/net_error_getter.dart';
+import 'package:alist/router.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_type_utils.dart';
 import 'package:alist/util/global.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
-import 'package:alist/net/net_error_getter.dart';
 import 'package:alist/util/widget_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
+import 'package:alist/widget/alist_will_pop_scope.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 typedef FileItemClickCallback = Function(
@@ -29,9 +31,9 @@ typedef DirectorPasswordCallback = Function(
 );
 
 class FileListScreen extends StatefulWidget {
-  final String? path;
+  const FileListScreen({super.key, this.path});
 
-  const FileListScreen({super.key, required this.path});
+  final String? path;
 
   @override
   State<FileListScreen> createState() => _FileListScreenState();
@@ -51,6 +53,7 @@ class _FileListScreenState extends State<FileListScreen>
   @override
   void initState() {
     super.initState();
+    Log.d("1111 ${Get.arguments}");
     final path = widget.path;
     if (isRootPath(path)) {
       _pageName == null;
@@ -102,7 +105,7 @@ class _FileListScreenState extends State<FileListScreen>
     }, onError: (code, msg, error) {
       if (code != null && code == 403) {
         _showDirectorPasswordDialog();
-        if(_passwordRetrying){
+        if (_passwordRetrying) {
           SmartDialog.showToast(msg ?? netErrorToMessage(error));
         }
       } else {
@@ -137,7 +140,6 @@ class _FileListScreenState extends State<FileListScreen>
   @override
   Widget build(BuildContext context) {
     final files = _data?.content ?? [];
-
     return AlistScaffold(
       appbarTitle: Text(_pageName ?? S.of(context).screenName_fileListRoot),
       body: RefreshIndicator(
@@ -178,21 +180,21 @@ class _FileListScreenState extends State<FileListScreen>
 
     switch (fileType) {
       case FileType.folder:
-        context.pushNamed(
-          NamedRouter.fileList,
-          queryParameters: {"path": file.getCompletePath(widget.path)},
-        );
+        Get.toNamed(NamedRouter.fileList,
+            arguments: {"path": file.getCompletePath(widget.path)},
+            preventDuplicates: false,
+            id: AlistRouter.fileListRouterStackId);
         break;
       case FileType.video:
-        context.pushNamed(
+        Get.toNamed(
           NamedRouter.videoPlayer,
-          queryParameters: {"path": file.getCompletePath(widget.path)},
+          arguments: {"path": file.getCompletePath(widget.path)},
         );
         break;
       case FileType.audio:
-        context.pushNamed(
+        Get.toNamed(
           NamedRouter.audioPlayer,
-          queryParameters: {"path": file.getCompletePath(widget.path)},
+          arguments: {"path": file.getCompletePath(widget.path)},
         );
         break;
       case FileType.image:
@@ -205,9 +207,9 @@ class _FileListScreenState extends State<FileListScreen>
         }
         final index = paths.indexOf(currentPath);
 
-        context.pushNamed(
+        Get.toNamed(
           NamedRouter.gallery,
-          extra: {"paths": paths, "index": index},
+          arguments: {"paths": paths, "index": index},
         );
         break;
       case FileType.txt:
@@ -218,10 +220,12 @@ class _FileListScreenState extends State<FileListScreen>
       case FileType.code:
       case FileType.apk:
       case FileType.compress:
-        context.pushNamed(
+        Get.toNamed(
           NamedRouter.fileReader,
-          queryParameters: {"path": file.getCompletePath(widget.path)},
-          extra: {"fileType": fileType},
+          arguments: {
+            "path": file.getCompletePath(widget.path),
+            "fileType": fileType
+          },
         );
         break;
       default:
@@ -271,9 +275,9 @@ class _FileListView extends StatelessWidget {
           return _FileListItem(
             icon: Images.fileTypeMd,
             fileName: "README.md",
-            onTap: () => context.pushNamed(
+            onTap: () => Get.toNamed(
               NamedRouter.web,
-              queryParameters: {"url": readMeUrl, "title": "README.md"},
+              arguments: {"url": readMeUrl, "title": "README.md"},
             ),
           );
         } else {
@@ -379,4 +383,44 @@ class _DirectorPasswordDialogState extends State<DirectorPasswordDialog> {
     widget.directorPasswordCallback(password);
     SmartDialog.dismiss();
   }
+}
+
+class FileListNavigator extends StatefulWidget {
+  FileListNavigator({Key? key}) : super(key: key);
+
+  @override
+  State<FileListNavigator> createState() => _FileListNavigatorState();
+}
+
+class _FileListNavigatorState extends State<FileListNavigator> with AutomaticKeepAliveClientMixin{
+  final GlobalKey<NavigatorState>? _key =
+      Get.nestedKey(AlistRouter.fileListRouterStackId);
+
+  @override
+  Widget build(BuildContext context) {
+    return AlistWillPopScope(
+      onWillPop: () async {
+        if (_key?.currentState != null &&
+            _key?.currentState?.canPop() == true) {
+          _key?.currentState?.pop();
+          return false;
+        }
+        return true;
+      },
+      child: Navigator(
+        key: _key,
+        onGenerateRoute: (settings) {
+          dynamic arguments = settings.arguments;
+          return GetPageRoute(
+            page: () => FileListScreen(
+              path: arguments?["path"],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  bool get wantKeepAlive => true;
 }

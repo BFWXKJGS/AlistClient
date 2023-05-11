@@ -6,10 +6,10 @@ class BaseEntity<T> {
   BaseEntity(this.code, this.message, this.data);
 
   BaseEntity.fromJson(Map<String, dynamic> json) {
-    code = json[Constant.code] as int;
-    message = json[Constant.message] as String;
-    if (json.containsKey(Constant.data)) {
-      data = _generateOBJ<T>(json[Constant.data] as Object?);
+    code = json[AlistConstant.code] as int;
+    message = json[AlistConstant.message] as String;
+    if (json.containsKey(AlistConstant.data)) {
+      data = _generateOBJ<T>(json[AlistConstant.data] as Object?);
     }
   }
 
