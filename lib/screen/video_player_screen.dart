@@ -1,6 +1,5 @@
 import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/net/dio_utils.dart';
-import 'package:alist/net/net_error_getter.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/widget/player_skin.dart';
 import 'package:dio/dio.dart';
@@ -19,8 +18,7 @@ class VideoPlayerScreen extends StatefulWidget {
   State createState() => _VideoPlayerScreenState();
 }
 
-class _VideoPlayerScreenState extends State<VideoPlayerScreen>
-    with NetErrorGetterMixin {
+class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   final String path = Get.arguments["path"];
   final CancelToken _cancelToken = CancelToken();
   final FlutterAliplayer fAliplayer = FlutterAliPlayerFactory.createAliPlayer();
@@ -57,8 +55,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
           _videoTitle = data?.name.substringBeforeLast(".") ?? "";
         });
       },
-      onError: (code, message, error) {
-        SmartDialog.showToast(message ?? netErrorToMessage(error));
+      onError: (code, message) {
+        SmartDialog.showToast(message);
       },
     );
   }

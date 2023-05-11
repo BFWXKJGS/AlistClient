@@ -1,6 +1,5 @@
 import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/net/dio_utils.dart';
-import 'package:alist/net/net_error_getter.dart';
 import 'package:alist/util/file_sign_utils.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
@@ -56,7 +55,7 @@ class _ImagesContainer extends StatefulWidget {
 
 class _ImagesContainerState extends State<_ImagesContainer> {
   late ExtendedPageController controller;
-  final Map<String, String> imageUrlMap = {};
+  final Map<String, FileInfoRespEntity> imageUrlMap = {};
 
   @override
   void initState() {
@@ -97,7 +96,7 @@ class _ImageContainer extends StatefulWidget {
     required this.imageUrlMap,
   });
 
-  final Map<String, String> imageUrlMap;
+  final Map<String, FileInfoRespEntity> imageUrlMap;
   final String? path;
   final String? url;
 
@@ -105,8 +104,7 @@ class _ImageContainer extends StatefulWidget {
   State<_ImageContainer> createState() => _ImageContainerState();
 }
 
-class _ImageContainerState extends State<_ImageContainer>
-    with NetErrorGetterMixin {
+class _ImageContainerState extends State<_ImageContainer> {
   late GestureConfig gestureConfig;
   String? imageUrl;
   String? sign;
@@ -129,15 +127,21 @@ class _ImageContainerState extends State<_ImageContainer>
     );
 
     if (widget.path != null) {
-      String? imageUrl = widget.imageUrlMap[widget.path];
-      if (imageUrl != null) {
-        this.imageUrl = imageUrl;
+      FileInfoRespEntity? fileInfo = widget.imageUrlMap[widget.path];
+      if (fileInfo != null) {
+        updateCurrentImageInfo(fileInfo);
       } else {
         _requestImageUrl();
       }
     } else {
       imageUrl = widget.url;
     }
+  }
+
+  void updateCurrentImageInfo(FileInfoRespEntity fileInfo) {
+    imageUrl = fileInfo.rawUrl;
+    sign = fileInfo.makeCacheUseSign(widget.path ?? "");
+    thumb = fileInfo.thumb;
   }
 
   _requestImageUrl() async {
@@ -148,17 +152,14 @@ class _ImageContainerState extends State<_ImageContainer>
     };
     DioUtils.instance.requestNetwork<FileInfoRespEntity>(Method.post, "fs/get",
         params: body, onSuccess: (data) {
-      var url = data?.rawUrl;
-      if (url != null) {
-        widget.imageUrlMap[widget.path ?? ""] = url;
+      if (data != null) {
+        widget.imageUrlMap[widget.path ?? ""] = data;
+        setState(() {
+          updateCurrentImageInfo(data);
+        });
       }
-      setState(() {
-        imageUrl = url;
-        sign = data?.makeCacheUseSign(widget.path ?? "");
-        thumb = data?.thumb;
-      });
-    }, onError: (code, message, error) {
-      print("code:$code,message:$message,error=$error");
+    }, onError: (code, message) {
+      print("code:$code,message:$message");
     });
   }
 

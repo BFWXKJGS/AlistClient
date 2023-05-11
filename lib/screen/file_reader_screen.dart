@@ -4,7 +4,6 @@ import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/util/download_utils.dart';
 import 'package:alist/util/file_type.dart';
-import 'package:alist/net/net_error_getter.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:dio/dio.dart';
 import 'package:flustars/flustars.dart';
@@ -41,8 +40,7 @@ class _FileReaderContainer extends StatefulWidget {
   State<_FileReaderContainer> createState() => _FileReaderContainerState();
 }
 
-class _FileReaderContainerState extends State<_FileReaderContainer>
-    with NetErrorGetterMixin {
+class _FileReaderContainerState extends State<_FileReaderContainer> {
   String? _localPath;
   int _downloadProgress = 0;
   final _cancelToken = CancelToken();
@@ -128,8 +126,8 @@ class _FileReaderContainerState extends State<_FileReaderContainer>
           _download(data?.name ?? "", data!.size, url);
         }
       },
-      onError: (code, message, error) {
-        SmartDialog.showToast(message ?? netErrorToMessage(error));
+      onError: (code, message) {
+        SmartDialog.showToast(message);
         debugPrint("code:$code,message:$message");
       },
     );

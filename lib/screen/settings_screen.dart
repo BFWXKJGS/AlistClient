@@ -1,5 +1,5 @@
 import 'package:alist/generated/images.dart';
-import 'package:alist/generated/l10n.dart';
+import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/global.dart';
 import 'package:alist/util/log_utils.dart';
@@ -18,7 +18,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlistScaffold(
-        appbarTitle: Text(S.of(context).screenName_settings),
+        appbarTitle: Text(Intl.screenName_settings.tr),
         body: const _SettingsContainer());
   }
 }
@@ -70,12 +70,17 @@ class _SettingsContainerState extends State<_SettingsContainer> {
             SpUtil.remove(AlistConstant.token);
             Get.offNamed(NamedRouter.login);
           } else if (settingsMenu.menuId == MenuId.about) {
+            String local = "en_US";
+            if (Get.locale?.toString().startsWith("zh_") == true) {
+              local = "zh";
+            }
+
             final url =
-                "https://${Global.configServerHost}/alist_h5/declaration?version=${packageInfo?.version ?? ""}&lang=${Get.locale}";
+                "https://${Global.configServerHost}/alist_h5/declaration?version=${packageInfo?.version ?? ""}&lang=$local";
             Log.d("url:$url");
             Get.toNamed(
               NamedRouter.web,
-              arguments: {"url": url, "title": S.of(context).screenName_about},
+              arguments: {"url": url, "title": Intl.screenName_about.tr},
             );
           }
         }
@@ -100,12 +105,12 @@ class _SettingsContainerState extends State<_SettingsContainer> {
     final settingsMenus = [
       SettingsMenu(
           menuId: MenuId.donate,
-          name: S.of(context).settingsScreen_item_donate,
+          name: Intl.settingsScreen_item_donate.tr,
           icon: Images.settingsPageDonate,
           route: NamedRouter.donate),
       SettingsMenu(
         menuId: MenuId.about,
-        name: S.of(context).settingsScreen_item_about,
+        name: Intl.settingsScreen_item_about.tr,
         icon: Images.settingsPageAbout,
         // route: NamedRouter.about,
       ),
@@ -115,7 +120,7 @@ class _SettingsContainerState extends State<_SettingsContainer> {
           0,
           SettingsMenu(
             menuId: MenuId.signIn,
-            name: S.of(context).settingsScreen_item_login,
+            name: Intl.settingsScreen_item_login.tr,
             icon: Images.settingsPageAccount,
           ));
     } else {
@@ -123,7 +128,7 @@ class _SettingsContainerState extends State<_SettingsContainer> {
           0,
           SettingsMenu(
             menuId: MenuId.account,
-            name: S.of(context).settingsScreen_item_account,
+            name: Intl.settingsScreen_item_account.tr,
             icon: Images.settingsPageAccount,
           ));
     }
@@ -142,7 +147,7 @@ class _SettingsContainerState extends State<_SettingsContainer> {
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 15),
-                  child: Text(S.of(context).tips_logout),
+                  child: Text(Intl.tips_logout.tr),
                 ),
                 Container(
                   width: double.infinity,
@@ -155,7 +160,7 @@ class _SettingsContainerState extends State<_SettingsContainer> {
                       SmartDialog.dismiss();
                       Get.offNamed(NamedRouter.login);
                     },
-                    child: Text(S.of(context).logout),
+                    child: Text(Intl.logout.tr),
                   ),
                 )
               ],

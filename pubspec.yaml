@@ -80,8 +80,6 @@ dependencies:
   volume_controller: ^2.0.6
   # screen_brightness
   screen_brightness: ^0.2.2
-  flutter_localizations:
-    sdk: flutter
 
 dev_dependencies:
   flutter_test:
@@ -140,6 +138,3 @@ flutter:
   # see https://flutter.dev/custom-fonts/#from-packages
   assets:
     - assets/images/
-
-flutter_intl:
-  enabled: true

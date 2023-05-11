@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:alist/net/json_parse_error.dart';
+import 'package:alist/net/net_error_handler.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:dio/dio.dart';
@@ -32,7 +33,7 @@ void configDio({
 
 typedef NetSuccessCallback<T> = Function(T data);
 typedef NetSuccessListCallback<T> = Function(List<T> data);
-typedef NetErrorCallback = Function(int? code, String? msg, dynamic exception);
+typedef NetErrorCallback = Function(int code, String msg);
 
 /// @weilu https://github.com/simplezhli
 class DioUtils {
@@ -146,18 +147,18 @@ class DioUtils {
         if (result.code == 200) {
           onSuccess?.call(result.data);
         } else {
-          _onError(result.code, result.message, null, onError);
+          _onError(result.code, result.message, onError);
         }
       }
     }, onError: (dynamic e) {
       if (cancelToken?.isCancelled != true) {
-        _onError(null, null, e, onError);
+        _onError(-1, NetErrorHandler.netErrorToMessage(e), onError);
       } else {
         _cancelLogPrint(e, url);
       }
     }).catchError((e) {
       if (cancelToken?.isCancelled != true) {
-        _onError(null, null, e, onError);
+        _onError(-1, NetErrorHandler.netErrorToMessage(e), onError);
       }
     });
   }
@@ -211,12 +212,12 @@ class DioUtils {
             onSuccess(result.data);
           }
         } else {
-          _onError(result.code, result.message, null, onError);
+          _onError(result.code, result.message, onError);
         }
       }
     }, onError: (dynamic e) {
       if (cancelToken?.isCancelled != true) {
-        _onError(null, null, e, onError);
+        _onError(-1, NetErrorHandler.netErrorToMessage(e), onError);
       } else {
         _cancelLogPrint(e, url);
       }
@@ -229,10 +230,9 @@ class DioUtils {
     }
   }
 
-  void _onError(
-      int? code, String? msg, dynamic exception, NetErrorCallback? onError) {
+  void _onError(int code, String msg, NetErrorCallback? onError) {
     Log.e('request error： code: $code, msg: $msg');
-    onError?.call(code, msg, exception);
+    onError?.call(code, msg);
   }
 }
 

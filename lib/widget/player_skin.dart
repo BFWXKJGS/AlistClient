@@ -2,13 +2,14 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:alist/generated/l10n.dart';
+import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/widget/slider.dart';
 import 'package:auto_orientation/auto_orientation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_aliplayer/flutter_aliplayer.dart';
+import 'package:get/get.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:wakelock/wakelock.dart';
@@ -439,7 +440,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
                   backgroundColor: Colors.white,
                 ),
                 child: Text(
-                  S.of(context).playerSkin_tips_playVideoFailed,
+                  Intl.playerSkin_tips_playVideoFailed.tr,
                   style: const TextStyle(color: Colors.black),
                 ),
               )
@@ -511,7 +512,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         ? null
         : () {
             setState(() {
-              _verticalDragging  = false;
+              _verticalDragging = false;
             });
             Log.d("onVerticalDragCancel", tag: tag);
           };
@@ -522,7 +523,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         ? null
         : (dragDetails) {
             setState(() {
-              _verticalDragging  = false;
+              _verticalDragging = false;
             });
             Log.d("onVerticalDragEnd ${dragDetails.velocity}", tag: tag);
           };

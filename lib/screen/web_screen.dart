@@ -34,7 +34,6 @@ class _WebScreenState extends State<WebScreen> {
   @override
   void initState() {
     super.initState();
-    Log.d("tangrui ${Get.arguments}");
     _title = firstPageTitle;
     _initController();
 

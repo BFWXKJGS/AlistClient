@@ -1,5 +1,4 @@
-{
-  "@@locale": "zh",
+const translationsZhCN = {
   "appName": "Alist Client",
   "screenName_login": "登录",
   "screenName_fileListRoot": "根目录",
@@ -40,5 +39,5 @@
   "net_error_send_timeout_error": "请求超时",
   "net_error_receive_timeout_error": "响应超时",
   "net_error_cancel_error": "请求已取消",
-  "net_error_certificate_error": "SSL证书错误"
-}
+  "net_error_certificate_error": "SSL证书错误",
+};

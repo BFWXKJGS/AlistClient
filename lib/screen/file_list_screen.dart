@@ -2,9 +2,8 @@ import 'dart:io';
 
 import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/generated/images.dart';
-import 'package:alist/generated/l10n.dart';
+import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
-import 'package:alist/net/net_error_getter.dart';
 import 'package:alist/router.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_type_utils.dart';
@@ -40,7 +39,7 @@ class FileListScreen extends StatefulWidget {
 }
 
 class _FileListScreenState extends State<FileListScreen>
-    with AutomaticKeepAliveClientMixin, NetErrorGetterMixin {
+    with AutomaticKeepAliveClientMixin {
   static const String tag = "_FileListScreenState";
   FileListRespEntity? _data;
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
@@ -102,14 +101,14 @@ class _FileListScreenState extends State<FileListScreen>
           _data = data;
         },
       );
-    }, onError: (code, msg, error) {
-      if (code != null && code == 403) {
+    }, onError: (code, msg) {
+      if (code == 403) {
         _showDirectorPasswordDialog();
         if (_passwordRetrying) {
-          SmartDialog.showToast(msg ?? netErrorToMessage(error));
+          SmartDialog.showToast(msg);
         }
       } else {
-        SmartDialog.showToast(msg ?? netErrorToMessage(error));
+        SmartDialog.showToast(msg);
       }
       debugPrint(msg);
     });
@@ -141,7 +140,7 @@ class _FileListScreenState extends State<FileListScreen>
   Widget build(BuildContext context) {
     final files = _data?.content ?? [];
     return AlistScaffold(
-      appbarTitle: Text(_pageName ?? S.of(context).screenName_fileListRoot),
+      appbarTitle: Text(_pageName ?? Intl.screenName_fileListRoot.tr),
       body: RefreshIndicator(
           key: _refreshIndicatorKey,
           onRefresh: () => _loadFiles(),
@@ -342,7 +341,7 @@ class _DirectorPasswordDialogState extends State<DirectorPasswordDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(S.of(context).directoryPasswordDialog_title),
+      title: Text(Intl.directoryPasswordDialog_title.tr),
       content: TextField(
         controller: _controller,
         obscureText: true,
@@ -359,7 +358,7 @@ class _DirectorPasswordDialogState extends State<DirectorPasswordDialog> {
               SmartDialog.dismiss();
             },
             child: Text(
-              S.of(context).directoryPasswordDialog_btn_cancel,
+              Intl.directoryPasswordDialog_btn_cancel.tr,
               style: TextStyle(color: Theme.of(context).colorScheme.secondary),
             )),
         TextButton(
@@ -367,7 +366,7 @@ class _DirectorPasswordDialogState extends State<DirectorPasswordDialog> {
               _onConfirm(context);
             },
             child: Text(
-              S.of(context).directoryPasswordDialog_btn_ok,
+              Intl.directoryPasswordDialog_btn_ok.tr,
             ))
       ],
     );
@@ -376,8 +375,7 @@ class _DirectorPasswordDialogState extends State<DirectorPasswordDialog> {
   void _onConfirm(BuildContext context) {
     String password = _controller.text;
     if (password.isEmpty) {
-      SmartDialog.showToast(
-          S.of(context).directoryPasswordDialog_tips_passwordEmpty);
+      SmartDialog.showToast(Intl.directoryPasswordDialog_tips_passwordEmpty.tr);
       return;
     }
     widget.directorPasswordCallback(password);

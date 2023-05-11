@@ -2,9 +2,8 @@ import 'dart:io';
 
 import 'package:alist/entity/login_resp_entity.dart';
 import 'package:alist/generated/images.dart';
-import 'package:alist/generated/l10n.dart';
+import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
-import 'package:alist/net/net_error_getter.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/global.dart';
 import 'package:alist/util/named_router.dart';
@@ -24,7 +23,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlistScaffold(
-      appbarTitle: Text(S.of(context).screenName_login),
+      appbarTitle: Text(Intl.screenName_login.tr),
       body: const SingleChildScrollView(
         child: LoginPageContainer(),
       ),
@@ -51,14 +50,13 @@ class LoginInputDecoration extends InputDecoration {
         );
 }
 
-class _LoginPageState extends State<LoginPageContainer>
-    with NetErrorGetterMixin {
-  final addressController =
-      TextEditingController(text: SpUtil.getString(AlistConstant.address) ?? "");
-  final usernameController =
-      TextEditingController(text: SpUtil.getString(AlistConstant.username) ?? "");
-  final passwordController =
-      TextEditingController(text: SpUtil.getString(AlistConstant.password) ?? "");
+class _LoginPageState extends State<LoginPageContainer> {
+  final addressController = TextEditingController(
+      text: SpUtil.getString(AlistConstant.address) ?? "");
+  final usernameController = TextEditingController(
+      text: SpUtil.getString(AlistConstant.username) ?? "");
+  final passwordController = TextEditingController(
+      text: SpUtil.getString(AlistConstant.password) ?? "");
   final CancelToken _cancelToken = CancelToken();
 
   Future<void> _login(
@@ -73,12 +71,11 @@ class _LoginPageState extends State<LoginPageContainer>
     var password = passwordController.text.trim();
 
     if (!_checkServerUrl(address)) {
-      SmartDialog.showToast(S.of(context).loginScreen_tips_serverUrlError);
+      SmartDialog.showToast(Intl.loginScreen_tips_serverUrlError.tr);
       return;
     }
     if (username.isEmpty || password.isEmpty) {
-      SmartDialog.showToast(
-          S.of(context).loginScreen_tips_usernameOrPasswordEmpty);
+      SmartDialog.showToast(Intl.loginScreen_tips_usernameOrPasswordEmpty.tr);
       return;
     }
 
@@ -101,8 +98,7 @@ class _LoginPageState extends State<LoginPageContainer>
           SpUtil.putBool(AlistConstant.guest, false);
           onSuccess();
         },
-        onError: (code, message, error) =>
-            onFailure(code ?? -1, message ?? netErrorToMessage(error)));
+        onError: (code, message) => onFailure(code, message));
   }
 
   bool _checkServerUrl(String serverUrl) {
@@ -121,7 +117,7 @@ class _LoginPageState extends State<LoginPageContainer>
     }
     SpUtil.remove(AlistConstant.token);
     if (!_checkServerUrl(address)) {
-      SmartDialog.showToast(S.of(context).loginScreen_tips_serverUrlError);
+      SmartDialog.showToast(Intl.loginScreen_tips_serverUrlError.tr);
       return;
     }
 
@@ -140,15 +136,15 @@ class _LoginPageState extends State<LoginPageContainer>
   void _tryEntryDefaultServer(BuildContext context) {
     SmartDialog.show(builder: (_) {
       return AlertDialog(
-        title: Text(S.of(context).guestModeDialog_title),
-        content: Text(S.of(context).guestModeDialog_content),
+        title: Text(Intl.guestModeDialog_title.tr),
+        content: Text(Intl.guestModeDialog_content.tr),
         actions: [
           TextButton(
             onPressed: () {
               SmartDialog.dismiss();
             },
             child: Text(
-              S.of(context).guestModeDialog_btn_cancel,
+              Intl.guestModeDialog_btn_cancel.tr,
               style: TextStyle(color: Theme.of(context).colorScheme.secondary),
             ),
           ),
@@ -157,7 +153,7 @@ class _LoginPageState extends State<LoginPageContainer>
               _enterVisitorMode(context, Global.demoServerBaseUrl);
               SmartDialog.dismiss();
             },
-            child: Text(S.of(context).guestModeDialog_btn_ok),
+            child: Text(Intl.guestModeDialog_btn_ok.tr),
           ),
         ],
       );
@@ -195,13 +191,13 @@ class _LoginPageState extends State<LoginPageContainer>
   @override
   Widget build(BuildContext context) {
     InputDecoration phoneNumberDecoration = LoginInputDecoration(
-      hintText: S.of(context).loginScreen_hint_username,
+      hintText: Intl.loginScreen_hint_username.tr,
     );
     InputDecoration passwordDecoration = LoginInputDecoration(
-      hintText: S.of(context).loginScreen_hint_password,
+      hintText: Intl.loginScreen_hint_password.tr,
     );
     InputDecoration addressDecoration = LoginInputDecoration(
-      hintText: S.of(context).loginScreen_hint_serverUrl,
+      hintText: Intl.loginScreen_hint_serverUrl.tr,
     );
 
     return Padding(
@@ -236,7 +232,7 @@ class _LoginPageState extends State<LoginPageContainer>
               _onLoginButtonClick(context);
             },
             child: Center(
-              child: Text(S.of(context).loginScreen_button_login),
+              child: Text(Intl.loginScreen_button_login.tr),
             ),
           ),
           const SizedBox(
@@ -255,7 +251,7 @@ class _LoginPageState extends State<LoginPageContainer>
               }
             },
             child: Center(
-              child: Text(S.of(context).loginScreen_button_guestMode),
+              child: Text(Intl.loginScreen_button_guestMode.tr),
             ),
           )
         ],

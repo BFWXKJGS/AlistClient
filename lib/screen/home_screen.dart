@@ -1,7 +1,9 @@
-import 'package:alist/generated/l10n.dart';
+import 'package:alist/l10n/intl_keys.dart';
+import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/screen/file_list_screen.dart';
 import 'package:alist/screen/settings_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -41,11 +43,11 @@ class _HomeScreenState extends State<HomeScreen> {
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: const Icon(Icons.home),
-            label: S.of(context).screenName_home,
+            label: Intl.screenName_home.tr,
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.settings),
-            label: S.of(context).screenName_settings,
+            label: Intl.screenName_settings.tr,
           )
         ],
         currentIndex: _currentPage,

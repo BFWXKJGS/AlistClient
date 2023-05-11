@@ -1,5 +1,4 @@
-{
-  "@@locale": "en",
+const translationsEnUS = {
   "appName": "Alist Client",
   "screenName_login": "Sign in",
   "screenName_fileListRoot": "Root",
@@ -25,7 +24,8 @@
   "tips_logout": "Do you need to logout？",
   "logout": "Logout",
   "guestModeDialog_title": "Browse as a guest",
-  "guestModeDialog_content": "You have not entered the server address, do you want to access the default server as a guest?",
+  "guestModeDialog_content":
+      "You have not entered the server address, do you want to access the default server as a guest?",
   "guestModeDialog_btn_ok": "Yes",
   "guestModeDialog_btn_cancel": "No",
   "directoryPasswordDialog_title": "Directory password",
@@ -40,5 +40,5 @@
   "net_error_send_timeout_error": "Request timeout",
   "net_error_receive_timeout_error": "Response timeout",
   "net_error_cancel_error": "Request cancelled",
-  "net_error_certificate_error": "bad certificate"
-}
+  "net_error_certificate_error": "bad certificate",
+};

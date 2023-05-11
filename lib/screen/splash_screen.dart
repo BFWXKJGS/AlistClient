@@ -2,6 +2,7 @@ import 'package:alist/net/dio_utils.dart';
 import 'package:alist/net/intercept.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/global.dart';
+import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -31,8 +32,9 @@ class _SplashScreenState extends State<SplashScreen> {
     while (_context == null) {
       await Future.delayed(const Duration(milliseconds: 17));
     }
-    Locale currentLocal = Localizations.localeOf(_context!);
-    if ("zh" == currentLocal.toString()) {
+    Locale? currentLocal = Get.locale;
+    Log.d("local =$currentLocal");
+    if (currentLocal?.toString().startsWith("zh_") == true) {
       Global.configServerHost = "alistc.geektang.cn";
       Global.demoServerBaseUrl = "https://www.geektang.cn/alist/";
     }

@@ -1,12 +1,12 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 
-import 'package:alist/generated/l10n.dart';
+import 'package:alist/l10n/alist_translations.dart';
 import 'package:alist/router.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
@@ -27,17 +27,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       initialRoute: "/",
+      translations: AlistTranslations(),
+      fallbackLocale: const Locale('en', 'US'),
+      locale: ui.window.locale,
       getPages: AlistRouter.screens,
       builder: _routerBuilder,
       navigatorObservers: [FlutterSmartDialog.observer],
-      localizationsDelegates: const [
-        S.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
       defaultTransition: Transition.cupertino,
-      supportedLocales: S.delegate.supportedLocales,
       title: "Alist Client",
       theme: _lightTheme(context),
       darkTheme: _dartTheme(context),
