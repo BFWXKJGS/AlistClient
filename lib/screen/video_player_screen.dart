@@ -1,6 +1,11 @@
+import 'package:alist/database/alist_database_controller.dart';
+import 'package:alist/database/table/video_viewing_record.dart';
 import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/net/dio_utils.dart';
+import 'package:alist/util/file_sign_utils.dart';
+import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/string_utils.dart';
+import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/player_skin.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +16,6 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
-
   const VideoPlayerScreen({super.key});
 
   @override
@@ -21,15 +25,23 @@ class VideoPlayerScreen extends StatefulWidget {
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   final String path = Get.arguments["path"];
   final CancelToken _cancelToken = CancelToken();
-  final FlutterAliplayer fAliplayer = FlutterAliPlayerFactory.createAliPlayer();
+  final FlutterAliplayer _fAliplayer =
+      FlutterAliPlayerFactory.createAliPlayer();
   String? _videoTitle;
+  String? _sign;
+  final AlistDatabaseController _database = Get.find();
+  final UserController _userController = Get.find();
+  VideoViewingRecord? _videoViewingRecord;
+  int _currentPos = 0;
+  int _duration = 0;
 
   @override
   void initState() {
     super.initState();
-    fAliplayer.setAutoPlay(true);
+    _fAliplayer.setAutoPlay(true);
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
 
+    _findAndCacheViewingRecord(path);
     _loadVideoInfoAndPlay();
   }
 
@@ -48,11 +60,21 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       params: body,
       onSuccess: (data) async {
         var url = "${data?.rawUrl}";
-        fAliplayer.setUrl(url);
-        fAliplayer.prepare();
+        _fAliplayer.setUrl(url);
+        if (_videoViewingRecord != null &&
+            _videoViewingRecord!.videoSign == data?.makeCacheUseSign(path)) {
+          Log.d(
+              "Aliplayer seek to ${_videoViewingRecord!.videoCurrentPosition}");
+          _fAliplayer.seekTo(_videoViewingRecord!.videoCurrentPosition,
+              FlutterAvpdef.ACCURATE);
+        } else {
+          // invalid cache.
+        }
+        _fAliplayer.prepare();
 
         setState(() {
           _videoTitle = data?.name.substringBeforeLast(".") ?? "";
+          _sign = data?.makeCacheUseSign(path);
         });
       },
       onError: (code, message) {
@@ -63,7 +85,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   void onViewPlayerCreated(viewId) async {
     /// bind player view
-    fAliplayer.setPlayerView(viewId);
+    _fAliplayer.setPlayerView(viewId);
   }
 
   @override
@@ -87,24 +109,89 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         children: [
           aliPlayerView,
           AlistPlayerSkin(
-            player: fAliplayer,
+            player: _fAliplayer,
             buildContext: context,
             videoTitle: _videoTitle ?? "",
-            retryCallback: () => _loadVideoInfoAndPlay,
+            onPlayProgressChange: (currentPos, duration) {
+              if (currentPos < 10 * 1000 || (currentPos / 1000) % 10 != 0) {
+                _currentPos = currentPos;
+                _duration = duration;
+              } else {
+                _saveViewingRecord(currentPos, duration);
+              }
+            },
           )
         ],
       ),
     );
   }
 
+  Future<void> _findAndCacheViewingRecord(String path) async {
+    final userId = _userController.user().username;
+    final baseUrl = _userController.user().baseUrl;
+    var record =
+        await _database.recordDao.findRecordByPath(baseUrl, userId, path);
+    if (record != null) {
+      Log.d("findAndCacheViewingRecord");
+      _videoViewingRecord = record;
+    } else {
+      Log.d("no findAndCacheViewingRecord");
+    }
+  }
+
+  Future<void> _saveViewingRecord(int currentPos, int duration) async {
+    final userId = _userController.user().username;
+    final baseUrl = _userController.user().baseUrl;
+    var sign = _sign;
+    if (sign != null) {
+      var record = _videoViewingRecord;
+      Log.d(
+          "record = ${record?.id} ${record?.videoSign} ${record?.videoCurrentPosition} ${record?.videoDuration}");
+      if (record == null) {
+        var videoViewingRecord = VideoViewingRecord(
+            serverUrl: baseUrl,
+            userId: userId,
+            videoSign: sign,
+            path: path,
+            videoCurrentPosition: currentPos,
+            videoDuration: duration);
+        _database.recordDao.insertRecord(videoViewingRecord).then((id) {
+          Log.d("insert record id=$id");
+          _videoViewingRecord = VideoViewingRecord(
+              id: id,
+              serverUrl: videoViewingRecord.serverUrl,
+              userId: videoViewingRecord.userId,
+              videoSign: videoViewingRecord.videoSign,
+              path: videoViewingRecord.path,
+              videoCurrentPosition: videoViewingRecord.videoCurrentPosition,
+              videoDuration: videoViewingRecord.videoDuration);
+        });
+      } else {
+        Log.d("update record");
+        _database.recordDao.updateRecord(VideoViewingRecord(
+          id: record.id,
+          serverUrl: baseUrl,
+          userId: userId,
+          videoSign: sign,
+          path: path,
+          videoCurrentPosition: currentPos,
+          videoDuration: duration,
+        ));
+      }
+    }
+  }
+
   @override
   void dispose() {
     _releasePlayer();
     _cancelToken.cancel();
+    if (_duration > 0) {
+      _saveViewingRecord(_currentPos, _duration);
+    }
     super.dispose();
   }
 
   void _releasePlayer() {
-    fAliplayer.destroy();
+    _fAliplayer.destroy();
   }
 }

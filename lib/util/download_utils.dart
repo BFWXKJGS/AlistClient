@@ -2,11 +2,14 @@ import 'dart:io';
 
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/string_utils.dart';
+import 'package:alist/util/user_controller.dart';
+import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sp_util/sp_util.dart';
 
 class DownloadUtils {
   static Future<Directory> findDownloadDir(String fileType) async {
+    UserController userController = Get.find();
     Directory downloadDir;
     if (Platform.isAndroid) {
       final dirs = await getExternalStorageDirectory();
@@ -18,13 +21,9 @@ class DownloadUtils {
     } else {
       downloadDir = await getTemporaryDirectory();
     }
-    String subPath = SpUtil.getString(AlistConstant.baseUrl).md5String();
-    if (SpUtil.getBool(AlistConstant.guest) == true) {
-      subPath = "$subPath/guest";
-    } else {
-      final username = SpUtil.getString(AlistConstant.username);
-      subPath = "$subPath/$username";
-    }
+    String subPath = userController.user().baseUrl.md5String();
+    final username = userController.user().username;
+    subPath = "$subPath/$username";
 
     downloadDir = Directory("${downloadDir.path}/$subPath/$fileType");
     if (!await downloadDir.exists()) {

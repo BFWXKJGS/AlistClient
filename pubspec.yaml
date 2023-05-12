@@ -62,10 +62,8 @@ dependencies:
   # screen hibernation control
   wakelock: ^0.6.2
   # database
-  drift: ^2.8.0
-  sqlite3_flutter_libs: ^0.5.0
+  floor: ^1.4.2
   path_provider: ^2.0.0
-  path: ^1.8.2
   # md5 ...
   crypto: ^3.0.2
   # open file
@@ -92,8 +90,8 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
   # 数据库
-  drift_dev: ^2.8.0
-  build_runner: ^2.3.3
+  floor_generator: ^1.4.2
+  build_runner: ^2.1.2
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

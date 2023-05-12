@@ -9,6 +9,9 @@ PODS:
     - AliPlayerSDK_iOS (= 5.4.9.1-26507944)
     - Flutter
     - MJExtension
+  - FMDB (2.7.5):
+    - FMDB/standard (= 2.7.5)
+  - FMDB/standard (2.7.5)
   - MJExtension (3.4.1)
   - open_file (0.0.1):
     - Flutter
@@ -24,21 +27,9 @@ PODS:
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - sqlite3 (3.41.0):
-    - sqlite3/common (= 3.41.0)
-  - sqlite3/common (3.41.0)
-  - sqlite3/fts5 (3.41.0):
-    - sqlite3/common
-  - sqlite3/perf-threadsafe (3.41.0):
-    - sqlite3/common
-  - sqlite3/rtree (3.41.0):
-    - sqlite3/common
-  - sqlite3_flutter_libs (0.0.1):
+  - sqflite (0.0.2):
     - Flutter
-    - sqlite3 (~> 3.41.0)
-    - sqlite3/fts5
-    - sqlite3/perf-threadsafe
-    - sqlite3/rtree
+    - FMDB (>= 2.7.5)
   - volume_controller (0.0.1):
     - Flutter
   - wakelock (0.0.1):
@@ -56,7 +47,7 @@ DEPENDENCIES:
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - screen_brightness_ios (from `.symlinks/plugins/screen_brightness_ios/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/ios`)
-  - sqlite3_flutter_libs (from `.symlinks/plugins/sqlite3_flutter_libs/ios`)
+  - sqflite (from `.symlinks/plugins/sqflite/ios`)
   - volume_controller (from `.symlinks/plugins/volume_controller/ios`)
   - wakelock (from `.symlinks/plugins/wakelock/ios`)
   - webview_flutter_wkwebview (from `.symlinks/plugins/webview_flutter_wkwebview/ios`)
@@ -64,8 +55,8 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - AliPlayerSDK_iOS
+    - FMDB
     - MJExtension
-    - sqlite3
 
 EXTERNAL SOURCES:
   auto_orientation:
@@ -86,8 +77,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/screen_brightness_ios/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/ios"
-  sqlite3_flutter_libs:
-    :path: ".symlinks/plugins/sqlite3_flutter_libs/ios"
+  sqflite:
+    :path: ".symlinks/plugins/sqflite/ios"
   volume_controller:
     :path: ".symlinks/plugins/volume_controller/ios"
   wakelock:
@@ -100,6 +91,7 @@ SPEC CHECKSUMS:
   auto_orientation: 102ed811a5938d52c86520ddd7ecd3a126b5d39d
   Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
   flutter_aliplayer: ade3b95c37b64e61b2f23a590937d8e61fe47bdc
+  FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
   MJExtension: 21c5f6f8c4d5d8844b7ae8fbae08fed0b501f961
   open_file: 02eb5cb6b21264bd3a696876f5afbfb7ca4f4b7d
   package_info_plus: 6c92f08e1f853dc01228d6f553146438dafcd14e
@@ -107,8 +99,7 @@ SPEC CHECKSUMS:
   permission_handler_apple: 44366e37eaf29454a1e7b1b7d736c2cceaeb17ce
   screen_brightness_ios: 715ca807df953bf676d339f11464e438143ee625
   shared_preferences_foundation: e2dae3258e06f44cc55f49d42024fd8dd03c590c
-  sqlite3: d31b2b69d59bd1b4ab30e5c92eb18fd8e82fa392
-  sqlite3_flutter_libs: 78f93cb854d4680595bc2c63c57209a104b2efb1
+  sqflite: 6d358c025f5b867b29ed92fc697fd34924e11904
   volume_controller: 531ddf792994285c9b17f9d8a7e4dcdd29b3eae9
   wakelock: d0fc7c864128eac40eba1617cb5264d9c940b46f
   webview_flutter_wkwebview: 2e2d318f21a5e036e2c3f26171342e95908bd60a

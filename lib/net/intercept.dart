@@ -7,7 +7,7 @@ class AuthInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     final String accessToken = SpUtil.getString(AlistConstant.token) ?? "";
-    final String serverUrl = SpUtil.getString(AlistConstant.address) ?? "";
+    final String serverUrl = SpUtil.getString(AlistConstant.serverUrl) ?? "";
     final String url = options.uri.toString();
     if (accessToken.isNotEmpty && serverUrl.isNotEmpty && url.startsWith(serverUrl)) {
       options.headers['Authorization'] = accessToken;

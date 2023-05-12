@@ -11,7 +11,7 @@ class AlistConstant {
   static const String message = 'message';
   static const String code = 'code';
 
-  static const String address = 'address';
+  static const String serverUrl = 'address';
   static const String baseUrl = 'baseUrl';
   static const String username = 'username';
   static const String password = 'password';

@@ -15,6 +15,6 @@
 
         <meta-data
             android:name="com.aliyun.alivc_license.licensefile"
-            android:value="assets/license.crt" />
+            android:value="license.crt" />
     </application>
 </manifest>

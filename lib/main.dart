@@ -4,12 +4,14 @@ import 'dart:ui' as ui;
 import 'package:alist/l10n/alist_translations.dart';
 import 'package:alist/router.dart';
 import 'package:alist/util/log_utils.dart';
+import 'package:alist/util/user_controller.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
+import 'database/alist_database_controller.dart';
 import 'generated/color_schemes.g.dart';
 
 void main() {
@@ -46,6 +48,8 @@ class MyApp extends StatelessWidget {
     final originalTextScaleFactor = MediaQuery.of(context).textScaleFactor;
     var newTextScaleFactor = min(originalTextScaleFactor, 1.1);
     newTextScaleFactor = max(newTextScaleFactor, 0.9);
+    Get.put(AlistDatabaseController());
+    Get.put(UserController());
 
     return MediaQuery(
       data:

@@ -1,4 +1,5 @@
 import 'package:alist/screen/aboute_screen.dart';
+import 'package:alist/screen/audio_player_screen.dart';
 import 'package:alist/screen/donate_screen.dart';
 import 'package:alist/screen/file_list_screen.dart';
 import 'package:alist/screen/file_reader_screen.dart';
@@ -23,6 +24,8 @@ class AlistRouter {
     GetPage(name: NamedRouter.settings, page: () => const SettingsScreen()),
     GetPage(
         name: NamedRouter.videoPlayer, page: () => const VideoPlayerScreen()),
+    GetPage(
+        name: NamedRouter.audioPlayer, page: () => const AudioPlayerScreen()),
     GetPage(name: NamedRouter.donate, page: () => const DonateScreen()),
     GetPage(name: NamedRouter.about, page: () => const AboutScreen()),
     GetPage(name: NamedRouter.gallery, page: () => GalleryScreen()),

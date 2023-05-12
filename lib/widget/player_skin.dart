@@ -14,19 +14,21 @@ import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:wakelock/wakelock.dart';
 
+typedef OnPlayProgressChange = Function(int currentPostion, int duration);
+
 /// Default Panel Widget
 class AlistPlayerSkin extends StatefulWidget {
   final FlutterAliplayer player;
   final BuildContext buildContext;
   final String videoTitle;
-  final VoidCallback retryCallback;
+  final OnPlayProgressChange onPlayProgressChange;
 
   const AlistPlayerSkin({
     super.key,
     required this.player,
     required this.buildContext,
     required this.videoTitle,
-    required this.retryCallback,
+    required this.onPlayProgressChange,
   });
 
   @override
@@ -111,6 +113,10 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       if (infoCode == FlutterAvpdef.CURRENTPOSITION) {
         setState(() {
           _currentPos = Duration(milliseconds: extraValue!);
+          if (_duration.inMilliseconds > 0) {
+            widget.onPlayProgressChange(
+                _currentPos.inMilliseconds, _duration.inMilliseconds);
+          }
         });
       } else if (infoCode == FlutterAvpdef.BUFFEREDPOSITION) {
         setState(() {

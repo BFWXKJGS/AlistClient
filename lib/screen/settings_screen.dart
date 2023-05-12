@@ -1,12 +1,11 @@
 import 'package:alist/generated/images.dart';
 import 'package:alist/l10n/intl_keys.dart';
-import 'package:alist/util/constant.dart';
 import 'package:alist/util/global.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
+import 'package:alist/util/user_controller.dart';
 import 'package:alist/util/widget_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
-import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -32,6 +31,7 @@ class _SettingsContainer extends StatefulWidget {
 
 class _SettingsContainerState extends State<_SettingsContainer> {
   PackageInfo? packageInfo;
+  final UserController _userController = Get.find();
 
   @override
   void initState() {
@@ -66,8 +66,7 @@ class _SettingsContainerState extends State<_SettingsContainer> {
           if (settingsMenu.menuId == MenuId.account) {
             _showAccountDialog(context);
           } else if (settingsMenu.menuId == MenuId.signIn) {
-            SpUtil.remove(AlistConstant.guest);
-            SpUtil.remove(AlistConstant.token);
+            _userController.logout();
             Get.offNamed(NamedRouter.login);
           } else if (settingsMenu.menuId == MenuId.about) {
             String local = "en_US";
@@ -115,7 +114,7 @@ class _SettingsContainerState extends State<_SettingsContainer> {
         // route: NamedRouter.about,
       ),
     ];
-    if (SpUtil.getBool(AlistConstant.guest) == true) {
+    if (_userController.user().guest == true) {
       settingsMenus.insert(
           0,
           SettingsMenu(
@@ -155,8 +154,7 @@ class _SettingsContainerState extends State<_SettingsContainer> {
                       const EdgeInsets.only(left: 20, right: 20, bottom: 20),
                   child: FilledButton(
                     onPressed: () {
-                      SpUtil.remove(AlistConstant.guest);
-                      SpUtil.remove(AlistConstant.token);
+                      _userController.logout();
                       SmartDialog.dismiss();
                       Get.offNamed(NamedRouter.login);
                     },
