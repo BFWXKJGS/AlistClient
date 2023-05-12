@@ -482,6 +482,11 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       onVerticalDragUpdate: _onVerticalDragUpdate(),
       onVerticalDragEnd: _onVerticalDragEnd(),
       onVerticalDragCancel: _onVerticalDragCancel(),
+      onHorizontalDragDown: (detail){},
+      onHorizontalDragStart: (detail){},
+      onHorizontalDragUpdate: (detail){},
+      onHorizontalDragEnd: (detail){},
+      onHorizontalDragCancel: (){},
       child: AbsorbPointer(
         absorbing: _hideStuff,
         child: Column(

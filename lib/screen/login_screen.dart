@@ -175,7 +175,7 @@ class _LoginPageState extends State<LoginPageContainer> {
   @override
   void initState() {
     super.initState();
-    addressController.text = _userController.user().baseUrl;
+    addressController.text = _userController.user().serverUrl;
     String username = _userController.user().username ?? "";
     if ("guest" != username) {
       usernameController.text = username;

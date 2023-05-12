@@ -1,6 +1,9 @@
+import 'dart:math';
+
 import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/util/file_sign_utils.dart';
+import 'package:alist/util/log_utils.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -83,7 +86,7 @@ class _ImagesContainerState extends State<_ImagesContainer> {
 
   @override
   void dispose() {
-    clearGestureDetailsCache();
+    // clearGestureDetailsCache();
     super.dispose();
   }
 }
@@ -122,7 +125,7 @@ class _ImageContainerState extends State<_ImageContainer> {
       inertialSpeed: 100.0,
       initialScale: 1.0,
       inPageView: true,
-      cacheGesture: true,
+      cacheGesture: false,
       initialAlignment: InitialAlignment.center,
     );
 
@@ -178,6 +181,15 @@ class _ImageContainerState extends State<_ImageContainer> {
       mode: ExtendedImageMode.gesture,
       initGestureConfigHandler: (state) {
         return gestureConfig;
+      },
+      onDoubleTap: (ExtendedImageGestureState state) {
+        Log.d("currentScale=${state.gestureDetails?.totalScale}");
+        var currentScale = state.gestureDetails?.totalScale ?? 1.0;
+        if (currentScale >= 2.0) {
+          state.handleDoubleTap(scale: 1);
+        } else {
+          state.handleDoubleTap(scale: min(currentScale + 1, 3));
+        }
       },
     );
   }
