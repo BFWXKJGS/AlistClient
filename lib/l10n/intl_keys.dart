@@ -21,6 +21,7 @@ class Intl {
   static const String wechat = "wechat";
   static const String alipay = "alipay";
   static const String playerSkin_tips_playVideoFailed = "playerSkin_tips_playVideoFailed";
+  static const String playerSkin_rate = "playerSkin_rate";
   static const String tips_logout = "tips_logout";
   static const String logout = "logout";
   static const String guestModeDialog_title = "guestModeDialog_title";

@@ -9,12 +9,14 @@ import 'package:auto_orientation/auto_orientation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_aliplayer/flutter_aliplayer.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:wakelock/wakelock.dart';
 
 typedef OnPlayProgressChange = Function(int currentPostion, int duration);
+typedef OnRateMenuTap = Function(Rate);
 
 /// Default Panel Widget
 class AlistPlayerSkin extends StatefulWidget {
@@ -50,6 +52,15 @@ String _duration2String(Duration duration) {
       ? "$inHours:$twoDigitMinutes:$twoDigitSeconds"
       : "$twoDigitMinutes:$twoDigitSeconds";
 }
+
+final _rateList = [
+  const Rate("0.5x", 0.5),
+  const Rate("0.75x", 0.75),
+  const Rate("1.0x", 1.0),
+  const Rate("1.25x", 1.25),
+  const Rate("1.5x", 1.5),
+  const Rate("2.0x", 2.0),
+];
 
 class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   static const String tag = "AlistPlayerSkinState";
@@ -90,6 +101,8 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   bool _prepared = false;
   String? _exception;
   bool _locked = false;
+  double _rate = 1.0;
+  String _rateStr = "1.0x";
 
   double _seekPos = -1.0;
   StreamSubscription? _currentPosSubs;
@@ -359,6 +372,45 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
             ),
 
             IconButton(
+              onPressed: () {
+                _hideTimer?.cancel();
+                Widget dialog;
+                onMenuTap(element) {
+                  if (_rate != element.rate) {
+                    _rate = element.rate;
+                    _rateStr = element.name;
+                    _player.setRate(_rate);
+                    setState(() {});
+                  }
+                  SmartDialog.dismiss();
+                }
+
+                if (_fullscreen) {
+                  dialog = VerticalRateMenuDialog(
+                    rate: _rate,
+                    onMenuTap: onMenuTap,
+                  );
+                } else {
+                  dialog = HorizontalRateMenuDialog(
+                    rate: _rate,
+                    onMenuTap: onMenuTap,
+                  );
+                }
+                SmartDialog.show(
+                  builder: (context) => dialog,
+                  alignment: _fullscreen
+                      ? Alignment.centerRight
+                      : Alignment.bottomCenter,
+                  onDismiss: () => _startHideTimer(),
+                );
+              },
+              icon: Text(
+                _rateStr,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+
+            IconButton(
               icon: Icon(
                 _fullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
                 color: Colors.white,
@@ -482,6 +534,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   Widget _buildContainer(BuildContext context) {
     Widget widget = GestureDetector(
       onTap: _cancelAndRestartTimer,
+      onDoubleTap: _onDoubleTap(),
       onVerticalDragDown: _onVerticalDragDown(),
       onVerticalDragStart: _onVerticalDragStart(),
       onVerticalDragUpdate: _onVerticalDragUpdate(),
@@ -532,6 +585,14 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         ),
       ],
     );
+  }
+
+  GestureTapCallback? _onDoubleTap() {
+    return _locked
+        ? null
+        : () {
+            _playOrPause();
+          };
   }
 
   GestureDragCancelCallback? _onHorizontalDragCancel() {
@@ -885,14 +946,14 @@ class VerticalDragIndicator extends StatelessWidget {
 
     return Center(
       child: AnimatedOpacity(
-        opacity: verticalDragging ? 0.9 : 0,
+        opacity: verticalDragging ? 0.7 : 0,
         duration: const Duration(milliseconds: 400),
         child: Container(
           width: 150,
           height: 50,
           padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: const BoxDecoration(
-              color: Color(0x90000000),
+              color: Color(0xff000000),
               borderRadius: BorderRadius.all(Radius.circular(4))),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -928,17 +989,20 @@ class HorizontalDragIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     var durationStr = _duration2String(duration);
     var currentPosStr = _duration2String(dragCurrentPos);
-    var ratio =
-        dragCurrentPos.inMilliseconds.toDouble() / duration.inMilliseconds;
+    var ratio = 0.0;
+    if (duration.inMilliseconds != 0) {
+      ratio =
+          dragCurrentPos.inMilliseconds.toDouble() / duration.inMilliseconds;
+    }
 
     return Center(
       child: AnimatedOpacity(
-        opacity: horizontalDragging ? 0.9 : 0,
+        opacity: horizontalDragging ? 0.7 : 0,
         duration: const Duration(milliseconds: 400),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
           decoration: const BoxDecoration(
-              color: Color(0x90000000),
+              color: Color(0xff000000),
               borderRadius: BorderRadius.all(Radius.circular(4))),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -960,6 +1024,124 @@ class HorizontalDragIndicator extends StatelessWidget {
               )
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class RatioMenuItem extends StatelessWidget {
+  const RatioMenuItem(
+      {Key? key,
+      required this.text,
+      this.check = false,
+      required this.direction,
+      this.onTap})
+      : super(key: key);
+  final String text;
+  final GestureTapCallback? onTap;
+  final bool check;
+  final Axis direction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Flex(
+          direction: direction,
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              text,
+              style: TextStyle(
+                  color: check
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.white),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class Rate {
+  final String name;
+  final double rate;
+
+  const Rate(this.name, this.rate);
+}
+
+class VerticalRateMenuDialog extends StatelessWidget {
+  const VerticalRateMenuDialog({Key? key, required this.rate, this.onMenuTap})
+      : super(key: key);
+  final double rate;
+  final OnRateMenuTap? onMenuTap;
+
+  @override
+  Widget build(BuildContext context) {
+    List<Widget> widgets = [
+      RatioMenuItem(text: Intl.playerSkin_rate.tr, direction: Axis.horizontal)
+    ];
+    for (var element in _rateList) {
+      widgets.add(RatioMenuItem(
+        text: element.name,
+        check: rate == element.rate,
+        direction: Axis.horizontal,
+        onTap: () {
+          onMenuTap?.call(element);
+        },
+      ));
+    }
+    return Container(
+      color: const Color(0xff777777),
+      child: SafeArea(
+        child: Column(
+          children: widgets,
+        ),
+      ),
+    );
+  }
+}
+
+class HorizontalRateMenuDialog extends StatelessWidget {
+  const HorizontalRateMenuDialog({Key? key, required this.rate, this.onMenuTap})
+      : super(key: key);
+  final double rate;
+  final OnRateMenuTap? onMenuTap;
+
+  @override
+  Widget build(BuildContext context) {
+    List<Widget> widgets = [];
+    for (var element in _rateList) {
+      widgets.add(RatioMenuItem(
+        text: element.name,
+        direction: Axis.vertical,
+        check: rate == element.rate,
+        onTap: () {
+          onMenuTap?.call(element);
+        },
+      ));
+    }
+    return Container(
+      color: const Color(0xff777777),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
+              child: Text(
+                Intl.playerSkin_rate.tr,
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            Row(children: widgets)
+          ],
         ),
       ),
     );

@@ -21,6 +21,7 @@ const translationsZhCN = {
   "wechat": "微信",
   "alipay": "支付宝",
   "playerSkin_tips_playVideoFailed": "播放失败，点我重试",
+  "playerSkin_rate": "倍速",
   "tips_logout": "您需要退出登录吗？",
   "logout": "退出登录",
   "guestModeDialog_title": "游客模式",
