@@ -1,4 +1,5 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 /// FijkSlider is like Slider in Flutter SDK.
@@ -52,7 +53,7 @@ class _FijkSliderState extends State<FijkSlider> {
 
     return GestureDetector(
       child: Container(
-        margin: EdgeInsets.only(left: margin, right: margin),
+        margin: const EdgeInsets.only(left: margin, right: margin),
         height: double.infinity,
         width: double.infinity,
         color: Colors.transparent,
@@ -108,7 +109,7 @@ class FijkSliderColors {
 
   @override
   int get hashCode =>
-      hashValues(playedColor, bufferedColor, cursorColor, baselineColor);
+      Object.hash(playedColor, bufferedColor, cursorColor, baselineColor);
 }
 
 class _SliderPainter extends CustomPainter {

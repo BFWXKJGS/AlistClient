@@ -79,6 +79,11 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   double _screenHeight = 0;
   double _verticalDragStartY = 0;
 
+  bool _horizontalDragging = false;
+  double _horizontalDragStartX = 0;
+  Duration? _dragStartPosition;
+  Duration _dragCurrentPosition = const Duration();
+
   // whether the video is playing in full screen
   bool _fullscreen = false;
   bool _playing = false;
@@ -482,11 +487,11 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       onVerticalDragUpdate: _onVerticalDragUpdate(),
       onVerticalDragEnd: _onVerticalDragEnd(),
       onVerticalDragCancel: _onVerticalDragCancel(),
-      onHorizontalDragDown: (detail){},
-      onHorizontalDragStart: (detail){},
-      onHorizontalDragUpdate: (detail){},
-      onHorizontalDragEnd: (detail){},
-      onHorizontalDragCancel: (){},
+      onHorizontalDragDown: _onHorizontalDragDown(),
+      onHorizontalDragStart: _onHorizontalDragStart(),
+      onHorizontalDragUpdate: _onHorizontalDragUpdate(),
+      onHorizontalDragEnd: _onHorizontalDragEnd(),
+      onHorizontalDragCancel: _onHorizontalDragCancel(),
       child: AbsorbPointer(
         absorbing: _hideStuff,
         child: Column(
@@ -502,26 +507,109 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       ),
     );
     return Stack(
-      alignment: Alignment.topCenter,
+      // alignment: Alignment.topCenter,
       children: [
         widget,
         Positioned(
-            left: 0,
-            right: 0,
-            top: 20,
-            child: BrightnessIndicator(
-              verticalDragging: _verticalDragging,
-              verticalDragType: _verticalDragType,
-              volumeIndicatorValue: _systemVolumeDragIndicatorValue,
-            ))
+          left: 0,
+          right: 0,
+          top: 50,
+          child: VerticalDragIndicator(
+            verticalDragging: _verticalDragging,
+            verticalDragType: _verticalDragType,
+            volumeIndicatorValue: _systemVolumeDragIndicatorValue,
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 50,
+          child: HorizontalDragIndicator(
+            horizontalDragging: _horizontalDragging,
+            dragCurrentPos: _dragCurrentPosition,
+            duration: _duration,
+          ),
+        ),
       ],
     );
   }
 
-  GestureDragCancelCallback? _onVerticalDragCancel() {
-    return (_locked || !_fullscreen)
+  GestureDragCancelCallback? _onHorizontalDragCancel() {
+    return _locked
         ? null
         : () {
+            _startHideTimer();
+            setState(() {
+              _horizontalDragging = false;
+            });
+          };
+  }
+
+  GestureDragEndCallback? _onHorizontalDragEnd() {
+    return _locked
+        ? null
+        : (dragDetails) {
+            setState(() {
+              _horizontalDragging = false;
+            });
+            _startHideTimer();
+            _player.seekTo(
+                _dragCurrentPosition.inMilliseconds, FlutterAvpdef.INACCURATE);
+          };
+  }
+
+  GestureDragUpdateCallback? _onHorizontalDragUpdate() {
+    return _locked
+        ? null
+        : (dragDetails) {
+            final dragStartX = _horizontalDragStartX;
+            final currentY = dragDetails.localPosition.dx;
+            final ratio = (currentY - dragStartX) / _screenWidth.toDouble();
+            var durationMilliseconds = _duration.inMilliseconds;
+            durationMilliseconds = min(durationMilliseconds, 1000 * 60 * 30);
+
+            int newPosition = ((ratio * durationMilliseconds) +
+                    _dragStartPosition!.inMilliseconds)
+                .round();
+            if (newPosition < 0) {
+              newPosition = 0;
+            } else if (newPosition > _duration.inMilliseconds) {
+              newPosition = _duration.inMilliseconds;
+            }
+
+            setState(() {
+              _dragCurrentPosition = Duration(milliseconds: newPosition);
+            });
+          };
+  }
+
+  GestureDragDownCallback? _onHorizontalDragDown() {
+    return _locked ? null : (dragDetails) {};
+  }
+
+  GestureDragStartCallback? _onHorizontalDragStart() {
+    return _locked
+        ? null
+        : (dragDetails) {
+            _hideTimer?.cancel();
+            setState(() {
+              _horizontalDragStartX = dragDetails.localPosition.dx;
+              _dragStartPosition = _currentPos;
+              setState(() {
+                _hideStuff = false;
+                _horizontalDragging = true;
+              });
+            });
+          };
+  }
+
+  GestureDragCancelCallback? _onVerticalDragCancel() {
+    return (_locked)
+        ? null
+        : () {
+            if (!_fullscreen) {
+              return;
+            }
             setState(() {
               _verticalDragging = false;
             });
@@ -530,9 +618,12 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   }
 
   GestureDragEndCallback? _onVerticalDragEnd() {
-    return (_locked || !_fullscreen)
+    return (_locked)
         ? null
         : (dragDetails) {
+            if (!_fullscreen) {
+              return;
+            }
             setState(() {
               _verticalDragging = false;
             });
@@ -541,7 +632,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   }
 
   GestureDragDownCallback? _onVerticalDragDown() {
-    return (_locked || !_fullscreen)
+    return _locked
         ? null
         : (dragDetails) {
             Log.d("onVerticalDragDown ${dragDetails.localPosition.dy}",
@@ -550,9 +641,12 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   }
 
   GestureDragUpdateCallback? _onVerticalDragUpdate() {
-    return (_locked || !_fullscreen)
+    return _locked
         ? null
         : (dragDetails) {
+            if (!_fullscreen) {
+              return;
+            }
             Log.d("onVerticalDragUpdate ${dragDetails.localPosition.dy}",
                 tag: tag);
             final dragStartY = _verticalDragStartY;
@@ -568,9 +662,12 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   }
 
   GestureDragStartCallback? _onVerticalDragStart() {
-    return (_locked || !_fullscreen)
+    return (_locked)
         ? null
         : (dragDetails) {
+            if (!_fullscreen) {
+              return;
+            }
             Log.d("onVerticalDragStart ${dragDetails.localPosition.dy}",
                 tag: tag);
             var dx = dragDetails.globalPosition.dx;
@@ -752,8 +849,8 @@ class _VideoLockWrapper extends StatelessWidget {
 
 enum VerticalDragType { brightness, volume }
 
-class BrightnessIndicator extends StatelessWidget {
-  const BrightnessIndicator({
+class VerticalDragIndicator extends StatelessWidget {
+  const VerticalDragIndicator({
     Key? key,
     required this.verticalDragging,
     required this.verticalDragType,
@@ -788,14 +885,14 @@ class BrightnessIndicator extends StatelessWidget {
 
     return Center(
       child: AnimatedOpacity(
-        opacity: verticalDragging ? 0.7 : 0,
+        opacity: verticalDragging ? 0.9 : 0,
         duration: const Duration(milliseconds: 400),
         child: Container(
           width: 150,
           height: 50,
           padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: const BoxDecoration(
-              color: Color(0x70333333),
+              color: Color(0x90000000),
               borderRadius: BorderRadius.all(Radius.circular(4))),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -808,6 +905,59 @@ class BrightnessIndicator extends StatelessWidget {
                 ),
               ),
               Expanded(child: indicator)
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class HorizontalDragIndicator extends StatelessWidget {
+  const HorizontalDragIndicator({
+    Key? key,
+    required this.horizontalDragging,
+    required this.dragCurrentPos,
+    required this.duration,
+  }) : super(key: key);
+  final bool horizontalDragging;
+  final Duration dragCurrentPos;
+  final Duration duration;
+
+  @override
+  Widget build(BuildContext context) {
+    var durationStr = _duration2String(duration);
+    var currentPosStr = _duration2String(dragCurrentPos);
+    var ratio =
+        dragCurrentPos.inMilliseconds.toDouble() / duration.inMilliseconds;
+
+    return Center(
+      child: AnimatedOpacity(
+        opacity: horizontalDragging ? 0.9 : 0,
+        duration: const Duration(milliseconds: 400),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+          decoration: const BoxDecoration(
+              color: Color(0x90000000),
+              borderRadius: BorderRadius.all(Radius.circular(4))),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("$currentPosStr / $durationStr",
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(color: Colors.white)),
+              Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: SizedBox(
+                  width: 145,
+                  child: LinearProgressIndicator(
+                    minHeight: 2,
+                    value: ratio,
+                  ),
+                ),
+              )
             ],
           ),
         ),
