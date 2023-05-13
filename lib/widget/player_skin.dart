@@ -1096,8 +1096,10 @@ class VerticalRateMenuDialog extends StatelessWidget {
       ));
     }
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       color: const Color(0xff777777),
       child: SafeArea(
+        left: false,
         child: Column(
           children: widgets,
         ),
@@ -1127,6 +1129,7 @@ class HorizontalRateMenuDialog extends StatelessWidget {
     }
     return Container(
       color: const Color(0xff777777),
+      padding: const EdgeInsets.symmetric(vertical: 17),
       child: SafeArea(
         top: false,
         child: Column(
@@ -1134,10 +1137,10 @@ class HorizontalRateMenuDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
+              padding: const EdgeInsets.symmetric(horizontal: 17),
               child: Text(
                 Intl.playerSkin_rate.tr,
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
             Row(children: widgets)
