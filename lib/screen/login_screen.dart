@@ -4,14 +4,17 @@ import 'package:alist/entity/login_resp_entity.dart';
 import 'package:alist/generated/images.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
+import 'package:alist/util/constant.dart';
 import 'package:alist/util/global.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:sp_util/sp_util.dart';
 
 typedef LoginSuccessCallback = Function();
 typedef LoginFailureCallback = Function(int code, String msg);
@@ -24,17 +27,17 @@ class LoginScreen extends StatelessWidget {
     return AlistScaffold(
       appbarTitle: Text(Intl.screenName_login.tr),
       body: const SingleChildScrollView(
-        child: LoginPageContainer(),
+        child: LoginScreenContainer(),
       ),
     );
   }
 }
 
-class LoginPageContainer extends StatefulWidget {
-  const LoginPageContainer({super.key});
+class LoginScreenContainer extends StatefulWidget {
+  const LoginScreenContainer({super.key});
 
   @override
-  State<LoginPageContainer> createState() => _LoginPageState();
+  State<LoginScreenContainer> createState() => _LoginScreenState();
 }
 
 class LoginInputDecoration extends InputDecoration {
@@ -49,7 +52,7 @@ class LoginInputDecoration extends InputDecoration {
         );
 }
 
-class _LoginPageState extends State<LoginPageContainer> {
+class _LoginScreenState extends State<LoginScreenContainer> {
   final UserController _userController = Get.find();
   final addressController = TextEditingController();
   final usernameController = TextEditingController();
@@ -181,9 +184,15 @@ class _LoginPageState extends State<LoginPageContainer> {
       usernameController.text = username;
     }
     passwordController.text = _userController.user().password ?? "";
-    if (Platform.isIOS) {
-      _testNetwork();
+    bool isAgreePrivacyPolicy =
+        SpUtil.getBool(AlistConstant.isAgreePrivacyPolicy) ?? false;
+    if (!isAgreePrivacyPolicy) {
+      Future.delayed(const Duration(microseconds: 200))
+          .then((value) => _showAgreementDialog());
     }
+    // if (Platform.isIOS) {
+    //   _testNetwork();
+    // }
   }
 
   // Used to request network access when entering the app for the first time
@@ -212,20 +221,20 @@ class _LoginPageState extends State<LoginPageContainer> {
           Image.asset(Images.logo),
           LoginTextField(
             padding: const EdgeInsets.only(top: 30),
-            icon: Image.asset(Images.loginPageServerUrl),
+            icon: Image.asset(Images.loginScreenServerUrl),
             decoration: addressDecoration,
             controller: addressController,
           ),
           LoginTextField(
             padding: const EdgeInsets.only(top: 20),
-            icon: Image.asset(Images.loginPageAccount),
+            icon: Image.asset(Images.loginScreenAccount),
             decoration: phoneNumberDecoration,
             controller: usernameController,
           ),
           LoginTextField(
             padding: const EdgeInsets.only(top: 20),
             obscureText: true,
-            icon: Image.asset(Images.loginPagePassword),
+            icon: Image.asset(Images.loginScreenPassword),
             decoration: passwordDecoration,
             controller: passwordController,
           ),
@@ -268,6 +277,68 @@ class _LoginPageState extends State<LoginPageContainer> {
   void dispose() {
     super.dispose();
     _cancelToken.cancel();
+  }
+
+  _showAgreementDialog() {
+    SmartDialog.show(
+      clickMaskDismiss: false,
+      backDismiss: false,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(Intl.privacyDialog_title.tr),
+          content: RichText(
+              text: TextSpan(children: [
+            TextSpan(
+                text: Intl.privacyDialog_content_part1.tr,
+                style: Theme.of(context).textTheme.bodyMedium),
+            TextSpan(
+                text: Intl.privacyDialog_link.tr,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Theme.of(context).colorScheme.primary),
+                recognizer: TapGestureRecognizer()
+                  ..onTap = () async {
+                    SmartDialog.dismiss();
+                    await _goPrivacyPolicyPage();
+                    _showAgreementDialog();
+                  }),
+            TextSpan(
+                text: Intl.privacyDialog_content_part2.tr,
+                style: Theme.of(context).textTheme.bodyMedium),
+          ])),
+          actions: [
+            TextButton(
+                onPressed: () {
+                  SmartDialog.dismiss();
+                  exit(0);
+                },
+                child: Text(Intl.privacyDialog_btn_cancel.tr)),
+            TextButton(
+              onPressed: () {
+                SmartDialog.dismiss();
+                SpUtil.putBool(AlistConstant.isAgreePrivacyPolicy, true);
+              },
+              child: Text(Intl.privacyDialog_btn_ok.tr),
+            )
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _goPrivacyPolicyPage() async {
+    String local = "en_US";
+    if (Get.locale?.toString().startsWith("zh_") == true) {
+      local = "zh";
+    }
+
+    final url =
+        "https://${Global.configServerHost}/alist_h5/privacyPolicy?lang=$local";
+    await Get.toNamed(
+      NamedRouter.web,
+      arguments: {"url": url},
+    );
   }
 }
 

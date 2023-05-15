@@ -17,6 +17,7 @@ class AlistConstant {
   static const String password = 'password';
   static const String token = 'token';
   static const String guest = 'guest';
+  static const String isAgreePrivacyPolicy = 'isAgreePrivacyPolicy';
 
   static const String locale = 'locale';
 }

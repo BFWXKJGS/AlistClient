@@ -243,6 +243,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   }
 
   void _playOrPause() async {
+    if (_locked) {
+      return;
+    }
     if (_playing == true) {
       _player.pause();
     } else {
@@ -297,6 +300,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       icon: Icon(iconData, color: Colors.white),
       padding: const EdgeInsets.only(left: 10.0, right: 10.0),
       onPressed: () {
+        if (_locked) {
+          return;
+        }
         setState(() {
           _volume = _volume > 0 ? 0.0 : 1.0;
           _player.setVolume(_volume);
@@ -343,6 +349,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
                       padding: const EdgeInsets.only(right: 0, left: 0),
                       child: FijkSlider(
                         value: currentValue,
+                        enable: !_locked,
                         cacheValue: _bufferPos.inMilliseconds.toDouble(),
                         min: 0.0,
                         max: duration,
@@ -373,6 +380,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
 
             IconButton(
               onPressed: () {
+                if (_locked) {
+                  return;
+                }
                 _hideTimer?.cancel();
                 Widget dialog;
                 onMenuTap(element) {
@@ -417,6 +427,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
               ),
               padding: const EdgeInsets.only(left: 10.0, right: 10.0),
               onPressed: () {
+                if (_locked) {
+                  return;
+                }
                 if (_fullscreen) {
                   _exitFullScreen();
                 } else {

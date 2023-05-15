@@ -17,6 +17,7 @@ class Intl {
   static const String settingsScreen_item_login = "settingsScreen_item_login";
   static const String settingsScreen_item_donate = "settingsScreen_item_donate";
   static const String settingsScreen_item_about = "settingsScreen_item_about";
+  static const String settingsScreen_item_privacyPolicy = "settingsScreen_item_privacyPolicy";
   static const String photo_load_failed = "photo_load_failed";
   static const String wechat = "wechat";
   static const String alipay = "alipay";
@@ -25,6 +26,7 @@ class Intl {
   static const String tips_logout = "tips_logout";
   static const String logout = "logout";
   static const String guestModeDialog_title = "guestModeDialog_title";
+  static const String guestModeDialog_content = "guestModeDialog_content";
   static const String guestModeDialog_btn_ok = "guestModeDialog_btn_ok";
   static const String guestModeDialog_btn_cancel = "guestModeDialog_btn_cancel";
   static const String directoryPasswordDialog_title = "directoryPasswordDialog_title";
@@ -40,5 +42,10 @@ class Intl {
   static const String net_error_receive_timeout_error = "net_error_receive_timeout_error";
   static const String net_error_cancel_error = "net_error_cancel_error";
   static const String net_error_certificate_error = "net_error_certificate_error";
-  static const String guestModeDialog_content = "guestModeDialog_content";
+  static const String privacyDialog_title = "privacyDialog_title";
+  static const String privacyDialog_content_part1 = "privacyDialog_content_part1";
+  static const String privacyDialog_link = "privacyDialog_link";
+  static const String privacyDialog_content_part2 = "privacyDialog_content_part2";
+  static const String privacyDialog_btn_ok = "privacyDialog_btn_ok";
+  static const String privacyDialog_btn_cancel = "privacyDialog_btn_cancel";
 }

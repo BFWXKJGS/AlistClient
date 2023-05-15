@@ -4,8 +4,10 @@ import 'package:alist/net/json_parse_error.dart';
 import 'package:alist/net/net_error_handler.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/log_utils.dart';
+import 'package:alist/util/named_router.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:get/route_manager.dart';
 
 import 'base_entity.dart';
 
@@ -147,6 +149,9 @@ class DioUtils {
         if (result.code == 200) {
           onSuccess?.call(result.data);
         } else {
+          if (result.code == 401) {
+            Get.offAllNamed(NamedRouter.login);
+          }
           _onError(result.code, result.message, onError);
         }
       }

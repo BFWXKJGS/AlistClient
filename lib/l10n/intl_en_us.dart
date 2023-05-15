@@ -17,6 +17,7 @@ const translationsEnUS = {
   "settingsScreen_item_login": "Sign in",
   "settingsScreen_item_donate": "Donate",
   "settingsScreen_item_about": "About",
+  "settingsScreen_item_privacyPolicy": "Privacy Policy",
   "photo_load_failed": "Failed to load photo",
   "wechat": "WeChat",
   "alipay": "Alipay",
@@ -42,4 +43,12 @@ const translationsEnUS = {
   "net_error_receive_timeout_error": "Response timeout",
   "net_error_cancel_error": "Request cancelled",
   "net_error_certificate_error": "bad certificate",
+  "privacyDialog_title": "Privacy Policy",
+  "privacyDialog_content_part1":
+      "Welcome to Alist Client, please make sure you read the following Privacy Policy to fully understand how we handle your personal information. Click on the ",
+  "privacyDialog_link": "《Privacy Policy》",
+  "privacyDialog_content_part2":
+      " for more information. If you agree, please click \"Agree\" to start receiving our services.",
+  "privacyDialog_btn_ok": "Agree",
+  "privacyDialog_btn_cancel": "Disagree",
 };

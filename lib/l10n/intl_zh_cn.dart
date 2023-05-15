@@ -17,6 +17,7 @@ const translationsZhCN = {
   "settingsScreen_item_donate": "赞赏",
   "settingsScreen_item_about": "关于我们",
   "settingsScreen_item_login": "去登录",
+  "settingsScreen_item_privacyPolicy": "隐私政策",
   "photo_load_failed": "图片加载失败",
   "wechat": "微信",
   "alipay": "支付宝",
@@ -41,4 +42,11 @@ const translationsZhCN = {
   "net_error_receive_timeout_error": "响应超时",
   "net_error_cancel_error": "请求已取消",
   "net_error_certificate_error": "SSL证书错误",
+  "privacyDialog_title": "隐私政策",
+  "privacyDialog_content_part1":
+      "欢迎使用 Alist Client，请您务必阅读以下隐私政策，以充分了解我们如何处理您的个人信息。点击",
+  "privacyDialog_link": "《隐私政策》",
+  "privacyDialog_content_part2": "了解详细信息。如您同意，请点击“同意”开始接受我们的服务。",
+  "privacyDialog_btn_ok": "同意",
+  "privacyDialog_btn_cancel": "不同意",
 };

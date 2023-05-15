@@ -13,6 +13,7 @@ class FijkSlider extends StatefulWidget {
   final ValueChanged<double> onChanged;
   final ValueChanged<double>? onChangeStart;
   final ValueChanged<double>? onChangeEnd;
+  final bool enable;
 
   final double min;
   final double max;
@@ -26,6 +27,7 @@ class FijkSlider extends StatefulWidget {
     this.cacheValue = 0.0,
     this.onChangeStart,
     this.onChangeEnd,
+    this.enable = true,
     this.min = 0.0,
     this.max = 1.0,
     this.colors = const FijkSliderColors(),
@@ -62,6 +64,7 @@ class _FijkSliderState extends State<FijkSlider> {
         ),
       ),
       onHorizontalDragStart: (DragStartDetails details) {
+        if (!widget.enable) return;
         setState(() {
           dragging = true;
         });
@@ -69,6 +72,7 @@ class _FijkSliderState extends State<FijkSlider> {
         widget.onChangeStart?.call(dragValue);
       },
       onHorizontalDragUpdate: (DragUpdateDetails details) {
+        if (!widget.enable) return;
         final box = context.findRenderObject() as RenderBox;
         final dx = details.localPosition.dx;
         dragValue = (dx - margin) / (box.size.width - 2 * margin);
@@ -77,6 +81,7 @@ class _FijkSliderState extends State<FijkSlider> {
         widget.onChanged(dragValue);
       },
       onHorizontalDragEnd: (DragEndDetails details) {
+        if (!widget.enable) return;
         setState(() {
           dragging = false;
         });

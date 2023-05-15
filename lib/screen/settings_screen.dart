@@ -60,15 +60,32 @@ class _SettingsContainerState extends State<_SettingsContainer> {
       SettingsMenu settingsMenu, BuildContext context, bool isDarkMode) {
     return ListTile(
       onTap: () {
-        if (settingsMenu.route?.isNotEmpty == true) {
-          Get.toNamed(settingsMenu.route!);
-        } else {
-          if (settingsMenu.menuId == MenuId.account) {
-            _showAccountDialog(context);
-          } else if (settingsMenu.menuId == MenuId.signIn) {
+        switch (settingsMenu.menuId) {
+          case MenuId.signIn:
             _userController.logout();
             Get.offNamed(NamedRouter.login);
-          } else if (settingsMenu.menuId == MenuId.about) {
+            break;
+          case MenuId.account:
+            _showAccountDialog(context);
+            break;
+          case MenuId.donate:
+            Get.toNamed(settingsMenu.route!);
+            break;
+          case MenuId.privacyPolicy:
+            String local = "en_US";
+            if (Get.locale?.toString().startsWith("zh_") == true) {
+              local = "zh";
+            }
+
+            final url =
+                "https://${Global.configServerHost}/alist_h5/privacyPolicy?version=${packageInfo?.version ?? ""}&lang=$local";
+            Log.d("url:$url");
+            Get.toNamed(
+              NamedRouter.web,
+              arguments: {"url": url, "title": Intl.settingsScreen_item_privacyPolicy.tr},
+            );
+            break;
+          case MenuId.about:
             String local = "en_US";
             if (Get.locale?.toString().startsWith("zh_") == true) {
               local = "zh";
@@ -81,7 +98,7 @@ class _SettingsContainerState extends State<_SettingsContainer> {
               NamedRouter.web,
               arguments: {"url": url, "title": Intl.screenName_about.tr},
             );
-          }
+            break;
         }
       },
       horizontalTitleGap: 2,
@@ -105,12 +122,17 @@ class _SettingsContainerState extends State<_SettingsContainer> {
       SettingsMenu(
           menuId: MenuId.donate,
           name: Intl.settingsScreen_item_donate.tr,
-          icon: Images.settingsPageDonate,
+          icon: Images.settingsScreenDonate,
+          route: NamedRouter.donate),
+      SettingsMenu(
+          menuId: MenuId.privacyPolicy,
+          name: Intl.settingsScreen_item_privacyPolicy.tr,
+          icon: Images.settingsScreenDonate,
           route: NamedRouter.donate),
       SettingsMenu(
         menuId: MenuId.about,
         name: Intl.settingsScreen_item_about.tr,
-        icon: Images.settingsPageAbout,
+        icon: Images.settingsScreenAbout,
         // route: NamedRouter.about,
       ),
     ];
@@ -120,7 +142,7 @@ class _SettingsContainerState extends State<_SettingsContainer> {
           SettingsMenu(
             menuId: MenuId.signIn,
             name: Intl.settingsScreen_item_login.tr,
-            icon: Images.settingsPageAccount,
+            icon: Images.settingsScreenAccount,
           ));
     } else {
       settingsMenus.insert(
@@ -128,7 +150,7 @@ class _SettingsContainerState extends State<_SettingsContainer> {
           SettingsMenu(
             menuId: MenuId.account,
             name: Intl.settingsScreen_item_account.tr,
-            icon: Images.settingsPageAccount,
+            icon: Images.settingsScreenAccount,
           ));
     }
     return settingsMenus;
@@ -186,5 +208,6 @@ enum MenuId {
   signIn,
   account,
   donate,
+  privacyPolicy,
   about,
 }
