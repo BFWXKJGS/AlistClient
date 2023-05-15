@@ -63,6 +63,7 @@ class _FijkSliderState extends State<FijkSlider> {
           painter: _SliderPainter(v, cv, dragging, colors: widget.colors),
         ),
       ),
+      onTap: () {},
       onHorizontalDragStart: (DragStartDetails details) {
         if (!widget.enable) return;
         setState(() {
