@@ -1,16 +1,5 @@
-# alist
+# Alist Client
 
-A new Flutter project.
+AList Client is a mobile application developed using Flutter based on [the AList project](https://github.com/alist-org/alist), supporting both Android and IOS platforms. It provides various functions, including online browsing of files, online viewing of videos, audios, and browsing of documents in the AList project. It also supports file uploading (to be developed) and file management (to be developed). Users can easily access and watch various types of media files in the AList project through AList Client.
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
