@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:alist/generated/images.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/util/global.dart';
@@ -82,7 +84,10 @@ class _SettingsContainerState extends State<_SettingsContainer> {
             Log.d("url:$url");
             Get.toNamed(
               NamedRouter.web,
-              arguments: {"url": url, "title": Intl.settingsScreen_item_privacyPolicy.tr},
+              arguments: {
+                "url": url,
+                "title": Intl.settingsScreen_item_privacyPolicy.tr
+              },
             );
             break;
           case MenuId.about:
@@ -120,11 +125,6 @@ class _SettingsContainerState extends State<_SettingsContainer> {
   List<SettingsMenu> _buildSettingsMenuItems(BuildContext context) {
     final settingsMenus = [
       SettingsMenu(
-          menuId: MenuId.donate,
-          name: Intl.settingsScreen_item_donate.tr,
-          icon: Images.settingsScreenDonate,
-          route: NamedRouter.donate),
-      SettingsMenu(
           menuId: MenuId.privacyPolicy,
           name: Intl.settingsScreen_item_privacyPolicy.tr,
           icon: Images.settingsScreenDonate,
@@ -136,6 +136,17 @@ class _SettingsContainerState extends State<_SettingsContainer> {
         // route: NamedRouter.about,
       ),
     ];
+    if (!Platform.isIOS) {
+      // ios app store no internal purchase allowed
+      settingsMenus.insert(
+        0,
+        SettingsMenu(
+            menuId: MenuId.donate,
+            name: Intl.settingsScreen_item_donate.tr,
+            icon: Images.settingsScreenDonate,
+            route: NamedRouter.donate),
+      );
+    }
     if (_userController.user().guest == true) {
       settingsMenus.insert(
           0,
