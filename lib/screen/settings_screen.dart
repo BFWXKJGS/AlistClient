@@ -127,7 +127,7 @@ class _SettingsContainerState extends State<_SettingsContainer> {
       SettingsMenu(
           menuId: MenuId.privacyPolicy,
           name: Intl.settingsScreen_item_privacyPolicy.tr,
-          icon: Images.settingsScreenDonate,
+          icon: Images.settingsScreenPrivacyPolicy,
           route: NamedRouter.donate),
       SettingsMenu(
         menuId: MenuId.about,
