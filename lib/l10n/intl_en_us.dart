@@ -1,5 +1,5 @@
 const translationsEnUS = {
-  "appName": "AClient",
+  "appName": "ALClient",
   "screenName_login": "Sign in",
   "screenName_fileListRoot": "Root",
   "screenName_settings": "Settings",
@@ -45,7 +45,7 @@ const translationsEnUS = {
   "net_error_certificate_error": "bad certificate",
   "privacyDialog_title": "Privacy Policy",
   "privacyDialog_content_part1":
-      "Welcome to AClient, please make sure you read the following Privacy Policy to fully understand how we handle your personal information. Click on the ",
+      "Welcome to ALClient, please make sure you read the following Privacy Policy to fully understand how we handle your personal information. Click on the ",
   "privacyDialog_link": "《Privacy Policy》",
   "privacyDialog_content_part2":
       " for more information. If you agree, please click \"Agree\" to start receiving our services.",
