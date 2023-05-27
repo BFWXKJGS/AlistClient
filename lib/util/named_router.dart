@@ -1,6 +1,6 @@
 class NamedRouter {
   // root
-  static const root = "/";
+  static const root = "/index";
 
   // login
   static const login = "/login";

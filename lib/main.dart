@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:alist/l10n/alist_translations.dart';
 import 'package:alist/router.dart';
 import 'package:alist/util/log_utils.dart';
+import 'package:alist/util/named_router.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +29,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      initialRoute: "/",
+      initialRoute: NamedRouter.root,
       translations: AlistTranslations(),
       fallbackLocale: const Locale('en', 'US'),
       locale: ui.window.locale,
@@ -36,7 +37,7 @@ class MyApp extends StatelessWidget {
       builder: _routerBuilder,
       navigatorObservers: [FlutterSmartDialog.observer],
       defaultTransition: Transition.cupertino,
-      title: "Alist Client",
+      title: "AClient",
       theme: _lightTheme(context),
       darkTheme: _dartTheme(context),
     );

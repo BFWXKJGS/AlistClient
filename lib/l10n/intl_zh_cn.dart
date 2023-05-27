@@ -1,5 +1,5 @@
 const translationsZhCN = {
-  "appName": "Alist Client",
+  "appName": "AClient",
   "screenName_login": "登录",
   "screenName_fileListRoot": "根目录",
   "screenName_settings": "设置",
@@ -44,7 +44,7 @@ const translationsZhCN = {
   "net_error_certificate_error": "SSL证书错误",
   "privacyDialog_title": "隐私政策",
   "privacyDialog_content_part1":
-      "欢迎使用 Alist Client，请您务必阅读以下隐私政策，以充分了解我们如何处理您的个人信息。点击",
+      "欢迎使用 AClient，请您务必阅读以下隐私政策，以充分了解我们如何处理您的个人信息。点击",
   "privacyDialog_link": "《隐私政策》",
   "privacyDialog_content_part2": "了解详细信息。如您同意，请点击“同意”开始接受我们的服务。",
   "privacyDialog_btn_ok": "同意",
