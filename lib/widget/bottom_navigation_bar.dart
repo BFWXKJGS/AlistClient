@@ -131,6 +131,7 @@ class AlistBottomNavigationBar extends StatefulWidget {
     required this.items,
     this.onTap,
     this.onDoubleTap,
+    this.onLongPress,
     this.currentIndex = 0,
     this.elevation,
     this.type,
@@ -180,6 +181,8 @@ class AlistBottomNavigationBar extends StatefulWidget {
   final ValueChanged<int>? onTap;
 
   final ValueChanged<int>? onDoubleTap;
+
+  final ValueChanged<int>? onLongPress;
 
   /// The index into [items] for the current active [BottomNavigationBarItem].
   final int currentIndex;
@@ -349,7 +352,8 @@ class AlistBottomNavigationBar extends StatefulWidget {
   final bool useLegacyColorScheme;
 
   @override
-  State<AlistBottomNavigationBar> createState() => _AlistBottomNavigationBarState();
+  State<AlistBottomNavigationBar> createState() =>
+      _AlistBottomNavigationBarState();
 }
 
 // This represents a single tile in the bottom navigation bar. It is intended
@@ -366,6 +370,7 @@ class _BottomNavigationTile extends StatelessWidget {
     this.flex,
     this.selected = false,
     this.onDoubleTap,
+    this.onLongPress,
     required this.selectedLabelStyle,
     required this.unselectedLabelStyle,
     required this.selectedIconTheme,
@@ -390,6 +395,7 @@ class _BottomNavigationTile extends StatelessWidget {
   final double iconSize;
   final VoidCallback? onTap;
   final VoidCallback? onDoubleTap;
+  final GestureLongPressCallback? onLongPress;
   final ColorTween? labelColorTween;
   final ColorTween? iconColorTween;
   final double? flex;
@@ -490,6 +496,7 @@ class _BottomNavigationTile extends StatelessWidget {
     Widget result = InkResponse(
       onTap: onTap,
       onDoubleTap: onDoubleTap,
+      onLongPress: onLongPress,
       mouseCursor: mouseCursor,
       enableFeedback: enableFeedback,
       child: Padding(
@@ -1054,6 +1061,7 @@ class _AlistBottomNavigationBarState extends State<AlistBottomNavigationBar>
         },
         onDoubleTap:
             widget.onDoubleTap != null ? () => widget.onDoubleTap!(i) : null,
+        onLongPress: widget.onLongPress != null ? () => widget.onLongPress!(i) : null,
         labelColorTween:
             widget.useLegacyColorScheme ? colorTween : labelColorTween,
         iconColorTween:

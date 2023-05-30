@@ -55,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
         currentIndex: _currentPage,
         onTap: (int idx) => _pageController.jumpToPage(idx),
-        onDoubleTap: (int idx) {
+        onLongPress: (int idx) {
           LogUtil.d("onDoubleTap: $idx");
           if (idx == 0 && _currentPage == 0) {
             Get.until((route) => route.isFirst,
