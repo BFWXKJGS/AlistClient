@@ -1,7 +1,10 @@
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/l10n/intl_keys.dart';
+import 'package:alist/router.dart';
 import 'package:alist/screen/file_list_screen.dart';
 import 'package:alist/screen/settings_screen.dart';
+import 'package:alist/widget/bottom_navigation_bar.dart';
+import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -39,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SettingsScreen(),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: AlistBottomNavigationBar(
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: const Icon(Icons.home),
@@ -52,6 +55,15 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
         currentIndex: _currentPage,
         onTap: (int idx) => _pageController.jumpToPage(idx),
+        onDoubleTap: (int idx) {
+          LogUtil.d("onDoubleTap: $idx");
+          if (idx == 0 && _currentPage == 0) {
+            Get.until((route) => route.isFirst,
+                id: AlistRouter.fileListRouterStackId);
+          } else {
+            _pageController.jumpToPage(idx);
+          }
+        },
       ),
     );
   }

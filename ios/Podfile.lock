@@ -27,7 +27,7 @@ PODS:
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - sqflite (0.0.2):
+  - sqflite (0.0.3):
     - Flutter
     - FMDB (>= 2.7.5)
   - volume_controller (0.0.1):
@@ -99,7 +99,7 @@ SPEC CHECKSUMS:
   permission_handler_apple: 44366e37eaf29454a1e7b1b7d736c2cceaeb17ce
   screen_brightness_ios: 715ca807df953bf676d339f11464e438143ee625
   shared_preferences_foundation: e2dae3258e06f44cc55f49d42024fd8dd03c590c
-  sqflite: 6d358c025f5b867b29ed92fc697fd34924e11904
+  sqflite: 31f7eba61e3074736dff8807a9b41581e4f7f15a
   volume_controller: 531ddf792994285c9b17f9d8a7e4dcdd29b3eae9
   wakelock: d0fc7c864128eac40eba1617cb5264d9c940b46f
   webview_flutter_wkwebview: 2e2d318f21a5e036e2c3f26171342e95908bd60a
