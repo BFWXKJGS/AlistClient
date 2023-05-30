@@ -6,6 +6,7 @@ import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/global.dart';
+import 'package:alist/util/keyboard_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
@@ -57,6 +58,7 @@ class _LoginScreenState extends State<LoginScreenContainer> {
   final addressController = TextEditingController();
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
+  final _2faController = TextEditingController();
   final CancelToken _cancelToken = CancelToken();
 
   Future<void> _login(
@@ -69,6 +71,7 @@ class _LoginScreenState extends State<LoginScreenContainer> {
 
     var username = usernameController.text.trim();
     var password = passwordController.text.trim();
+    var twofaCode = _2faController.text.trim();
 
     if (!_checkServerUrl(address)) {
       SmartDialog.showToast(Intl.loginScreen_tips_serverUrlError.tr);
@@ -82,25 +85,28 @@ class _LoginScreenState extends State<LoginScreenContainer> {
     SmartDialog.showLoading();
     var baseUrl = "${address}api/";
     DioUtils.instance.configBaseUrlAgain(baseUrl);
-    DioUtils.instance.requestNetwork<LoginRespEntity>(Method.post, "auth/login",
-        params: {
-          'username': username,
-          'password': password,
-          'opt_code': '',
-        },
-        cancelToken: _cancelToken,
-        onSuccess: (data) {
-          _userController.login(User(
-            baseUrl: baseUrl,
-            serverUrl: address,
-            username: username,
-            password: password,
-            token: data!.token,
-            guest: false,
-          ));
-          onSuccess();
-        },
-        onError: (code, message) => onFailure(code, message));
+    DioUtils.instance.requestNetwork<LoginRespEntity>(
+      Method.post,
+      "auth/login",
+      params: {
+        'username': username,
+        'password': password,
+        'otp_code': twofaCode,
+      },
+      cancelToken: _cancelToken,
+      onSuccess: (data) {
+        _userController.login(User(
+          baseUrl: baseUrl,
+          serverUrl: address,
+          username: username,
+          password: password,
+          token: data!.token,
+          guest: false,
+        ));
+        onSuccess();
+      },
+      onError: (code, message) => onFailure(code, message),
+    );
   }
 
   bool _checkServerUrl(String serverUrl) {
@@ -170,6 +176,16 @@ class _LoginScreenState extends State<LoginScreenContainer> {
       },
       onFailure: (code, message) {
         SmartDialog.dismiss();
+        if (code == 402) {
+          // need 2FA code
+          if (_2faController.text.isNotEmpty) {
+            _2faController.clear();
+            SmartDialog.showToast(message);
+          }
+          FocusManager.instance.primaryFocus?.unfocus();
+          _showType2FACodeDialog(context);
+          return;
+        }
         SmartDialog.showToast(message);
       },
     );
@@ -243,6 +259,9 @@ class _LoginScreenState extends State<LoginScreenContainer> {
           ),
           FilledButton(
             onPressed: () {
+              // clear the last 2fa code typed.
+              _2faController.text = "";
+              KeyboardUtil.hideKeyboard(context);
               _onLoginButtonClick(context);
             },
             child: Center(
@@ -317,6 +336,7 @@ class _LoginScreenState extends State<LoginScreenContainer> {
             TextButton(
               onPressed: () {
                 SmartDialog.dismiss();
+                _testNetwork();
                 SpUtil.putBool(AlistConstant.isAgreePrivacyPolicy, true);
               },
               child: Text(Intl.privacyDialog_btn_ok.tr),
@@ -339,6 +359,58 @@ class _LoginScreenState extends State<LoginScreenContainer> {
       NamedRouter.web,
       arguments: {"url": url},
     );
+  }
+
+  void _showType2FACodeDialog(BuildContext context) {
+    SmartDialog.show(
+        clickMaskDismiss: false,
+        builder: (_) {
+          return AlertDialog(
+            title: Text(Intl.twofaCodeDialog_title.tr),
+            content: TextField(
+              controller: _2faController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                isCollapsed: true,
+                isDense: true,
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 11, vertical: 12),
+              ),
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () {
+                    _2faController.text = "";
+                    SmartDialog.dismiss();
+                  },
+                  child: Text(
+                    Intl.twofaCodeDialog_btn_cancel.tr,
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.secondary),
+                  )),
+              TextButton(
+                  onPressed: () {
+                    SmartDialog.dismiss();
+                    _onConfirm(context);
+                  },
+                  child: Text(
+                    Intl.twofaCodeDialog_btn_ok.tr,
+                  ))
+            ],
+          );
+        });
+  }
+
+  void _onConfirm(BuildContext context) {
+    var twofaCode = _2faController.text.trim();
+    if (twofaCode.isEmpty) {
+      SmartDialog.showToast(Intl.twofaCodeDialog_tips_codeEmpty.tr);
+      return;
+    }
+
+    KeyboardUtil.hideKeyboard(context);
+    _onLoginButtonClick(context);
   }
 }
 

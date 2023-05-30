@@ -78,6 +78,8 @@ dependencies:
   volume_controller: ^2.0.6
   # screen_brightness
   screen_brightness: ^0.2.2
+  # slidable
+  flutter_slidable: ^3.0.0
 
 dev_dependencies:
   flutter_test:

@@ -49,4 +49,8 @@ const translationsZhCN = {
   "privacyDialog_content_part2": "了解详细信息。如您同意，请点击“同意”开始接受我们的服务。",
   "privacyDialog_btn_ok": "同意",
   "privacyDialog_btn_cancel": "不同意",
+  "twofaCodeDialog_title": "2FA",
+  "twofaCodeDialog_btn_ok": "登录",
+  "twofaCodeDialog_btn_cancel": "取消",
+  "twofaCodeDialog_tips_codeEmpty": "验证码不能为空!",
 };

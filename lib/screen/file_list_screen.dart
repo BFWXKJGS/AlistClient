@@ -141,6 +141,8 @@ class _FileListScreenState extends State<FileListScreen>
     final files = _data?.content ?? [];
     return AlistScaffold(
       appbarTitle: Text(_pageName ?? Intl.screenName_fileListRoot.tr),
+      onLeadingDoubleTap: () =>
+          Navigator.of(context).popUntil((route) => route.isFirst),
       body: RefreshIndicator(
           key: _refreshIndicatorKey,
           onRefresh: () => _loadFiles(),

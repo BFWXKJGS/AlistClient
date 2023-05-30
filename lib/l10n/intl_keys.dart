@@ -48,4 +48,8 @@ class Intl {
   static const String privacyDialog_content_part2 = "privacyDialog_content_part2";
   static const String privacyDialog_btn_ok = "privacyDialog_btn_ok";
   static const String privacyDialog_btn_cancel = "privacyDialog_btn_cancel";
+  static const String twofaCodeDialog_title = "twofaCodeDialog_title";
+  static const String twofaCodeDialog_btn_ok = "twofaCodeDialog_btn_ok";
+  static const String twofaCodeDialog_btn_cancel = "twofaCodeDialog_btn_cancel";
+  static const String twofaCodeDialog_tips_codeEmpty = "twofaCodeDialog_tips_codeEmpty";
 }
