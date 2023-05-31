@@ -7,14 +7,12 @@ import 'package:alist/net/dio_utils.dart';
 import 'package:alist/router.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_type_utils.dart';
-import 'package:alist/util/global.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/widget_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/alist_will_pop_scope.dart';
 import 'package:dio/dio.dart';
-import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -231,6 +229,12 @@ class _FileListScreenState extends State<FileListScreen>
           },
         );
         break;
+      case FileType.markdown:
+        Get.toNamed(
+          NamedRouter.markdownReader,
+          arguments: {"markdownPath": file.getCompletePath(widget.path), "title": file.name},
+        );
+        break;
       default:
         break;
     }
@@ -267,21 +271,22 @@ class _FileListView extends StatelessWidget {
       itemBuilder: (context, index) {
         if (index == files.length) {
           // it's readme
-          String readMeUrl = Uri(
-              scheme: "https",
-              host: Global.configServerHost,
-              path: "alist_h5/showMarkDown",
-              queryParameters: {
-                "markdownUrl": readme,
-                "title": "README.md",
-              }).toString();
           return _FileListItem(
             icon: Images.fileTypeMd,
             fileName: "README.md",
-            onTap: () => Get.toNamed(
-              NamedRouter.web,
-              arguments: {"url": readMeUrl, "title": "README.md"},
-            ),
+            onTap: () {
+              if (GetUtils.isURL(readme!)) {
+                Get.toNamed(
+                  NamedRouter.markdownReader,
+                  arguments: {"markdownUrl": readme!, "title": "README.md"},
+                );
+              } else {
+                Get.toNamed(
+                  NamedRouter.markdownReader,
+                  arguments: {"markdownContent": readme!, "title": "README.md"},
+                );
+              }
+            },
           );
         } else {
           // it's file

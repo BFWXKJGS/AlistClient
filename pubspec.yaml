@@ -73,7 +73,7 @@ dependencies:
   # native webview
   webview_flutter: ^4.2.0
   # markdown
-  markdown: ^7.1.0
+  markdown_widget: ^2.2.0
   # volume_controller
   volume_controller: ^2.0.6
   # screen_brightness

@@ -6,6 +6,7 @@ import 'package:alist/screen/file_reader_screen.dart';
 import 'package:alist/screen/gallery_screen.dart';
 import 'package:alist/screen/home_screen.dart';
 import 'package:alist/screen/login_screen.dart';
+import 'package:alist/screen/markdown_reader_screen.dart';
 import 'package:alist/screen/settings_screen.dart';
 import 'package:alist/screen/splash_screen.dart';
 import 'package:alist/screen/video_player_screen.dart';
@@ -31,5 +32,7 @@ class AlistRouter {
     GetPage(name: NamedRouter.gallery, page: () => GalleryScreen()),
     GetPage(name: NamedRouter.fileReader, page: () => FileReaderScreen()),
     GetPage(name: NamedRouter.web, page: () => const WebScreen()),
+    GetPage(
+        name: NamedRouter.markdownReader, page: () => MarkdownReaderScreen()),
   ];
 }

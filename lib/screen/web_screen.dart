@@ -1,11 +1,4 @@
-import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
-
-import 'package:alist/net/dio_utils.dart';
-import 'package:alist/util/download_utils.dart';
 import 'package:alist/util/log_utils.dart';
-import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/alist_will_pop_scope.dart';
 import 'package:flustars/flustars.dart';
@@ -22,8 +15,7 @@ class WebScreen extends StatefulWidget {
 
 class _WebScreenState extends State<WebScreen> {
   String? firstPageTitle = Get.arguments["title"];
-  String firstPageUrl = Get.arguments["url"];
-  bool isMarkdown = Get.arguments["isMarkdown"] ?? false;
+  String firstPageUrl = Get.arguments["url"] ?? "";
 
   static const String tag = "_WebScreenState";
   late WebViewController _controller;
@@ -36,12 +28,7 @@ class _WebScreenState extends State<WebScreen> {
     super.initState();
     _title = firstPageTitle;
     _initController();
-
-    if (isMarkdown) {
-      _downloadMarkDown();
-    } else {
-      _load(url: firstPageUrl);
-    }
+    _load(url: firstPageUrl);
   }
 
   void _load({String? url, String? html}) {
@@ -140,21 +127,5 @@ class _WebScreenState extends State<WebScreen> {
     } else {
       return const SizedBox();
     }
-  }
-
-  _downloadMarkDown() async {
-    final downloadDir = await DownloadUtils.findDownloadDir("Markdown");
-    final filePath = '${downloadDir.path}/${firstPageTitle ?? "noName.md"}';
-    File file = File(filePath);
-    if (await file.exists()) {
-      await file.delete();
-    }
-
-    DioUtils.instance.download(firstPageUrl, filePath).then((value) async {
-      Uint8List markdownTextBytes = await file.readAsBytes();
-      String markdownText = utf8.decode(markdownTextBytes);
-      String html = await MarkdownUtil.toHtml(markdownText);
-      _load(html: html);
-    });
   }
 }

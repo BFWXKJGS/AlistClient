@@ -184,7 +184,8 @@ class LoginScreenController extends GetxController {
         }
       }
     });
-    ignoreSSLError.value = SpUtil.getBool(AlistConstant.ignoreSSLError) ?? false;
+    ignoreSSLError.value =
+        SpUtil.getBool(AlistConstant.ignoreSSLError) ?? false;
 
     addressController.text = userController.user().serverUrl;
     String username = userController.user().username ?? "";
