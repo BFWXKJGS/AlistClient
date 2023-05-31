@@ -6,7 +6,7 @@ import 'package:alist/util/log_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 
-class NetErrorHandler{
+class NetErrorHandler {
   static String netErrorToMessage(dynamic error) {
     if (error is JsonParseException) {
       return Intl.net_error_parse_error.tr;
@@ -21,8 +21,11 @@ class NetErrorHandler{
       return Intl.net_error_parse_error.tr;
     }
     if (error is DioError) {
+      if (error.error is HandshakeException) {
+        return Intl.net_error_certificate_error.tr;
+      }
       Log.d(error.type.toString());
-      switch(error.type){
+      switch (error.type) {
         case DioErrorType.connectionTimeout:
           return Intl.net_error_connect_timeout_error.tr;
         case DioErrorType.sendTimeout:

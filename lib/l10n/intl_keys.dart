@@ -13,6 +13,7 @@ class Intl {
   static const String loginScreen_button_guestMode = "loginScreen_button_guestMode";
   static const String loginScreen_tips_serverUrlError = "loginScreen_tips_serverUrlError";
   static const String loginScreen_tips_usernameOrPasswordEmpty = "loginScreen_tips_usernameOrPasswordEmpty";
+  static const String loginScreen_checkbox_ignore_ssl_error = "loginScreen_checkbox_ignore_ssl_error";
   static const String settingsScreen_item_account = "settingsScreen_item_account";
   static const String settingsScreen_item_login = "settingsScreen_item_login";
   static const String settingsScreen_item_donate = "settingsScreen_item_donate";

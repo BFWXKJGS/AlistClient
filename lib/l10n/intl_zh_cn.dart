@@ -13,6 +13,7 @@ const translationsZhCN = {
   "loginScreen_button_guestMode": "游客模式",
   "loginScreen_tips_serverUrlError": "请输入正确的服务器地址",
   "loginScreen_tips_usernameOrPasswordEmpty": "用户名/密码为空",
+  "loginScreen_checkbox_ignore_ssl_error": "忽略SSL证书错误",
   "settingsScreen_item_account": "账户管理",
   "settingsScreen_item_donate": "赞赏",
   "settingsScreen_item_about": "关于我们",

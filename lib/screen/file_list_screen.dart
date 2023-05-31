@@ -14,6 +14,7 @@ import 'package:alist/util/widget_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/alist_will_pop_scope.dart';
 import 'package:dio/dio.dart';
+import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -85,8 +86,9 @@ class _FileListScreenState extends State<FileListScreen>
   }
 
   Future<void> _loadFiles() async {
+    var path = widget.path ?? "/";
     var body = {
-      "path": widget.path,
+      "path": path,
       "password": _password ?? "",
       "page": 1,
       "per_page": 0,

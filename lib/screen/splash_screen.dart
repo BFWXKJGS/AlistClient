@@ -93,6 +93,7 @@ class _SplashScreenState extends State<SplashScreen> {
       interceptors.add(LoggingInterceptor());
     }
 
+    var ignoreSSLError = SpUtil.getBool(AlistConstant.ignoreSSLError) ?? false;
     var baseUrl = SpUtil.getString(AlistConstant.baseUrl);
     if (baseUrl == null || baseUrl.isEmpty) {
       baseUrl = Global.demoServerBaseUrl;
@@ -100,6 +101,7 @@ class _SplashScreenState extends State<SplashScreen> {
     configDio(
       baseUrl: baseUrl,
       interceptors: interceptors,
+      ignoreSSLError: ignoreSSLError,
     );
   }
 }

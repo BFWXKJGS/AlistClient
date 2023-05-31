@@ -13,6 +13,7 @@ const translationsEnUS = {
   "loginScreen_button_guestMode": "Browse as a guest",
   "loginScreen_tips_serverUrlError": "Server URL is invalid",
   "loginScreen_tips_usernameOrPasswordEmpty": "Username or password is empty",
+  "loginScreen_checkbox_ignore_ssl_error": "Ignore SSL certificate error",
   "settingsScreen_item_account": "Account",
   "settingsScreen_item_login": "Sign in",
   "settingsScreen_item_donate": "Donate",

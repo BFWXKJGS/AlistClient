@@ -27,18 +27,124 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlistScaffold(
       appbarTitle: Text(Intl.screenName_login.tr),
-      body: const SingleChildScrollView(
+      body: SingleChildScrollView(
         child: LoginScreenContainer(),
       ),
     );
   }
 }
 
-class LoginScreenContainer extends StatefulWidget {
-  const LoginScreenContainer({super.key});
+class LoginScreenContainer extends StatelessWidget {
+  LoginScreenContainer({super.key});
+
+  final loginScreenController = Get.put(LoginScreenController());
 
   @override
-  State<LoginScreenContainer> createState() => _LoginScreenState();
+  Widget build(BuildContext context) {
+    InputDecoration phoneNumberDecoration = LoginInputDecoration(
+      hintText: Intl.loginScreen_hint_username.tr,
+    );
+    InputDecoration passwordDecoration = LoginInputDecoration(
+      hintText: Intl.loginScreen_hint_password.tr,
+    );
+    InputDecoration addressDecoration = LoginInputDecoration(
+      hintText: Intl.loginScreen_hint_serverUrl.tr,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(25, 50, 25, 0),
+      child: Column(
+        children: [
+          Image.asset(Images.logo),
+          LoginTextField(
+            padding: const EdgeInsets.only(top: 30),
+            icon: Image.asset(Images.loginScreenServerUrl),
+            decoration: addressDecoration,
+            controller: loginScreenController.addressController,
+          ),
+          LoginTextField(
+            padding: const EdgeInsets.only(top: 20),
+            icon: Image.asset(Images.loginScreenAccount),
+            decoration: phoneNumberDecoration,
+            controller: loginScreenController.usernameController,
+          ),
+          LoginTextField(
+            padding: const EdgeInsets.only(top: 20),
+            obscureText: true,
+            icon: Image.asset(Images.loginScreenPassword),
+            decoration: passwordDecoration,
+            controller: loginScreenController.passwordController,
+          ),
+          Obx(() => buildSSLErrorIgnoreCheckbox(context)),
+          const SizedBox(
+            height: 20,
+          ),
+          FilledButton(
+            onPressed: () {
+              // clear the last 2fa code typed.
+              loginScreenController.twofaController.text = "";
+              KeyboardUtil.hideKeyboard(context);
+              loginScreenController._onLoginButtonClick(context);
+            },
+            child: Center(
+              child: Text(Intl.loginScreen_button_login.tr),
+            ),
+          ),
+          const SizedBox(
+            height: 15,
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+            ),
+            onPressed: () {
+              var address = loginScreenController.addressController.text.trim();
+              if (address.isEmpty) {
+                loginScreenController._tryEntryDefaultServer(context);
+              } else {
+                loginScreenController._enterVisitorMode(context, address);
+              }
+            },
+            child: Center(
+              child: Text(Intl.loginScreen_button_guestMode.tr),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Row buildSSLErrorIgnoreCheckbox(BuildContext context) {
+    return Row(
+      children: [
+        Checkbox(
+          value: loginScreenController.ignoreSSLError.value,
+          onChanged: loginScreenController.sslErrorIgnoreCheckboxEnable.value
+              ? (checked) {
+                  loginScreenController.ignoreSSLError.value = checked ?? false;
+                }
+              : null,
+        ),
+        GestureDetector(
+          onTap: () {
+            if (loginScreenController.sslErrorIgnoreCheckboxEnable.value) {
+              loginScreenController.ignoreSSLError.value =
+                  !loginScreenController.ignoreSSLError.value;
+            }
+          },
+          child: Text(
+            Intl.loginScreen_checkbox_ignore_ssl_error.tr,
+            style: !loginScreenController.sslErrorIgnoreCheckboxEnable.value
+                ? Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Theme.of(context).disabledColor)
+                : null,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class LoginInputDecoration extends InputDecoration {
@@ -53,13 +159,52 @@ class LoginInputDecoration extends InputDecoration {
         );
 }
 
-class _LoginScreenState extends State<LoginScreenContainer> {
-  final UserController _userController = Get.find();
+class LoginScreenController extends GetxController {
+  final UserController userController = Get.find();
   final addressController = TextEditingController();
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
-  final _2faController = TextEditingController();
+  final twofaController = TextEditingController();
   final CancelToken _cancelToken = CancelToken();
+
+  var sslErrorIgnoreCheckboxEnable = false.obs;
+  var ignoreSSLError = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    addressController.addListener(() {
+      var sslErrorIgnoreCheckboxEnable =
+          addressController.text.trim().startsWith("https");
+      if (sslErrorIgnoreCheckboxEnable !=
+          this.sslErrorIgnoreCheckboxEnable.value) {
+        this.sslErrorIgnoreCheckboxEnable.value = sslErrorIgnoreCheckboxEnable;
+        if (!sslErrorIgnoreCheckboxEnable) {
+          ignoreSSLError.value = false;
+        }
+      }
+    });
+    ignoreSSLError.value = SpUtil.getBool(AlistConstant.ignoreSSLError) ?? false;
+
+    addressController.text = userController.user().serverUrl;
+    String username = userController.user().username ?? "";
+    if ("guest" != username) {
+      usernameController.text = username;
+    }
+    passwordController.text = userController.user().password ?? "";
+    bool isAgreePrivacyPolicy =
+        SpUtil.getBool(AlistConstant.isAgreePrivacyPolicy) ?? false;
+    if (!isAgreePrivacyPolicy) {
+      Future.delayed(const Duration(microseconds: 200))
+          .then((value) => _showAgreementDialog());
+    }
+  }
+
+  @override
+  void onClose() {
+    super.onClose();
+    _cancelToken.cancel();
+  }
 
   Future<void> _login(
       {required LoginSuccessCallback onSuccess,
@@ -71,7 +216,7 @@ class _LoginScreenState extends State<LoginScreenContainer> {
 
     var username = usernameController.text.trim();
     var password = passwordController.text.trim();
-    var twofaCode = _2faController.text.trim();
+    var twofaCode = twofaController.text.trim();
 
     if (!_checkServerUrl(address)) {
       SmartDialog.showToast(Intl.loginScreen_tips_serverUrlError.tr);
@@ -84,7 +229,7 @@ class _LoginScreenState extends State<LoginScreenContainer> {
 
     SmartDialog.showLoading();
     var baseUrl = "${address}api/";
-    DioUtils.instance.configBaseUrlAgain(baseUrl);
+    DioUtils.instance.configAgain(baseUrl, ignoreSSLError.value);
     DioUtils.instance.requestNetwork<LoginRespEntity>(
       Method.post,
       "auth/login",
@@ -95,7 +240,7 @@ class _LoginScreenState extends State<LoginScreenContainer> {
       },
       cancelToken: _cancelToken,
       onSuccess: (data) {
-        _userController.login(User(
+        userController.login(User(
           baseUrl: baseUrl,
           serverUrl: address,
           username: username,
@@ -103,6 +248,7 @@ class _LoginScreenState extends State<LoginScreenContainer> {
           token: data!.token,
           guest: false,
         ));
+        SpUtil.putBool(AlistConstant.ignoreSSLError, ignoreSSLError.value);
         onSuccess();
       },
       onError: (code, message) => onFailure(code, message),
@@ -129,8 +275,9 @@ class _LoginScreenState extends State<LoginScreenContainer> {
     }
 
     var baseUrl = "${address}api/";
-    DioUtils.instance.configBaseUrlAgain(baseUrl);
-    _userController.login(User(
+    DioUtils.instance.configAgain(baseUrl, ignoreSSLError.value);
+    SpUtil.putBool(AlistConstant.ignoreSSLError, ignoreSSLError.value);
+    userController.login(User(
       baseUrl: baseUrl,
       serverUrl: address,
       username: "guest",
@@ -178,8 +325,8 @@ class _LoginScreenState extends State<LoginScreenContainer> {
         SmartDialog.dismiss();
         if (code == 402) {
           // need 2FA code
-          if (_2faController.text.isNotEmpty) {
-            _2faController.clear();
+          if (twofaController.text.isNotEmpty) {
+            twofaController.clear();
             SmartDialog.showToast(message);
           }
           FocusManager.instance.primaryFocus?.unfocus();
@@ -191,111 +338,11 @@ class _LoginScreenState extends State<LoginScreenContainer> {
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-    addressController.text = _userController.user().serverUrl;
-    String username = _userController.user().username ?? "";
-    if ("guest" != username) {
-      usernameController.text = username;
-    }
-    passwordController.text = _userController.user().password ?? "";
-    bool isAgreePrivacyPolicy =
-        SpUtil.getBool(AlistConstant.isAgreePrivacyPolicy) ?? false;
-    if (!isAgreePrivacyPolicy) {
-      Future.delayed(const Duration(microseconds: 200))
-          .then((value) => _showAgreementDialog());
-    }
-    // if (Platform.isIOS) {
-    //   _testNetwork();
-    // }
-  }
-
   // Used to request network access when entering the app for the first time
   // just for IOS
   void _testNetwork() async {
     await Future.delayed(const Duration(seconds: 1));
     DioUtils.instance.requestNetwork(Method.get, "/").catchError((e) {});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    InputDecoration phoneNumberDecoration = LoginInputDecoration(
-      hintText: Intl.loginScreen_hint_username.tr,
-    );
-    InputDecoration passwordDecoration = LoginInputDecoration(
-      hintText: Intl.loginScreen_hint_password.tr,
-    );
-    InputDecoration addressDecoration = LoginInputDecoration(
-      hintText: Intl.loginScreen_hint_serverUrl.tr,
-    );
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(25, 50, 25, 0),
-      child: Column(
-        children: [
-          Image.asset(Images.logo),
-          LoginTextField(
-            padding: const EdgeInsets.only(top: 30),
-            icon: Image.asset(Images.loginScreenServerUrl),
-            decoration: addressDecoration,
-            controller: addressController,
-          ),
-          LoginTextField(
-            padding: const EdgeInsets.only(top: 20),
-            icon: Image.asset(Images.loginScreenAccount),
-            decoration: phoneNumberDecoration,
-            controller: usernameController,
-          ),
-          LoginTextField(
-            padding: const EdgeInsets.only(top: 20),
-            obscureText: true,
-            icon: Image.asset(Images.loginScreenPassword),
-            decoration: passwordDecoration,
-            controller: passwordController,
-          ),
-          const SizedBox(
-            height: 30,
-          ),
-          FilledButton(
-            onPressed: () {
-              // clear the last 2fa code typed.
-              _2faController.text = "";
-              KeyboardUtil.hideKeyboard(context);
-              _onLoginButtonClick(context);
-            },
-            child: Center(
-              child: Text(Intl.loginScreen_button_login.tr),
-            ),
-          ),
-          const SizedBox(
-            height: 15,
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-            ),
-            onPressed: () {
-              var address = addressController.text.trim();
-              if (address.isEmpty) {
-                _tryEntryDefaultServer(context);
-              } else {
-                _enterVisitorMode(context, address);
-              }
-            },
-            child: Center(
-              child: Text(Intl.loginScreen_button_guestMode.tr),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _cancelToken.cancel();
   }
 
   _showAgreementDialog() {
@@ -368,7 +415,7 @@ class _LoginScreenState extends State<LoginScreenContainer> {
           return AlertDialog(
             title: Text(Intl.twofaCodeDialog_title.tr),
             content: TextField(
-              controller: _2faController,
+              controller: twofaController,
               autofocus: true,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
@@ -381,7 +428,7 @@ class _LoginScreenState extends State<LoginScreenContainer> {
             actions: [
               TextButton(
                   onPressed: () {
-                    _2faController.text = "";
+                    twofaController.text = "";
                     SmartDialog.dismiss();
                   },
                   child: Text(
@@ -403,7 +450,7 @@ class _LoginScreenState extends State<LoginScreenContainer> {
   }
 
   void _onConfirm(BuildContext context) {
-    var twofaCode = _2faController.text.trim();
+    var twofaCode = twofaController.text.trim();
     if (twofaCode.isEmpty) {
       SmartDialog.showToast(Intl.twofaCodeDialog_tips_codeEmpty.tr);
       return;

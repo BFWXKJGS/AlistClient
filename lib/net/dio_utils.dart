@@ -6,6 +6,8 @@ import 'package:alist/util/constant.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
+import 'package:flustars/flustars.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/route_manager.dart';
 
@@ -17,6 +19,7 @@ Duration _receiveTimeout = const Duration(seconds: 15);
 Duration _sendTimeout = const Duration(seconds: 10);
 String _baseUrl = '';
 List<Interceptor> _interceptors = [];
+bool? _ignoreSSLError;
 
 /// 初始化Dio配置
 void configDio({
@@ -25,12 +28,14 @@ void configDio({
   Duration? sendTimeout,
   String? baseUrl,
   List<Interceptor>? interceptors,
+  bool ignoreSSLError = false
 }) {
   _connectTimeout = connectTimeout ?? _connectTimeout;
   _receiveTimeout = receiveTimeout ?? _receiveTimeout;
   _sendTimeout = sendTimeout ?? _sendTimeout;
   _baseUrl = baseUrl ?? _baseUrl;
   _interceptors = interceptors ?? _interceptors;
+  _ignoreSSLError = ignoreSSLError;
 }
 
 typedef NetSuccessCallback<T> = Function(T data);
@@ -45,7 +50,7 @@ class DioUtils {
     _dioInit();
   }
 
-  void _dioInit() {
+  void _dioInit({bool? ignoreSSLError}) {
     final BaseOptions options = BaseOptions(
       connectTimeout: _connectTimeout,
       receiveTimeout: _receiveTimeout,
@@ -61,6 +66,14 @@ class DioUtils {
       //      contentType: Headers.formUrlEncodedContentType, // 适用于post form表单提交
     );
     _dio = Dio(options);
+
+    ignoreSSLError ??= _ignoreSSLError;
+    if (ignoreSSLError == true) {
+      _dioIgnoreSSLError(dio);
+      _dioIgnoreSSLError(_downloadDio);
+    } else {
+      _downloadDio.httpClientAdapter = IOHttpClientAdapter();
+    }
 
     /// 添加拦截器
     void addInterceptor(Interceptor interceptor) {
@@ -114,11 +127,9 @@ class DioUtils {
     }
   }
 
-  void configBaseUrlAgain(String baseUrl) {
-    if (_baseUrl != baseUrl) {
-      _baseUrl = baseUrl;
-      _dioInit();
-    }
+  void configAgain(String baseUrl, bool ignoreSSLError) {
+    _baseUrl = baseUrl;
+    _dioInit(ignoreSSLError: ignoreSSLError);
   }
 
   Options _checkOptions(String method, Options? options) {
@@ -156,6 +167,7 @@ class DioUtils {
         }
       }
     }, onError: (dynamic e) {
+      LogUtil.d(e);
       if (cancelToken?.isCancelled != true) {
         _onError(-1, NetErrorHandler.netErrorToMessage(e), onError);
       } else {
@@ -238,6 +250,18 @@ class DioUtils {
   void _onError(int code, String msg, NetErrorCallback? onError) {
     Log.e('request error： code: $code, msg: $msg');
     onError?.call(code, msg);
+  }
+
+  void _dioIgnoreSSLError(Dio dio) {
+    dio.httpClientAdapter = IOHttpClientAdapter(
+      onHttpClientCreate: (client) {
+        client.badCertificateCallback = (cert, host, port) => true;
+        return client;
+      },
+      validateCertificate: (cert, host, port) {
+        return true;
+      },
+    );
   }
 }
 
