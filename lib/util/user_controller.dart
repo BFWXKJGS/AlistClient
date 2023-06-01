@@ -15,13 +15,16 @@ class UserController extends GetxController {
     SpUtil.putString(AlistConstant.password, user.password ?? "");
     SpUtil.putString(AlistConstant.token, user.token ?? "");
     SpUtil.putBool(AlistConstant.guest, user.guest);
+    SpUtil.putBool(AlistConstant.useDemoServer, user.useDemoServer);
   }
 
   void logout() {
     var currentUserValue = user.value;
+    var isUseDemoServer = currentUserValue.useDemoServer;
+    var guest = currentUserValue.guest;
     var newUserValue = User(
-        baseUrl: currentUserValue.baseUrl,
-        serverUrl: currentUserValue.serverUrl,
+        baseUrl: isUseDemoServer ? "" : currentUserValue.baseUrl,
+        serverUrl: isUseDemoServer ? "" : currentUserValue.serverUrl,
         guest: false,
         username: currentUserValue.username,
         password: currentUserValue.password,
@@ -29,6 +32,14 @@ class UserController extends GetxController {
     user.value = newUserValue;
     SpUtil.remove(AlistConstant.guest);
     SpUtil.remove(AlistConstant.token);
+    if (isUseDemoServer) {
+      SpUtil.remove(AlistConstant.useDemoServer);
+      SpUtil.remove(AlistConstant.serverUrl);
+      SpUtil.remove(AlistConstant.baseUrl);
+    }
+    if (guest) {
+      SpUtil.remove(AlistConstant.username);
+    }
   }
 }
 
@@ -39,6 +50,7 @@ class User {
   final String username;
   final String? password;
   final String? token;
+  final bool useDemoServer;
 
   User({
     required this.baseUrl,
@@ -47,5 +59,6 @@ class User {
     this.username = "guest",
     this.password,
     this.token,
+    this.useDemoServer = false,
   });
 }

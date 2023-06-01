@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:alist/entity/login_resp_entity.dart';
+import 'package:alist/entity/my_info_resp.dart';
 import 'package:alist/generated/images.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
@@ -8,27 +9,83 @@ import 'package:alist/util/constant.dart';
 import 'package:alist/util/global.dart';
 import 'package:alist/util/keyboard_utils.dart';
 import 'package:alist/util/named_router.dart';
+import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:dio/dio.dart';
+import 'package:flustars/flustars.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:sp_util/sp_util.dart';
 
 typedef LoginSuccessCallback = Function();
 typedef LoginFailureCallback = Function(int code, String msg);
 
+const _bottomBarTypes1 = ["http://", "https://", "www.", "m."];
+const _bottomBarTypes2 = ["www.", "m.", ".com", ".cn"];
+
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+  final loginScreenController = Get.put(LoginScreenController());
+
+  LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return AlistScaffold(
       appbarTitle: Text(Intl.screenName_login.tr),
-      body: SingleChildScrollView(
-        child: LoginScreenContainer(),
+      body: Stack(
+        children: [
+          GestureDetector(
+            onTap: () {
+              Get.focusScope?.unfocus();
+            },
+            behavior: HitTestBehavior.translucent,
+            child: SingleChildScrollView(
+              child: LoginScreenContainer(),
+            ),
+          ),
+          Obx(() => Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: buildServerUrlBottomBar(
+                  context,
+                  loginScreenController.bottomBarTypes,
+                  loginScreenController.keyboardHeight.value > 0 &&
+                      loginScreenController.addressTextFieldIsFocused.value,
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+
+  Widget buildServerUrlBottomBar(
+      BuildContext context, List<String> bottomBarTypes, bool visible) {
+    if (!visible) {
+      return const SizedBox();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      color: Theme.of(context).colorScheme.surfaceVariant,
+      child: Row(
+        children: [
+          for (var value1 in bottomBarTypes)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: ElevatedButton(
+                    style: ButtonStyle(
+                        minimumSize:
+                            MaterialStateProperty.all(const Size(0, 30))),
+                    onPressed: () =>
+                        loginScreenController.appendServerUrlText(value1),
+                    child: Text(value1)),
+              ),
+            )
+        ],
       ),
     );
   }
@@ -37,18 +94,21 @@ class LoginScreen extends StatelessWidget {
 class LoginScreenContainer extends StatelessWidget {
   LoginScreenContainer({super.key});
 
-  final loginScreenController = Get.put(LoginScreenController());
+  final loginScreenController = Get.find<LoginScreenController>();
 
   @override
   Widget build(BuildContext context) {
-    InputDecoration phoneNumberDecoration = LoginInputDecoration(
-      hintText: Intl.loginScreen_hint_username.tr,
+    InputDecoration usernameDecoration = LoginInputDecoration(
+      hintText: "guest",
+      labelText: Intl.loginScreen_label_username.tr,
     );
     InputDecoration passwordDecoration = LoginInputDecoration(
-      hintText: Intl.loginScreen_hint_password.tr,
+      hintText: "password",
+      labelText: Intl.loginScreen_label_password.tr,
     );
     InputDecoration addressDecoration = LoginInputDecoration(
-      hintText: Intl.loginScreen_hint_serverUrl.tr,
+      hintText: "https://example.com/",
+      labelText: Intl.loginScreen_label_serverUrl.tr,
     );
 
     return Padding(
@@ -61,11 +121,13 @@ class LoginScreenContainer extends StatelessWidget {
             icon: Image.asset(Images.loginScreenServerUrl),
             decoration: addressDecoration,
             controller: loginScreenController.addressController,
+            focusNode: loginScreenController.addressFocusNode,
+            keyboardType: TextInputType.url,
           ),
           LoginTextField(
             padding: const EdgeInsets.only(top: 20),
             icon: Image.asset(Images.loginScreenAccount),
-            decoration: phoneNumberDecoration,
+            decoration: usernameDecoration,
             controller: loginScreenController.usernameController,
           ),
           LoginTextField(
@@ -102,7 +164,7 @@ class LoginScreenContainer extends StatelessWidget {
               if (address.isEmpty) {
                 loginScreenController._tryEntryDefaultServer(context);
               } else {
-                loginScreenController._enterVisitorMode(context, address);
+                loginScreenController._enterVisitorMode(address);
               }
             },
             child: Center(
@@ -119,28 +181,16 @@ class LoginScreenContainer extends StatelessWidget {
       children: [
         Checkbox(
           value: loginScreenController.ignoreSSLError.value,
-          onChanged: loginScreenController.sslErrorIgnoreCheckboxEnable.value
-              ? (checked) {
-                  loginScreenController.ignoreSSLError.value = checked ?? false;
-                }
-              : null,
+          onChanged: (checked) {
+            loginScreenController.ignoreSSLError.value = checked ?? false;
+          },
         ),
         GestureDetector(
           onTap: () {
-            if (loginScreenController.sslErrorIgnoreCheckboxEnable.value) {
-              loginScreenController.ignoreSSLError.value =
-                  !loginScreenController.ignoreSSLError.value;
-            }
+            loginScreenController.ignoreSSLError.value =
+                !loginScreenController.ignoreSSLError.value;
           },
-          child: Text(
-            Intl.loginScreen_checkbox_ignore_ssl_error.tr,
-            style: !loginScreenController.sslErrorIgnoreCheckboxEnable.value
-                ? Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: Theme.of(context).disabledColor)
-                : null,
-          ),
+          child: Text(Intl.loginScreen_checkbox_ignore_ssl_error.tr),
         ),
       ],
     );
@@ -148,41 +198,38 @@ class LoginScreenContainer extends StatelessWidget {
 }
 
 class LoginInputDecoration extends InputDecoration {
-  const LoginInputDecoration({required String hintText})
+  LoginInputDecoration({required String hintText, required String labelText})
       : super(
           hintText: hintText,
           border: const OutlineInputBorder(),
           isCollapsed: true,
+          label: Text(labelText),
           isDense: true,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 11, vertical: 12),
         );
 }
 
-class LoginScreenController extends GetxController {
+class LoginScreenController extends GetxController with WidgetsBindingObserver {
   final UserController userController = Get.find();
+  final FocusNode addressFocusNode = FocusNode();
   final addressController = TextEditingController();
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   final twofaController = TextEditingController();
   final CancelToken _cancelToken = CancelToken();
+  var keyboardHeight = 0.0.obs;
+  var bottomBarTypes = _bottomBarTypes1.obs;
+  var addressTextFieldIsFocused = false.obs;
 
-  var sslErrorIgnoreCheckboxEnable = false.obs;
   var ignoreSSLError = false.obs;
 
   @override
   void onInit() {
     super.onInit();
     addressController.addListener(() {
-      var sslErrorIgnoreCheckboxEnable =
-          addressController.text.trim().startsWith("https");
-      if (sslErrorIgnoreCheckboxEnable !=
-          this.sslErrorIgnoreCheckboxEnable.value) {
-        this.sslErrorIgnoreCheckboxEnable.value = sslErrorIgnoreCheckboxEnable;
-        if (!sslErrorIgnoreCheckboxEnable) {
-          ignoreSSLError.value = false;
-        }
-      }
+      var text = addressController.text.trim();
+      bottomBarTypes.value = text.isEmpty ? _bottomBarTypes1 : _bottomBarTypes2;
     });
     ignoreSSLError.value =
         SpUtil.getBool(AlistConstant.ignoreSSLError) ?? false;
@@ -199,12 +246,27 @@ class LoginScreenController extends GetxController {
       Future.delayed(const Duration(microseconds: 200))
           .then((value) => _showAgreementDialog());
     }
+    WidgetsBinding.instance.addObserver(this);
+    addressFocusNode.addListener(() {
+      addressTextFieldIsFocused.value = addressFocusNode.hasFocus;
+    });
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      if (Get.context != null) {
+        keyboardHeight.value = MediaQuery.of(Get.context!).viewInsets.bottom;
+      }
+    });
   }
 
   @override
   void onClose() {
-    super.onClose();
+    WidgetsBinding.instance.removeObserver(this);
     _cancelToken.cancel();
+    super.onClose();
   }
 
   Future<void> _login(
@@ -218,10 +280,17 @@ class LoginScreenController extends GetxController {
     var username = usernameController.text.trim();
     var password = passwordController.text.trim();
     var twofaCode = twofaController.text.trim();
+    if (username.isEmpty && password.isEmpty) {
+      _enterVisitorMode(address);
+      return;
+    }
 
     if (!_checkServerUrl(address)) {
       SmartDialog.showToast(Intl.loginScreen_tips_serverUrlError.tr);
       return;
+    }
+    if (!address.startsWith("http://") && !address.startsWith("https://")) {
+      address = "http://$address";
     }
     if (username.isEmpty || password.isEmpty) {
       SmartDialog.showToast(Intl.loginScreen_tips_usernameOrPasswordEmpty.tr);
@@ -239,6 +308,7 @@ class LoginScreenController extends GetxController {
         'password': password,
         'otp_code': twofaCode,
       },
+      options: Options(followRedirects: false),
       cancelToken: _cancelToken,
       onSuccess: (data) {
         userController.login(User(
@@ -260,13 +330,13 @@ class LoginScreenController extends GetxController {
     if (serverUrl.isEmpty) {
       return false;
     }
-    if (!serverUrl.startsWith("http://") && !serverUrl.startsWith("https://")) {
+    if (serverUrl.contains(" ")) {
       return false;
     }
     return true;
   }
 
-  _enterVisitorMode(BuildContext context, String address) {
+  _enterVisitorMode(String address, {bool useDemoServer = false}) {
     if (!address.endsWith("/")) {
       address = "$address/";
     }
@@ -274,17 +344,42 @@ class LoginScreenController extends GetxController {
       SmartDialog.showToast(Intl.loginScreen_tips_serverUrlError.tr);
       return;
     }
+    if (!address.startsWith("http://") && !address.startsWith("https://")) {
+      address = "http://$address";
+    }
 
     var baseUrl = "${address}api/";
     DioUtils.instance.configAgain(baseUrl, ignoreSSLError.value);
+    SmartDialog.showLoading(
+        msg: "checking...", backDismiss: false, clickMaskDismiss: false);
+    DioUtils.instance.requestNetwork<MyInfoResp>(Method.get, "me",
+        options: Options(followRedirects: false), onSuccess: (data) {
+      _doAfterEnterVisitorMode(baseUrl, address, data?.username,
+          useDemoServer: useDemoServer);
+      SmartDialog.dismiss();
+    }, onError: (code, message) {
+      if (code == 301) {
+        var baseUrl = message.substringBeforeLast("api/me")!;
+        addressController.text = baseUrl;
+        _enterVisitorMode(baseUrl, useDemoServer: useDemoServer);
+        return;
+      }
+      SmartDialog.dismiss();
+    });
+  }
+
+  void _doAfterEnterVisitorMode(
+      String baseUrl, String address, String? username,
+      {bool useDemoServer = false}) {
     SpUtil.putBool(AlistConstant.ignoreSSLError, ignoreSSLError.value);
     userController.login(User(
       baseUrl: baseUrl,
       serverUrl: address,
-      username: "guest",
+      username: username ?? "guest",
       password: null,
       token: null,
       guest: true,
+      useDemoServer: useDemoServer,
     ));
     Get.offNamed(NamedRouter.home);
   }
@@ -306,7 +401,7 @@ class LoginScreenController extends GetxController {
           ),
           TextButton(
             onPressed: () {
-              _enterVisitorMode(context, Global.demoServerBaseUrl);
+              _enterVisitorMode(Global.demoServerBaseUrl, useDemoServer: true);
               SmartDialog.dismiss();
             },
             child: Text(Intl.guestModeDialog_btn_ok.tr),
@@ -324,6 +419,12 @@ class LoginScreenController extends GetxController {
       },
       onFailure: (code, message) {
         SmartDialog.dismiss();
+        if (code == 301) {
+          // redirect
+          addressController.text = message;
+          _onLoginButtonClick(context);
+          return;
+        }
         if (code == 402) {
           // need 2FA code
           if (twofaController.text.isNotEmpty) {
@@ -460,6 +561,12 @@ class LoginScreenController extends GetxController {
     KeyboardUtil.hideKeyboard(context);
     _onLoginButtonClick(context);
   }
+
+  appendServerUrlText(String text) {
+    addressController.text = "${addressController.text}$text";
+    addressController.selection = TextSelection.fromPosition(
+        TextPosition(offset: addressController.text.length));
+  }
 }
 
 class LoginTextField extends StatelessWidget {
@@ -470,6 +577,8 @@ class LoginTextField extends StatelessWidget {
     required this.controller,
     required this.padding,
     this.obscureText = false,
+    this.keyboardType,
+    this.focusNode,
   });
 
   final InputDecoration decoration;
@@ -477,6 +586,8 @@ class LoginTextField extends StatelessWidget {
   final Widget icon;
   final EdgeInsetsGeometry padding;
   final bool obscureText;
+  final TextInputType? keyboardType;
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -493,6 +604,8 @@ class LoginTextField extends StatelessWidget {
               decoration: decoration,
               controller: controller,
               obscureText: obscureText,
+              focusNode: focusNode,
+              keyboardType: keyboardType,
             ),
           )
         ],

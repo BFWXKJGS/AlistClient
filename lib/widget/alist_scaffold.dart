@@ -7,10 +7,12 @@ class AlistScaffold extends StatelessWidget {
     required this.appbarTitle,
     required this.body,
     this.onLeadingDoubleTap,
+    this.resizeToAvoidBottomInset,
   }) : super(key: key);
   final Widget appbarTitle;
   final Widget body;
   final GestureTapCallback? onLeadingDoubleTap;
+  final bool? resizeToAvoidBottomInset;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +39,7 @@ class AlistScaffold extends StatelessWidget {
               ),
         child: Scaffold(
           backgroundColor: isDarkMode ? null : Colors.transparent,
+          resizeToAvoidBottomInset : resizeToAvoidBottomInset ?? true,
           appBar: AppBar(
             leading: canPop
                 ? GestureDetector(

@@ -6,9 +6,9 @@ class Intl {
   static const String screenName_home = "screenName_home";
   static const String screenName_donate = "screenName_donate";
   static const String screenName_about = "screenName_about";
-  static const String loginScreen_hint_username = "loginScreen_hint_username";
-  static const String loginScreen_hint_password = "loginScreen_hint_password";
-  static const String loginScreen_hint_serverUrl = "loginScreen_hint_serverUrl";
+  static const String loginScreen_label_username = "loginScreen_label_username";
+  static const String loginScreen_label_password = "loginScreen_label_password";
+  static const String loginScreen_label_serverUrl = "loginScreen_label_serverUrl";
   static const String loginScreen_button_login = "loginScreen_button_login";
   static const String loginScreen_button_guestMode = "loginScreen_button_guestMode";
   static const String loginScreen_tips_serverUrlError = "loginScreen_tips_serverUrlError";

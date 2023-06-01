@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:alist/net/json_parse_error.dart';
 import 'package:alist/net/net_error_handler.dart';
+import 'package:alist/net/redirect_exception.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
@@ -22,14 +23,13 @@ List<Interceptor> _interceptors = [];
 bool? _ignoreSSLError;
 
 /// 初始化Dio配置
-void configDio({
-  Duration? connectTimeout,
-  Duration? receiveTimeout,
-  Duration? sendTimeout,
-  String? baseUrl,
-  List<Interceptor>? interceptors,
-  bool ignoreSSLError = false
-}) {
+void configDio(
+    {Duration? connectTimeout,
+    Duration? receiveTimeout,
+    Duration? sendTimeout,
+    String? baseUrl,
+    List<Interceptor>? interceptors,
+    bool ignoreSSLError = false}) {
   _connectTimeout = connectTimeout ?? _connectTimeout;
   _receiveTimeout = receiveTimeout ?? _receiveTimeout;
   _sendTimeout = sendTimeout ?? _sendTimeout;
@@ -110,6 +110,19 @@ class DioUtils {
     );
 
     try {
+      if (options?.followRedirects == false &&
+          (response.statusCode == 301 ||
+              response.statusCode == 302 ||
+              response.statusCode == 307 ||
+              response.statusCode == 308)) {
+        for (var entity in response.headers.map.entries) {
+          if (entity.key.toLowerCase() == "location") {
+            if (entity.value.isNotEmpty) {
+              throw RedirectException(entity.value.first);
+            }
+          }
+        }
+      }
       final String responseData = response.data.toString();
 
       /// 集成测试无法使用 isolate https://github.com/flutter/flutter/issues/24703
@@ -123,6 +136,9 @@ class DioUtils {
           : parseData(responseData);
       return BaseEntity<T>.fromJson(map);
     } catch (e) {
+      if (e is RedirectException) {
+        rethrow;
+      }
       throw JsonParseException(e.toString());
     }
   }
@@ -169,13 +185,15 @@ class DioUtils {
     }, onError: (dynamic e) {
       LogUtil.d(e);
       if (cancelToken?.isCancelled != true) {
-        _onError(-1, NetErrorHandler.netErrorToMessage(e), onError);
+        _onError(e is RedirectException ? 301 : -1,
+            NetErrorHandler.netErrorToMessage(e), onError);
       } else {
         _cancelLogPrint(e, url);
       }
     }).catchError((e) {
       if (cancelToken?.isCancelled != true) {
-        _onError(-1, NetErrorHandler.netErrorToMessage(e), onError);
+        _onError(e is RedirectException ? 301 : -1,
+            NetErrorHandler.netErrorToMessage(e), onError);
       }
     });
   }

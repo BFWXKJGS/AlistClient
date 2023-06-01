@@ -19,7 +19,7 @@ class AlistRouter {
 
   static final List<GetPage> screens = [
     GetPage(name: NamedRouter.root, page: () => const SplashScreen()),
-    GetPage(name: NamedRouter.login, page: () => const LoginScreen()),
+    GetPage(name: NamedRouter.login, page: () => LoginScreen()),
     GetPage(name: NamedRouter.home, page: () => const HomeScreen()),
     GetPage(name: NamedRouter.fileList, page: () => const FileListScreen()),
     GetPage(name: NamedRouter.settings, page: () => const SettingsScreen()),
