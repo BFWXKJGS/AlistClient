@@ -157,6 +157,7 @@ class DownloadUtils {
       fileUrl,
       tmpFilePath,
       cancelToken: cancelToken,
+      onReceiveProgress: onReceiveProgress
     )
         .then((value) async {
       if (await downloadFile.exists()) {

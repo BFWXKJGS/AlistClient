@@ -62,4 +62,12 @@ const translationsEnUS = {
   "fileList_menu_fileName": "Name",
   "fileList_menu_fileType": "Type",
   "fileList_menu_modifyTime": "Time",
+  "installPermissionDialog_title": "Install permission",
+  "installPermissionDialog_content":
+      "Please grant the permission to install the apk file, otherwise the installation will fail",
+  "installPermissionDialog_btn_ok": "OK",
+  "installPermissionDialog_btn_cancel": "Cancel",
+  "installPermissionDialog_denied": "Permission denied",
+  "fileReaderScreen_openAgain": "Open again",
+  "fileReaderScreen_install": "Install",
 };

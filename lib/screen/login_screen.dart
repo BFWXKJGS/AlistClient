@@ -368,6 +368,7 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
         _enterVisitorMode(baseUrl, useDemoServer: useDemoServer);
         return;
       }
+      SmartDialog.showToast(message);
       SmartDialog.dismiss();
     });
   }
@@ -405,8 +406,11 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
           ),
           TextButton(
             onPressed: () {
-              _enterVisitorMode(Global.demoServerBaseUrl, useDemoServer: true);
               SmartDialog.dismiss();
+              Future.delayed(Duration.zero).then(
+                (value) => _enterVisitorMode(Global.demoServerBaseUrl,
+                    useDemoServer: true),
+              );
             },
             child: Text(Intl.guestModeDialog_btn_ok.tr),
           ),

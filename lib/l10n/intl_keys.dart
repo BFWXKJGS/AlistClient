@@ -59,4 +59,11 @@ class Intl {
   static const String fileList_menu_fileName = "fileList_menu_fileName";
   static const String fileList_menu_fileType = "fileList_menu_fileType";
   static const String fileList_menu_modifyTime = "fileList_menu_modifyTime";
+  static const String installPermissionDialog_title = "installPermissionDialog_title";
+  static const String installPermissionDialog_content = "installPermissionDialog_content";
+  static const String installPermissionDialog_btn_ok = "installPermissionDialog_btn_ok";
+  static const String installPermissionDialog_btn_cancel = "installPermissionDialog_btn_cancel";
+  static const String installPermissionDialog_denied = "installPermissionDialog_denied";
+  static const String fileReaderScreen_openAgain = "fileReaderScreen_openAgain";
+  static const String fileReaderScreen_install = "fileReaderScreen_install";
 }

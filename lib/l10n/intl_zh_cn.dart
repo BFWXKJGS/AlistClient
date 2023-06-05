@@ -60,4 +60,11 @@ const translationsZhCN = {
   "fileList_menu_fileName": "文件名称",
   "fileList_menu_fileType": "文件类型",
   "fileList_menu_modifyTime": "修改时间",
+  "installPermissionDialog_title": "安装权限",
+  "installPermissionDialog_content": "请授予安装权限，否则无法安装应用",
+  "installPermissionDialog_btn_ok": "去授权",
+  "installPermissionDialog_btn_cancel": "取消",
+  "installPermissionDialog_denied": "权限被拒绝",
+  "fileReaderScreen_openAgain": "再次打开",
+  "fileReaderScreen_install": "安装",
 };

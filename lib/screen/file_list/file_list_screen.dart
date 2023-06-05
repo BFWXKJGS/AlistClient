@@ -246,26 +246,9 @@ class _FileListScreenState extends State<FileListScreen>
   void _onFileTap(
     BuildContext context,
     List<FileItemVO> files,
-      FileItemVO file,
-  ) async {
+    FileItemVO file,
+  ) {
     FileType fileType = file.type;
-    if (fileType == FileType.apk &&
-        Platform.isAndroid &&
-        !await Permission.requestInstallPackages.isGranted) {
-      var permissionResult = Permission.requestInstallPackages.request();
-      if (await permissionResult.isGranted) {
-        if (mounted) {
-          _onFileTap(context, files, file);
-        }
-      } else {
-        SmartDialog.showToast("No permission to install apk");
-      }
-      return;
-    }
-
-    if (!mounted) {
-      return;
-    }
 
     switch (fileType) {
       case FileType.folder:
@@ -314,10 +297,7 @@ class _FileListScreenState extends State<FileListScreen>
       case FileType.markdown:
         Get.toNamed(
           NamedRouter.markdownReader,
-          arguments: {
-            "markdownPath": file.path,
-            "title": file.name
-          },
+          arguments: {"markdownPath": file.path, "title": file.name},
         );
         break;
       case FileType.txt:
