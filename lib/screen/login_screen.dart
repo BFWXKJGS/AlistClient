@@ -190,7 +190,7 @@ class LoginScreenContainer extends StatelessWidget {
             loginScreenController.ignoreSSLError.value =
                 !loginScreenController.ignoreSSLError.value;
           },
-          child: Text(Intl.loginScreen_checkbox_ignore_ssl_error.tr),
+          child: Text(Intl.loginScreen_checkbox_ignoreSSLError.tr),
         ),
       ],
     );
@@ -354,8 +354,12 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
         msg: "checking...", backDismiss: false, clickMaskDismiss: false);
     DioUtils.instance.requestNetwork<MyInfoResp>(Method.get, "me",
         options: Options(followRedirects: false), onSuccess: (data) {
-      _doAfterEnterVisitorMode(baseUrl, address, data?.username,
-          useDemoServer: useDemoServer);
+      if (data?.disabled == true) {
+        SmartDialog.showToast(Intl.loginScreen_tips_guestAccountDisabled.tr);
+      } else {
+        _doAfterEnterVisitorMode(baseUrl, address, data?.username,
+            useDemoServer: useDemoServer);
+      }
       SmartDialog.dismiss();
     }, onError: (code, message) {
       if (code == 301) {

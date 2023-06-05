@@ -37,4 +37,7 @@ class NamedRouter {
 
   // markdownReader
   static const markdownReader = "/markdownReader";
+
+  // pdfReader
+  static const pdfReader = "/pdfReader";
 }

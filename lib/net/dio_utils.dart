@@ -222,41 +222,39 @@ class DioUtils {
     );
   }
 
-  /// 统一处理(onSuccess返回T对象，onSuccessList返回 List<T>)
-  void asyncRequestNetwork<T>(
+  Future<void> requestForString(
     Method method,
     String url, {
-    NetSuccessCallback<T?>? onSuccess,
+    NetSuccessCallback<String?>? onSuccess,
     NetErrorCallback? onError,
     Object? params,
     Map<String, dynamic>? queryParameters,
     CancelToken? cancelToken,
     Options? options,
-  }) {
-    Stream.fromFuture(_request<T>(
-      method.value,
-      url,
-      data: params,
-      queryParameters: queryParameters,
-      options: options,
-      cancelToken: cancelToken,
-    )).asBroadcastStream().listen((result) {
-      if (cancelToken?.isCancelled != true) {
-        if (result.code == 200) {
-          if (onSuccess != null) {
-            onSuccess(result.data);
-          }
-        } else {
-          _onError(result.code, result.message, onError);
+  }) async {
+    try {
+      Response<String> response = await _downloadDio.request<String>(
+        url,
+        data: params,
+        queryParameters: queryParameters,
+        options: _checkOptions(method.value, options),
+        cancelToken: cancelToken,
+      );
+
+      if (response.statusCode == 200) {
+        if (onSuccess != null) {
+          onSuccess(response.data);
+        }
+      } else {
+        if (onError != null) {
+          onError(-1, response.data ?? "");
         }
       }
-    }, onError: (dynamic e) {
-      if (cancelToken?.isCancelled != true) {
-        _onError(-1, NetErrorHandler.netErrorToMessage(e), onError);
-      } else {
-        _cancelLogPrint(e, url);
+    } catch (e) {
+      if (onError != null) {
+        onError(-1, NetErrorHandler.netErrorToMessage(e));
       }
-    });
+    }
   }
 
   void _cancelLogPrint(dynamic e, String url) {

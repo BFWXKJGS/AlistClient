@@ -13,7 +13,8 @@ class Intl {
   static const String loginScreen_button_guestMode = "loginScreen_button_guestMode";
   static const String loginScreen_tips_serverUrlError = "loginScreen_tips_serverUrlError";
   static const String loginScreen_tips_usernameOrPasswordEmpty = "loginScreen_tips_usernameOrPasswordEmpty";
-  static const String loginScreen_checkbox_ignore_ssl_error = "loginScreen_checkbox_ignore_ssl_error";
+  static const String loginScreen_checkbox_ignoreSSLError = "loginScreen_checkbox_ignoreSSLError";
+  static const String loginScreen_tips_guestAccountDisabled = "loginScreen_tips_guestAccountDisabled";
   static const String settingsScreen_item_account = "settingsScreen_item_account";
   static const String settingsScreen_item_login = "settingsScreen_item_login";
   static const String settingsScreen_item_donate = "settingsScreen_item_donate";
@@ -53,4 +54,9 @@ class Intl {
   static const String twofaCodeDialog_btn_ok = "twofaCodeDialog_btn_ok";
   static const String twofaCodeDialog_btn_cancel = "twofaCodeDialog_btn_cancel";
   static const String twofaCodeDialog_tips_codeEmpty = "twofaCodeDialog_tips_codeEmpty";
+  static const String loadingStatusWidget_retry = "loadingStatusWidget_retry";
+  static const String fileList_menu_forceRefresh = "fileList_menu_forceRefresh";
+  static const String fileList_menu_fileName = "fileList_menu_fileName";
+  static const String fileList_menu_fileType = "fileList_menu_fileType";
+  static const String fileList_menu_modifyTime = "fileList_menu_modifyTime";
 }

@@ -1,7 +1,8 @@
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/router.dart';
-import 'package:alist/screen/file_list_screen.dart';
+import 'package:alist/screen/file_list/file_list_navigator.dart';
+import 'package:alist/screen/file_list/file_list_screen.dart';
 import 'package:alist/screen/settings_screen.dart';
 import 'package:alist/widget/bottom_navigation_bar.dart';
 import 'package:flustars/flustars.dart';

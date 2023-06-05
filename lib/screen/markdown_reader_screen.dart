@@ -2,13 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/net/dio_utils.dart';
-import 'package:alist/net/net_error_handler.dart';
 import 'package:alist/util/download_utils.dart';
-import 'package:alist/util/file_sign_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
+import 'package:alist/widget/loading_status_widget.dart';
 import 'package:dio/dio.dart';
+import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:markdown_widget/markdown_widget.dart';
@@ -27,30 +26,12 @@ class MarkdownReaderScreen extends StatelessWidget {
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15),
           child: Obx(() {
-            if (_controller.errMsg.value.isNotEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 15, vertical: 10),
-                      child: Text(_controller.errMsg.value),
-                    ),
-                    FilledButton(
-                      onPressed: () => _controller.retry(),
-                      child: const Text("Retry"),
-                    )
-                  ],
-                ),
-              );
-            }
-
-            return _controller.loading.value
-                ? const Center(
-                    child: CircularProgressIndicator(),
-                  )
-                : buildMarkdownWidget(isDark);
+            return LoadingStatusWidget(
+              loading: _controller.loading.value,
+              errorMsg: _controller.errMsg.value,
+              retryCallback: () => _controller.retry(),
+              child: buildMarkdownWidget(isDark),
+            );
           }),
         ));
   }
@@ -77,7 +58,7 @@ class MarkdownReaderController extends GetxController {
     super.onInit();
     markdownContent.value = Get.arguments["markdownContent"] ?? "";
     if (markdownContent.value.isEmpty) {
-      _downloadAndShowMarkdownContent();
+      _download();
     }
   }
 
@@ -89,84 +70,45 @@ class MarkdownReaderController extends GetxController {
 
   retry() {
     errMsg.value = "";
-    _downloadAndShowMarkdownContent();
+    _download();
   }
 
-  void _downloadAndShowMarkdownContent() {
-    if (markdownUrl != null && markdownUrl!.isNotEmpty) {
-      _downloadByMarkdownUrl(markdownUrl!);
-    } else if (markdownPath != null && markdownPath!.isNotEmpty) {
-      _predownload(markdownPath!);
-    }
-  }
-
-  void _predownload(String remotePath) {
-    loading.value = true;
-    var body = {
-      "path": remotePath,
-      "password": "",
-    };
-    DioUtils.instance.requestNetwork<FileInfoRespEntity>(
-      Method.post,
-      cancelToken: _cancelToken,
-      "fs/get",
-      params: body,
-      onSuccess: (data) async {
-        var url = data?.rawUrl;
-        markdownUrl = data?.name;
-        if (url != null && url.isNotEmpty) {
-          _downloadByMarkdownUrl(url, sign: data?.makeCacheUseSign(remotePath));
-        }
-      },
-      onError: (code, message) {
-        loading.value = true;
-        errMsg.value = message;
-        debugPrint("code:$code,message:$message");
-      },
-    );
-  }
-
-  Future<void> _downloadByMarkdownUrl(
-    String markdownUrl, {
-    String? sign,
-  }) async {
-    loading.value = true;
-    final downloadDir = await DownloadUtils.findDownloadDir("Markdown");
-    final filePath = '${downloadDir.path}/${sign ?? "noName"}.md';
-    File markdownFile = File(filePath);
-
-    if (sign != null && sign.isNotEmpty) {
-      // cache file exists, read cache.
-      if (markdownFile.existsSync()) {
-        Uint8List markdownTextBytes = await markdownFile.readAsBytes();
-        String markdownText = utf8.decode(markdownTextBytes);
-        markdownContent.value = markdownText;
+  _download() {
+    if (markdownPath != null && markdownPath!.isNotEmpty) {
+      loading.value = true;
+      DownloadUtils.downloadByPath(markdownPath!,
+          fileType: "Markdown",
+          cancelToken: _cancelToken, onSuccess: (_, localPath) async {
+        await _readFileAndShowMarkdown(localPath);
         loading.value = false;
-        return;
-      }
+      }, onFailed: (code, message) {
+        LogUtil.d("code=$code message=$message");
+        loading.value = false;
+        errMsg.value = message;
+      });
+    } else if (markdownUrl != null && markdownUrl!.isNotEmpty) {
+      _downloadByMarkdownUrl(markdownUrl!);
     }
+  }
 
-    final tmpFilePath = '$filePath.tmp';
-    File tempFile = File(tmpFilePath);
-    if (await tempFile.exists()) {
-      await tempFile.delete();
-    }
+  Future<void> _readFileAndShowMarkdown(String localPath) async {
+    LogUtil.d("localPath=$localPath");
 
-    DioUtils.instance
-        .download(
-      markdownUrl,
-      tmpFilePath,
-      cancelToken: _cancelToken,
-    )
-        .then((value) async {
-      await tempFile.rename(filePath);
-      Uint8List markdownTextBytes = await markdownFile.readAsBytes();
-      String markdownText = utf8.decode(markdownTextBytes);
-      markdownContent.value = markdownText;
+    File markdownFile = File(localPath);
+    Uint8List markdownTextBytes = await markdownFile.readAsBytes();
+    String markdownText = utf8.decode(markdownTextBytes);
+    markdownContent.value = markdownText;
+  }
+
+  Future<void> _downloadByMarkdownUrl(String markdownUrl) async {
+    loading.value = true;
+    DioUtils.instance.requestForString(Method.get, markdownUrl,
+        cancelToken: _cancelToken, onSuccess: (data) {
+      markdownContent.value = data ?? "";
       loading.value = false;
-    }).catchError((e) {
-      errMsg.value = NetErrorHandler.netErrorToMessage(e);
+    }, onError: (code, message) {
       loading.value = false;
+      errMsg.value = message;
     });
   }
 }

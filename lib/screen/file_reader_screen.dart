@@ -1,12 +1,7 @@
-import 'dart:io';
-
-import 'package:alist/entity/file_info_resp_entity.dart';
-import 'package:alist/net/dio_utils.dart';
 import 'package:alist/util/download_utils.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:dio/dio.dart';
-import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -51,7 +46,7 @@ class _FileReaderContainerState extends State<_FileReaderContainer> {
   @override
   void initState() {
     super.initState();
-    _predownload(widget.remotePath);
+    _download(widget.remotePath);
   }
 
   @override
@@ -107,70 +102,18 @@ class _FileReaderContainerState extends State<_FileReaderContainer> {
     super.dispose();
   }
 
-  void _predownload(String remotePath) {
-    var body = {
-      "path": remotePath,
-      "password": "",
-    };
-    DioUtils.instance.requestNetwork<FileInfoRespEntity>(
-      Method.post,
-      cancelToken: _cancelToken,
-      "fs/get",
-      params: body,
-      onSuccess: (data) async {
-        var url = data?.rawUrl;
-        setState(() {
-          fileName = data?.name;
-        });
-        if (url != null && url.isNotEmpty) {
-          _download(data?.name ?? "", data!.size, url);
-        }
-      },
-      onError: (code, message) {
-        SmartDialog.showToast(message);
-        debugPrint("code:$code,message:$message");
-      },
-    );
-  }
-
-  Future<void> _download(String name, int fileSize, String url) async {
-    LogUtil.d("start download $name", tag: "FileReaderScreen");
-    Directory downloadDir = await DownloadUtils.findDownloadDir("Download");
-    LogUtil.d("downloadDir=$downloadDir", tag: "FileReaderScreen");
-    final cacheFilePath = '${downloadDir.path}/$name';
-    final cacheFile = File(cacheFilePath);
-    if (await cacheFile.exists()) {
-      if (await cacheFile.length() == fileSize) {
-        _openFile(cacheFilePath);
-        return;
-      } else {
-        await cacheFile.delete();
-      }
-    }
-
-    final downloadTmpFilePath = '${downloadDir.path}/$name.tmp';
-    final downloadTmpFile = File(downloadTmpFilePath);
-    if (await downloadTmpFile.exists()) {
-      await downloadTmpFile.delete();
-    }
-
-    DioUtils.instance
-        .download(
-      url,
-      downloadTmpFilePath,
-      onReceiveProgress: (count, total) => setState(() {
-        _downloadProgress = (count.toDouble() / total * 100).toInt();
-      }),
-    )
-        .then((value) async {
-      await downloadTmpFile.rename(cacheFilePath);
-
-      LogUtil.d("open file $name", tag: "FileReaderScreen");
-      _openFile(cacheFilePath);
-    }).catchError((e) {
+  void _download(String remotePath) {
+    DownloadUtils.downloadByPath(remotePath, cancelToken: _cancelToken,
+        onReceiveProgress: (count, total) {
+      _downloadProgress = (count.toDouble() / total * 100).toInt();
+    }, onSuccess: (fileName, localPath) {
       setState(() {
-        failedMessage = e.toString();
+        this.fileName = fileName;
       });
+      _openFile(localPath);
+    }, onFailed: (code, message) {
+      SmartDialog.showToast(message);
+      debugPrint("code:$code,message:$message");
     });
   }
 

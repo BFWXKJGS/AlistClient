@@ -1,12 +1,13 @@
 import 'package:alist/screen/aboute_screen.dart';
 import 'package:alist/screen/audio_player_screen.dart';
 import 'package:alist/screen/donate_screen.dart';
-import 'package:alist/screen/file_list_screen.dart';
+import 'package:alist/screen/file_list/file_list_screen.dart';
 import 'package:alist/screen/file_reader_screen.dart';
 import 'package:alist/screen/gallery_screen.dart';
 import 'package:alist/screen/home_screen.dart';
 import 'package:alist/screen/login_screen.dart';
 import 'package:alist/screen/markdown_reader_screen.dart';
+import 'package:alist/screen/pdf_reader_screen.dart';
 import 'package:alist/screen/settings_screen.dart';
 import 'package:alist/screen/splash_screen.dart';
 import 'package:alist/screen/video_player_screen.dart';
@@ -34,5 +35,6 @@ class AlistRouter {
     GetPage(name: NamedRouter.web, page: () => const WebScreen()),
     GetPage(
         name: NamedRouter.markdownReader, page: () => MarkdownReaderScreen()),
+    GetPage(name: NamedRouter.pdfReader, page: () => PdfReaderScreen()),
   ];
 }

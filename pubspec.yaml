@@ -80,6 +80,10 @@ dependencies:
   screen_brightness: ^0.2.2
   # slidable
   flutter_slidable: ^3.0.0
+  # pdf
+  flutter_pdfview: ^1.3.1
+  # date time format
+  intl: ^0.18.1
 
 dev_dependencies:
   flutter_test:

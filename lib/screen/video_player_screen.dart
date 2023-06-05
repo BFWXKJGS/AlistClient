@@ -130,7 +130,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     final userId = _userController.user().username;
     final baseUrl = _userController.user().baseUrl;
     var record =
-        await _database.recordDao.findRecordByPath(baseUrl, userId, path);
+        await _database.videoViewingRecordDao.findRecordByPath(baseUrl, userId, path);
     if (record != null) {
       Log.d("findAndCacheViewingRecord");
       _videoViewingRecord = record;
@@ -155,7 +155,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             path: path,
             videoCurrentPosition: currentPos,
             videoDuration: duration);
-        _database.recordDao.insertRecord(videoViewingRecord).then((id) {
+        _database.videoViewingRecordDao.insertRecord(videoViewingRecord).then((id) {
           Log.d("insert record id=$id");
           _videoViewingRecord = VideoViewingRecord(
               id: id,
@@ -168,7 +168,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         });
       } else {
         Log.d("update record");
-        _database.recordDao.updateRecord(VideoViewingRecord(
+        _database.videoViewingRecordDao.updateRecord(VideoViewingRecord(
           id: record.id,
           serverUrl: baseUrl,
           userId: userId,
