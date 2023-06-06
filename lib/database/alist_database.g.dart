@@ -77,7 +77,7 @@ class _$AlistDatabase extends AlistDatabase {
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 2,
+      version: 3,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -101,7 +101,7 @@ class _$AlistDatabase extends AlistDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `server` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `password` TEXT NOT NULL, `guest` INTEGER NOT NULL, `ignore_ssl_error` INTEGER NOT NULL, `create_time` INTEGER NOT NULL, `update_time` INTEGER NOT NULL)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `file_viewing_record` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `name` TEXT NOT NULL, `size` INTEGER NOT NULL, `sign` TEXT, `thumb` TEXT, `modified` TEXT NOT NULL, `provider` TEXT NOT NULL, `create_time` INTEGER NOT NULL)');
+            'CREATE TABLE IF NOT EXISTS `file_viewing_record` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `name` TEXT NOT NULL, `size` INTEGER NOT NULL, `sign` TEXT, `thumb` TEXT, `modified` INTEGER NOT NULL, `provider` TEXT NOT NULL, `create_time` INTEGER NOT NULL, `path` TEXT NOT NULL)');
 
         await callback?.onCreate?.call(database, version);
       },
@@ -536,7 +536,7 @@ class _$FileViewingRecordDao extends FileViewingRecordDao {
   _$FileViewingRecordDao(
     this.database,
     this.changeListener,
-  )   : _queryAdapter = QueryAdapter(database),
+  )   : _queryAdapter = QueryAdapter(database, changeListener),
         _fileViewingRecordInsertionAdapter = InsertionAdapter(
             database,
             'file_viewing_record',
@@ -551,8 +551,10 @@ class _$FileViewingRecordDao extends FileViewingRecordDao {
                   'thumb': item.thumb,
                   'modified': item.modified,
                   'provider': item.provider,
-                  'create_time': item.createTime
-                }),
+                  'create_time': item.createTime,
+                  'path': item.path
+                },
+            changeListener),
         _fileViewingRecordUpdateAdapter = UpdateAdapter(
             database,
             'file_viewing_record',
@@ -568,8 +570,10 @@ class _$FileViewingRecordDao extends FileViewingRecordDao {
                   'thumb': item.thumb,
                   'modified': item.modified,
                   'provider': item.provider,
-                  'create_time': item.createTime
-                }),
+                  'create_time': item.createTime,
+                  'path': item.path
+                },
+            changeListener),
         _fileViewingRecordDeletionAdapter = DeletionAdapter(
             database,
             'file_viewing_record',
@@ -585,8 +589,10 @@ class _$FileViewingRecordDao extends FileViewingRecordDao {
                   'thumb': item.thumb,
                   'modified': item.modified,
                   'provider': item.provider,
-                  'create_time': item.createTime
-                });
+                  'create_time': item.createTime,
+                  'path': item.path
+                },
+            changeListener);
 
   final sqflite.DatabaseExecutor database;
 
@@ -601,33 +607,39 @@ class _$FileViewingRecordDao extends FileViewingRecordDao {
   final DeletionAdapter<FileViewingRecord> _fileViewingRecordDeletionAdapter;
 
   @override
-  Future<List<FileViewingRecord>?> findRecordByRemotePath(
+  Stream<List<FileViewingRecord>?> recordList(
     String serverUrl,
     String userId,
-    String remotePath,
-  ) async {
-    return _queryAdapter.queryList(
-        'SELECT * FROM file_viewing_record WHERE server_url = ?1 AND user_id=?2 AND remote_path=?3',
-        mapper: (Map<String, Object?> row) => FileViewingRecord(id: row['id'] as int?, serverUrl: row['server_url'] as String, userId: row['user_id'] as String, remotePath: row['remote_path'] as String, name: row['name'] as String, size: row['size'] as int, sign: row['sign'] as String?, thumb: row['thumb'] as String?, modified: row['modified'] as String, provider: row['provider'] as String, createTime: row['create_time'] as int),
-        arguments: [serverUrl, userId, remotePath]);
-  }
-
-  @override
-  Future<List<FileViewingRecord>?> serverList() async {
-    return _queryAdapter.queryList(
-        'SELECT * FROM file_viewing_record ORDER BY id desc LIMIT 100',
+  ) {
+    return _queryAdapter.queryListStream(
+        'SELECT * FROM file_viewing_record WHERE server_url = ?1 AND user_id=?2 ORDER BY id DESC LIMIT 100',
         mapper: (Map<String, Object?> row) => FileViewingRecord(
             id: row['id'] as int?,
             serverUrl: row['server_url'] as String,
             userId: row['user_id'] as String,
             remotePath: row['remote_path'] as String,
             name: row['name'] as String,
+            path: row['path'] as String,
             size: row['size'] as int,
             sign: row['sign'] as String?,
             thumb: row['thumb'] as String?,
-            modified: row['modified'] as String,
+            modified: row['modified'] as int,
             provider: row['provider'] as String,
-            createTime: row['create_time'] as int));
+            createTime: row['create_time'] as int),
+        arguments: [serverUrl, userId],
+        queryableName: 'file_viewing_record',
+        isView: false);
+  }
+
+  @override
+  Future<void> deleteByPath(
+    String serverUrl,
+    String userId,
+    String remotePath,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM file_viewing_record WHERE server_url = ?1 AND user_id=?2 AND remote_path=?3',
+        arguments: [serverUrl, userId, remotePath]);
   }
 
   @override

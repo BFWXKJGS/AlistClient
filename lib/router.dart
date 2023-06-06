@@ -22,7 +22,7 @@ class AlistRouter {
     GetPage(name: NamedRouter.root, page: () => const SplashScreen()),
     GetPage(name: NamedRouter.login, page: () => LoginScreen()),
     GetPage(name: NamedRouter.home, page: () => const HomeScreen()),
-    GetPage(name: NamedRouter.fileList, page: () => const FileListScreen()),
+    GetPage(name: NamedRouter.fileList, page: () => FileListWrapper()),
     GetPage(name: NamedRouter.settings, page: () => const SettingsScreen()),
     GetPage(
         name: NamedRouter.videoPlayer, page: () => const VideoPlayerScreen()),

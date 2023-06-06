@@ -18,7 +18,7 @@ import 'table/video_viewing_record.dart';
 
 part 'alist_database.g.dart'; // the generated code will be there
 
-@Database(version: 2, entities: [
+@Database(version: 3, entities: [
   VideoViewingRecord,
   FileDownloadRecord,
   FilePassword,

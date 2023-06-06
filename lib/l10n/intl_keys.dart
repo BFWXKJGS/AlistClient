@@ -6,6 +6,7 @@ class Intl {
   static const String screenName_home = "screenName_home";
   static const String screenName_donate = "screenName_donate";
   static const String screenName_about = "screenName_about";
+  static const String screenName_recents = "screenName_recents";
   static const String loginScreen_label_username = "loginScreen_label_username";
   static const String loginScreen_label_password = "loginScreen_label_password";
   static const String loginScreen_label_serverUrl = "loginScreen_label_serverUrl";
@@ -66,4 +67,13 @@ class Intl {
   static const String installPermissionDialog_denied = "installPermissionDialog_denied";
   static const String fileReaderScreen_openAgain = "fileReaderScreen_openAgain";
   static const String fileReaderScreen_install = "fileReaderScreen_install";
+  static const String recentsScreen_noRecord = "recentsScreen_noRecord";
+  static const String recentsScreen_menu_delete = "recentsScreen_menu_delete";
+  static const String recentsScreen_menu_details = "recentsScreen_menu_details";
+  static const String recentsScreen_menu_open = "recentsScreen_menu_open";
+  static const String recentsScreen_menu_showInFolder = "recentsScreen_menu_showInFolder";
+  static const String fileDetailsDialog_name = "fileDetailsDialog_name";
+  static const String fileDetailsDialog_size = "fileDetailsDialog_size";
+  static const String fileDetailsDialog_where = "fileDetailsDialog_where";
+  static const String fileDetailsDialog_modified = "fileDetailsDialog_modified";
 }

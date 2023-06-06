@@ -58,20 +58,20 @@ dependencies:
   # package info in android、ios...
   package_info_plus: ^3.1.2
   # image loader
-  extended_image: ^7.0.2
+  extended_image: ^8.0.2
   # screen hibernation control
   wakelock: ^0.6.2
   # database
   floor: ^1.4.2
-  path_provider: ^2.0.0
+  path_provider: ^2.0.15
   # md5 ...
-  crypto: ^3.0.2
+  crypto: ^3.0.3
   # open file
   open_file: ^3.3.1
   # permission
   permission_handler: ^10.2.0
   # native webview
-  webview_flutter: ^4.2.0
+  webview_flutter: ^4.2.2
   # markdown
   markdown_widget: ^2.2.0
   # volume_controller
@@ -84,6 +84,8 @@ dependencies:
   flutter_pdfview: ^1.3.1
   # date time format
   intl: ^0.18.1
+  # text
+  extended_text: ^11.0.1
 
 dev_dependencies:
   flutter_test:

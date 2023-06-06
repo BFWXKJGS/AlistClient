@@ -27,7 +27,7 @@ class FileViewingRecord {
   final String? thumb;
 
   @ColumnInfo(name: 'modified')
-  final String modified;
+  final int modified;
 
   @ColumnInfo(name: 'provider')
   final String provider;
@@ -35,12 +35,16 @@ class FileViewingRecord {
   @ColumnInfo(name: 'create_time')
   final int createTime;
 
+  @ColumnInfo(name: 'path')
+  final String path;
+
   FileViewingRecord({
     this.id,
     required this.serverUrl,
     required this.userId,
     required this.remotePath,
     required this.name,
+    required this.path,
     required this.size,
     required this.sign,
     required this.thumb,

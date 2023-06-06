@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/table/file_password.dart';
+import 'package:alist/database/table/file_viewing_record.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/generated/images.dart';
 import 'package:alist/l10n/intl_keys.dart';
@@ -14,15 +13,15 @@ import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/user_controller.dart';
-import 'package:alist/util/widget_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
+import 'package:alist/widget/file_list_item_view.dart';
 import 'package:dio/dio.dart';
+import 'package:extended_text/extended_text.dart';
 import 'package:floor/floor.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 typedef FileItemClickCallback = Function(
   BuildContext context,
@@ -31,11 +30,18 @@ typedef FileItemClickCallback = Function(
 );
 
 class FileListScreen extends StatefulWidget {
-  const FileListScreen({super.key, this.path, this.sortBy, this.sortByUp});
+  const FileListScreen({
+    super.key,
+    this.path,
+    this.sortBy,
+    this.sortByUp,
+    this.isRootStack = false,
+  });
 
   final String? path;
   final MenuId? sortBy;
   final bool? sortByUp;
+  final bool isRootStack;
 
   @override
   State<FileListScreen> createState() => _FileListScreenState();
@@ -62,6 +68,7 @@ class _FileListScreenState extends State<FileListScreen>
   bool _passwordRetrying = false;
   String path = "";
   bool _forceRefresh = false;
+  int? stackId;
 
   @override
   void initState() {
@@ -71,6 +78,7 @@ class _FileListScreenState extends State<FileListScreen>
       path = "/";
     }
     this.path = path;
+    stackId = !widget.isRootStack ? AlistRouter.fileListRouterStackId : null;
     LogUtil.d("sortBy=${widget.sortBy}");
     _menuAnchorController.updateSortBy(widget.sortBy, widget.sortByUp);
 
@@ -208,19 +216,27 @@ class _FileListScreenState extends State<FileListScreen>
 
   AlistScaffold _buildScaffold(BuildContext context) {
     return AlistScaffold(
-      appbarTitle: Text(_pageName ?? Intl.screenName_fileListRoot.tr),
+      appbarTitle: ExtendedText(
+        _pageName ?? Intl.screenName_fileListRoot.tr,
+        maxLines: 1,
+        overflowWidget: const TextOverflowWidget(
+          position: TextOverflowPosition.middle,
+          child: Text("..."),
+        ),
+      ),
       appbarActions: [_menuMoreIcon()],
-      onLeadingDoubleTap: () => Get.until((route) => route.isFirst,
-          id: AlistRouter.fileListRouterStackId),
+      onLeadingDoubleTap: () =>
+          Get.until((route) => route.isFirst, id: stackId),
       body: RefreshIndicator(
-          key: _refreshIndicatorKey,
-          onRefresh: () => _loadFiles(),
-          child: _FileListView(
-            path: path,
-            readme: _data?.readme,
-            files: _files,
-            onFileItemClick: _onFileTap,
-          )),
+        key: _refreshIndicatorKey,
+        onRefresh: () => _loadFiles(),
+        child: _FileListView(
+          path: path,
+          readme: _data?.readme,
+          files: _files,
+          onFileItemClick: _onFileTap,
+        ),
+      ),
     );
   }
 
@@ -249,17 +265,22 @@ class _FileListScreenState extends State<FileListScreen>
     FileItemVO file,
   ) {
     FileType fileType = file.type;
+    if (!file.isDir) {
+      _fileViewingRecord(file);
+    }
 
     switch (fileType) {
       case FileType.folder:
-        Get.toNamed(NamedRouter.fileList,
-            arguments: {
-              "path": file.path,
-              "sortBy": _menuAnchorController.sortBy.value,
-              "sortByUp": _menuAnchorController.sortByUp.value
-            },
-            preventDuplicates: false,
-            id: AlistRouter.fileListRouterStackId);
+        Get.toNamed(
+          NamedRouter.fileList,
+          arguments: {
+            "path": file.path,
+            "sortBy": _menuAnchorController.sortBy.value,
+            "sortByUp": _menuAnchorController.sortByUp.value
+          },
+          preventDuplicates: false,
+          id: stackId,
+        );
         break;
       case FileType.video:
         Get.toNamed(
@@ -319,6 +340,26 @@ class _FileListScreenState extends State<FileListScreen>
         );
         break;
     }
+  }
+
+  @transaction
+  Future<void> _fileViewingRecord(FileItemVO file) async {
+    var user = _userController.user.value;
+    var recordData = _databaseController.fileViewingRecordDao;
+    await recordData.deleteByPath(user.serverUrl, user.username, file.path);
+    await recordData.insertRecord(FileViewingRecord(
+      serverUrl: user.serverUrl,
+      userId: user.username,
+      remotePath: file.path,
+      name: file.name,
+      path: file.path,
+      size: file.size ?? 0,
+      sign: file.sign,
+      thumb: file.thumb,
+      modified: file.modifiedMilliseconds,
+      provider: "",
+      createTime: DateTime.now().millisecondsSinceEpoch,
+    ));
   }
 
   @override
@@ -397,7 +438,7 @@ class _FileListScreenState extends State<FileListScreen>
       thumb: resp.thumb,
       sign: resp.sign,
       icon: resp.getFileIcon(),
-      modifiedMilliseconds: modifyTime?.millisecond ?? -1,
+      modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
     );
   }
 }
@@ -429,10 +470,10 @@ class _FileListView extends StatelessWidget {
       itemBuilder: (context, index) {
         if (index == files.length) {
           // it's readme
-          return _FileListItem(
+          return FileListItemView(
             icon: Images.fileTypeMd,
             fileName: "README.md",
-            lastModify: null,
+            time: null,
             sizeDesc: null,
             onTap: () {
               if (GetUtils.isURL(readme!)) {
@@ -451,10 +492,11 @@ class _FileListView extends StatelessWidget {
         } else {
           // it's file
           final file = files[index];
-          return _FileListItem(
+          return FileListItemView(
             icon: file.icon,
             fileName: file.name,
-            lastModify: file.modified,
+            thumbnail: file.thumb,
+            time: file.modified,
             sizeDesc: file.sizeDesc,
             onTap: () => onFileItemClick(context, files, file),
           );
@@ -464,76 +506,12 @@ class _FileListView extends StatelessWidget {
   }
 }
 
-class _FileListItem extends StatelessWidget {
-  const _FileListItem({
-    Key? key,
-    required this.icon,
-    required this.fileName,
-    required this.lastModify,
-    required this.sizeDesc,
-    required this.onTap,
-  }) : super(key: key);
-  final GestureTapCallback onTap;
-  final String icon;
-  final String fileName;
-  final String? lastModify;
-  final String? sizeDesc;
+class FileListWrapper extends StatelessWidget {
+  FileListWrapper({Key? key}) : super(key: key);
+  final String? path = Get.arguments?["path"];
 
   @override
   Widget build(BuildContext context) {
-    bool isDarkMode = WidgetUtils.isDarkMode(context);
-    return ListTile(
-      horizontalTitleGap: 6,
-      minVerticalPadding: 12,
-      leading: Image.asset(icon),
-      trailing: Image.asset(
-        Images.iconArrowRight,
-        color: isDarkMode ? Colors.white : null,
-      ),
-      title: Text(
-        fileName,
-        overflow: TextOverflow.ellipsis,
-        maxLines: 2,
-      ),
-      subtitle: lastModify != null
-          ? Row(
-              children: [
-                Text(lastModify!),
-                if (sizeDesc != null) Text(" - ${sizeDesc!}"),
-              ],
-            )
-          : null,
-      onTap: onTap,
-    );
+    return FileListScreen(path: path, isRootStack: true);
   }
-}
-
-class FileItemVO {
-  String name;
-  String path;
-  int? size;
-  String? sizeDesc;
-  bool isDir;
-  String modified;
-  int modifiedMilliseconds;
-  String sign;
-  String thumb;
-  int typeInt;
-  FileType type;
-  String icon;
-
-  FileItemVO({
-    required this.name,
-    required this.path,
-    required this.size,
-    required this.sizeDesc,
-    required this.isDir,
-    required this.modified,
-    required this.modifiedMilliseconds,
-    required this.sign,
-    required this.thumb,
-    required this.typeInt,
-    required this.type,
-    required this.icon,
-  });
 }

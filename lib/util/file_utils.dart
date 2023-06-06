@@ -2,17 +2,18 @@ import 'dart:math';
 
 import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/generated/images.dart';
+import 'package:alist/util/constant.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:flustars/flustars.dart';
 import 'package:intl/intl.dart';
 
 final isoDateFormat = DateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-final dateFormatThisYear = DateFormat("MM-dd HH:mm");
-final dateFormatThatYear = DateFormat("yyyy-MM-dd HH:mm");
+final dateFormatThisYear = DateFormat("MM/dd HH:mm");
+final dateFormatThatYear = DateFormat("yyyy/MM/dd HH:mm");
 final now = DateTime.now();
 
-extension FileListRespContentExtensions on FileListRespContent {
-  FileType getFileType() {
+class FileUtils {
+  static FileType getFileType(bool isDir, String name) {
     if (isDir) {
       return FileType.folder;
     }
@@ -155,7 +156,6 @@ extension FileListRespContentExtensions on FileListRespContent {
       case "swift":
       case "kt":
       case "rs":
-      case "ts":
       case "sh":
       case "vb":
       case "sql":
@@ -188,8 +188,8 @@ extension FileListRespContentExtensions on FileListRespContent {
     return FileType.others;
   }
 
-  String getFileIcon() {
-    FileType fileType = getFileType();
+  static String getFileIcon(bool isDir, String name) {
+    FileType fileType = getFileType(isDir, name);
     switch (fileType) {
       case FileType.folder:
         return Images.fileTypeFolder;
@@ -224,6 +224,49 @@ extension FileListRespContentExtensions on FileListRespContent {
     }
   }
 
+  static String? formatBytes(int size) {
+    if (size <= 0) return "0B";
+    const suffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+    var i = (log(size) / log(1024)).floor();
+    return "${(size / pow(1024, i)).toStringAsFixed(2)}${suffixes[i]}";
+  }
+
+  static String getReformatTime(DateTime? modifyTime, String defaultValue) {
+    String? modifyTimeStr;
+    if (now.year == modifyTime?.year) {
+      modifyTimeStr = dateFormatThisYear.format(modifyTime!);
+    } else if (modifyTime != null) {
+      modifyTimeStr = dateFormatThatYear.format(modifyTime);
+    } else {
+      modifyTimeStr = defaultValue;
+    }
+    return modifyTimeStr;
+  }
+
+  static String? getCompleteThumbnail(String? thumbnail){
+    if(thumbnail == null || thumbnail.isEmpty){
+      return null;
+    }
+
+    if (!thumbnail.startsWith("http://") &&
+        !thumbnail.startsWith("https://")) {
+      String serverUrl = SpUtil.getString(AlistConstant.serverUrl) ?? "";
+      Uri uri = Uri.parse(serverUrl);
+      thumbnail = "${uri.scheme}://${uri.host}:${uri.port}$thumbnail";
+    }
+    return thumbnail;
+  }
+}
+
+extension FileListRespContentExtensions on FileListRespContent {
+  FileType getFileType() {
+    return FileUtils.getFileType(isDir, name);
+  }
+
+  String getFileIcon() {
+    return FileUtils.getFileIcon(isDir, name);
+  }
+
   String getCompletePath(String? parentPath) {
     var path = '';
     if (parentPath == '/' || parentPath == null) {
@@ -237,10 +280,7 @@ extension FileListRespContentExtensions on FileListRespContent {
   String? formatBytes() {
     if (isDir) return null;
     var size = this.size ?? 0;
-    if (size <= 0) return "0B";
-    const suffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-    var i = (log(size) / log(1024)).floor();
-    return "${(size / pow(1024, i)).toStringAsFixed(2)}${suffixes[i]}";
+    return FileUtils.formatBytes(size);
   }
 
   DateTime? parseModifiedTime(FileListRespContent resp) {
@@ -259,14 +299,6 @@ extension FileListRespContentExtensions on FileListRespContent {
   }
 
   String getReformatModified(DateTime? modifyTime) {
-    String? modifyTimeStr;
-    if (now.year == modifyTime?.year) {
-      modifyTimeStr = dateFormatThisYear.format(modifyTime!);
-    } else if (modifyTime != null) {
-      modifyTimeStr = dateFormatThatYear.format(modifyTime);
-    } else {
-      modifyTimeStr = modified;
-    }
-    return modifyTimeStr;
+    return FileUtils.getReformatTime(modifyTime, modified);
   }
 }

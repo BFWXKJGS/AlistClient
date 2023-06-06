@@ -173,7 +173,7 @@ class _SettingsContainerState extends State<_SettingsContainer> {
         builder: (_) {
           return Container(
             width: double.infinity,
-            color: Colors.white,
+            color: Get.theme.colorScheme.surface,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
