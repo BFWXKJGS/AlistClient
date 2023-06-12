@@ -455,6 +455,7 @@ class _FileListScreenState extends State<FileListScreen>
       sign: resp.sign,
       icon: resp.getFileIcon(),
       modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
+      provider: _data?.provider
     );
   }
 
@@ -571,6 +572,7 @@ class _FileListScreenState extends State<FileListScreen>
         path: file.path,
         modified: file.modified,
         thumb: file.thumb,
+        provider: file.provider,
       ),
     );
   }
@@ -827,6 +829,7 @@ class _FileListView extends StatelessWidget {
         path: file.path,
         modified: file.modified,
         thumb: file.thumb,
+        provider: file.provider,
       ),
     );
   }

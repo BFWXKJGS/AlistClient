@@ -12,12 +12,14 @@ class FileDetailsDialog extends StatelessWidget {
     required this.path,
     required this.modified,
     required this.thumb,
+    required this.provider,
   }) : super(key: key);
   final String name;
   final String? size;
   final String path;
   final String modified;
   final String? thumb;
+  final String? provider;
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +40,8 @@ class FileDetailsDialog extends StatelessWidget {
           _buildInfoRow("${Intl.fileDetailsDialog_size.tr}:", size!),
         _buildInfoRow("${Intl.fileDetailsDialog_where.tr}:", path),
         _buildInfoRow("${Intl.fileDetailsDialog_modified.tr}:", modified),
+        if (provider != null && provider!.isNotEmpty)
+          _buildInfoRow("${Intl.fileDetailsDialog_provider.tr}:", provider!),
         if (thumb != null && thumb!.isNotEmpty)
           _buildThumb(thumb!, FileUtils.getFileIcon(false, name))
       ],

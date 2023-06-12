@@ -86,6 +86,7 @@ const translationsZhCN = {
   "fileDetailsDialog_size": "大小",
   "fileDetailsDialog_where": "位置",
   "fileDetailsDialog_modified": "修改时间",
+  "fileDetailsDialog_provider": "挂载类型",
   "deleteFileDialog_title": "删除文件",
   "deleteFileDialog_btn_cancel": "取消",
   "deleteFileDialog_btn_ok": "删除",

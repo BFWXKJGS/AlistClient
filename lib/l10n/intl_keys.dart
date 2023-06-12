@@ -85,6 +85,7 @@ class Intl {
   static const String fileDetailsDialog_size = "fileDetailsDialog_size";
   static const String fileDetailsDialog_where = "fileDetailsDialog_where";
   static const String fileDetailsDialog_modified = "fileDetailsDialog_modified";
+  static const String fileDetailsDialog_provider = "fileDetailsDialog_provider";
   static const String deleteFileDialog_title = "deleteFileDialog_title";
   static const String deleteFileDialog_btn_cancel = "deleteFileDialog_btn_cancel";
   static const String deleteFileDialog_btn_ok = "deleteFileDialog_btn_ok";

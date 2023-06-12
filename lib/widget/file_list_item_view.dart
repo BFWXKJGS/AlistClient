@@ -123,6 +123,7 @@ class FileItemVO {
   int typeInt;
   FileType type;
   String icon;
+  String? provider;
 
   FileItemVO({
     required this.name,
@@ -137,5 +138,6 @@ class FileItemVO {
     required this.typeInt,
     required this.type,
     required this.icon,
+    required this.provider,
   });
 }

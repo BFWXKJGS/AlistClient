@@ -89,6 +89,7 @@ const translationsEnUS = {
   "fileDetailsDialog_size": "Size",
   "fileDetailsDialog_where": "Where",
   "fileDetailsDialog_modified": "Modified",
+  "fileDetailsDialog_provider": "Provider",
   "deleteFileDialog_title": "Delete file",
   "deleteFileDialog_btn_cancel": "Cancel",
   "deleteFileDialog_btn_ok": "Delete",

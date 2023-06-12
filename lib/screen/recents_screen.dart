@@ -177,6 +177,7 @@ class _RecentsScreenState extends State<RecentsScreen>
         path: record.path,
         modified: FileUtils.getReformatTime(modified, ""),
         thumb: record.thumb,
+        provider: record.provider,
       ),
     );
   }
