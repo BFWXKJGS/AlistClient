@@ -25,7 +25,7 @@ class FileListRespEntity {
 @JsonSerializable()
 class FileListRespContent {
 	late String name;
-	late int size;
+	int? size;
 	@JSONField(name: "is_dir")
 	late bool isDir;
 	late String modified;

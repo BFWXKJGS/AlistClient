@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>AlivcLicenseFile</key>
+	<string>license.crt</string>
 	<key>AlivcLicenseKey</key>
 	<string>7od4xPYaUwm4scy4t57cd70e56f2d4196aed4167e6e4174c9</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>

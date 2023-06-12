@@ -1,9 +1,10 @@
 import 'package:alist/generated/images.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-import 'package:alist/generated/l10n.dart';
+import 'package:alist/l10n/intl_keys.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({Key? key}) : super(key: key);
@@ -11,7 +12,7 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlistScaffold(
-      appbarTitle: Text(S.of(context).screenName_about),
+      appbarTitle: Text(Intl.screenName_about.tr),
       body: const _AboutPageContainer(),
     );
   }
@@ -45,7 +46,7 @@ class _AboutPageContainerState extends State<_AboutPageContainer> {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              S.of(context).appName,
+              Intl.appName.tr,
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),

@@ -1,21 +1,20 @@
+import 'dart:math';
+
 import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/net/dio_utils.dart';
-import 'package:alist/net/net_error_getter.dart';
+import 'package:alist/util/file_sign_utils.dart';
+import 'package:alist/util/log_utils.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 
 class GalleryScreen extends StatelessWidget {
-  const GalleryScreen(
-      {Key? key,
-      required this.paths,
-      required this.urls,
-      required this.initializedIndex})
-      : super(key: key);
+  GalleryScreen({Key? key}) : super(key: key);
 
-  final List<String>? urls;
-  final List<String>? paths;
-  final int initializedIndex;
+  final List<String>? urls = Get.arguments["urls"];
+  final List<String>? paths = Get.arguments["paths"];
+  final int initializedIndex = Get.arguments["index"];
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +58,7 @@ class _ImagesContainer extends StatefulWidget {
 
 class _ImagesContainerState extends State<_ImagesContainer> {
   late ExtendedPageController controller;
-  final Map<String, String> imageUrlMap = {};
+  final Map<String, FileInfoRespEntity> imageUrlMap = {};
 
   @override
   void initState() {
@@ -80,8 +79,15 @@ class _ImagesContainerState extends State<_ImagesContainer> {
       controller: controller,
       itemCount: widget.paths?.length ?? widget.urls?.length ?? 0,
       scrollDirection: Axis.horizontal,
-      preloadPagesCount: 1,
+      // Using ‘preloadPagesCount’ will cause gesture conflict
+      // preloadPagesCount: 1,
     );
+  }
+
+  @override
+  void dispose() {
+    // clearGestureDetailsCache();
+    super.dispose();
   }
 }
 
@@ -93,7 +99,7 @@ class _ImageContainer extends StatefulWidget {
     required this.imageUrlMap,
   });
 
-  final Map<String, String> imageUrlMap;
+  final Map<String, FileInfoRespEntity> imageUrlMap;
   final String? path;
   final String? url;
 
@@ -101,11 +107,11 @@ class _ImageContainer extends StatefulWidget {
   State<_ImageContainer> createState() => _ImageContainerState();
 }
 
-class _ImageContainerState extends State<_ImageContainer>
-    with NetErrorGetterMixin {
+class _ImageContainerState extends State<_ImageContainer> {
   late GestureConfig gestureConfig;
   String? imageUrl;
   String? sign;
+  String? thumb;
 
   @override
   void initState() {
@@ -119,19 +125,26 @@ class _ImageContainerState extends State<_ImageContainer>
       inertialSpeed: 100.0,
       initialScale: 1.0,
       inPageView: true,
+      cacheGesture: false,
       initialAlignment: InitialAlignment.center,
     );
 
     if (widget.path != null) {
-      String? imageUrl = widget.imageUrlMap[widget.path];
-      if (imageUrl != null) {
-        this.imageUrl = imageUrl;
+      FileInfoRespEntity? fileInfo = widget.imageUrlMap[widget.path];
+      if (fileInfo != null) {
+        updateCurrentImageInfo(fileInfo);
       } else {
         _requestImageUrl();
       }
     } else {
       imageUrl = widget.url;
     }
+  }
+
+  void updateCurrentImageInfo(FileInfoRespEntity fileInfo) {
+    imageUrl = fileInfo.rawUrl;
+    sign = fileInfo.makeCacheUseSign(widget.path ?? "");
+    thumb = fileInfo.thumb;
   }
 
   _requestImageUrl() async {
@@ -142,16 +155,14 @@ class _ImageContainerState extends State<_ImageContainer>
     };
     DioUtils.instance.requestNetwork<FileInfoRespEntity>(Method.post, "fs/get",
         params: body, onSuccess: (data) {
-      var url = data?.rawUrl;
-      if (url != null) {
-        widget.imageUrlMap[widget.path ?? ""] = url;
+      if (data != null) {
+        widget.imageUrlMap[widget.path ?? ""] = data;
+        setState(() {
+          updateCurrentImageInfo(data);
+        });
       }
-      setState(() {
-        imageUrl = url;
-        sign = data?.sign;
-      });
-    }, onError: (code, message, error) {
-      print("code:$code,message:$message,error=$error");
+    }, onError: (code, message) {
+      print("code:$code,message:$message");
     });
   }
 
@@ -170,6 +181,15 @@ class _ImageContainerState extends State<_ImageContainer>
       mode: ExtendedImageMode.gesture,
       initGestureConfigHandler: (state) {
         return gestureConfig;
+      },
+      onDoubleTap: (ExtendedImageGestureState state) {
+        Log.d("currentScale=${state.gestureDetails?.totalScale}");
+        var currentScale = state.gestureDetails?.totalScale ?? 1.0;
+        if (currentScale >= 2.0) {
+          state.handleDoubleTap(scale: 1);
+        } else {
+          state.handleDoubleTap(scale: min(currentScale + 1, 3));
+        }
       },
     );
   }

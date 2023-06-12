@@ -6,10 +6,12 @@ import 'package:sp_util/sp_util.dart';
 class AuthInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    final String accessToken = SpUtil.getString(Constant.token) ?? "";
-    final String serverUrl = SpUtil.getString(Constant.address) ?? "";
+    final String accessToken = SpUtil.getString(AlistConstant.token) ?? "";
+    final String serverUrl = SpUtil.getString(AlistConstant.serverUrl) ?? "";
     final String url = options.uri.toString();
-    if (accessToken.isNotEmpty && serverUrl.isNotEmpty && url.startsWith(serverUrl)) {
+    if (accessToken.isNotEmpty &&
+        serverUrl.isNotEmpty &&
+        url.startsWith(serverUrl)) {
       options.headers['Authorization'] = accessToken;
     }
     super.onRequest(options, handler);
@@ -25,10 +27,21 @@ class LoggingInterceptor extends Interceptor {
     _startTime = DateTime.now();
     Log.d('----------Start----------');
     if (options.queryParameters.isEmpty) {
-      Log.d('RequestUrl: ${options.baseUrl}${options.path}');
+      if (options.path.startsWith("http://") ||
+          options.path.startsWith("https://")) {
+        Log.d('RequestUrl: ${options.path}');
+      } else {
+        Log.d('RequestUrl: ${options.baseUrl}${options.path}');
+      }
     } else {
-      Log.d(
-          'RequestUrl: ${options.baseUrl}${options.path}?${Transformer.urlEncodeMap(options.queryParameters)}');
+      if (options.path.startsWith("http://") ||
+          options.path.startsWith("https://")) {
+        Log.d(
+            'RequestUrl: ${options.path}?${Transformer.urlEncodeMap(options.queryParameters)}');
+      } else {
+        Log.d(
+            'RequestUrl: ${options.baseUrl}${options.path}?${Transformer.urlEncodeMap(options.queryParameters)}');
+      }
     }
     Log.d('RequestMethod: ${options.method}');
     Log.d('RequestHeaders:${options.headers}');

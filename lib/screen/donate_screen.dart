@@ -1,15 +1,14 @@
 import 'package:alist/entity/donate_config_entity.dart';
+import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
-import 'package:alist/net/net_error_getter.dart';
 import 'package:alist/util/global.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:dio/dio.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
-import 'package:alist/generated/l10n.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 
 class DonateScreen extends StatelessWidget {
   const DonateScreen({Key? key}) : super(key: key);
@@ -17,7 +16,7 @@ class DonateScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlistScaffold(
-      appbarTitle: Text(S.of(context).screenName_donate),
+      appbarTitle: Text(Intl.screenName_donate.tr),
       body: const _PageContainer(),
     );
   }
@@ -30,8 +29,7 @@ class _PageContainer extends StatefulWidget {
   State<_PageContainer> createState() => _PageContainerState();
 }
 
-class _PageContainerState extends State<_PageContainer>
-    with NetErrorGetterMixin {
+class _PageContainerState extends State<_PageContainer> {
   final CancelToken _cancelToken = CancelToken();
   List<_DonateItemData>? _donateConfig;
   bool _loading = true;
@@ -61,7 +59,7 @@ class _PageContainerState extends State<_PageContainer>
         if (data?.alipay != null && data?.alipay.isNotEmpty == true) {
           list.add(
             _DonateItemData(
-                name: S.of(context).alipay,
+                name: Intl.alipay.tr,
                 image: data?.alipay ?? "",
                 imageSmall: data?.alipaySmall ?? ""),
           );
@@ -69,7 +67,7 @@ class _PageContainerState extends State<_PageContainer>
         if (data?.wechat != null && data?.wechat.isNotEmpty == true) {
           list.add(
             _DonateItemData(
-                name: S.of(context).wechat,
+                name: Intl.wechat.tr,
                 image: data?.wechat ?? "",
                 imageSmall: data?.wechatSmall ?? ""),
           );
@@ -79,8 +77,8 @@ class _PageContainerState extends State<_PageContainer>
           _loading = false;
         });
       },
-      onError: (code, message, error) {
-        SmartDialog.showToast(message ?? netErrorToMessage(error));
+      onError: (code, message) {
+        SmartDialog.showToast(message);
         setState(() {
           _loading = false;
         });
@@ -105,9 +103,9 @@ class _PageContainerState extends State<_PageContainer>
 
         return InkWell(
           onTap: () {
-            context.pushNamed(
+            Get.toNamed(
               NamedRouter.gallery,
-              extra: {"urls": imageUrls, "index": index},
+              arguments: {"urls": imageUrls, "index": index},
             );
           },
           child: _ListItem(

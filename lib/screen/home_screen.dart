@@ -1,7 +1,13 @@
-import 'package:alist/generated/l10n.dart';
-import 'package:alist/screen/file_list_screen.dart';
+import 'package:alist/l10n/intl_keys.dart';
+import 'package:alist/l10n/intl_keys.dart';
+import 'package:alist/router.dart';
+import 'package:alist/screen/file_list/file_list_navigator.dart';
+import 'package:alist/screen/file_list/file_list_screen.dart';
 import 'package:alist/screen/settings_screen.dart';
+import 'package:alist/widget/bottom_navigation_bar.dart';
+import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,24 +35,36 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: PageView(
         controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
         children: <Widget>[
-          FileListScreen(path: "/"),
+          FileListNavigator(
+            isInFileListStack: _currentPage == 0,
+          ),
           const SettingsScreen(),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: AlistBottomNavigationBar(
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: const Icon(Icons.home),
-            label: S.of(context).screenName_home,
+            label: Intl.screenName_home.tr,
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.settings),
-            label: S.of(context).screenName_settings,
+            label: Intl.screenName_settings.tr,
           )
         ],
         currentIndex: _currentPage,
         onTap: (int idx) => _pageController.jumpToPage(idx),
+        onLongPress: (int idx) {
+          LogUtil.d("onDoubleTap: $idx");
+          if (idx == 0 && _currentPage == 0) {
+            Get.until((route) => route.isFirst,
+                id: AlistRouter.fileListRouterStackId);
+          } else {
+            _pageController.jumpToPage(idx);
+          }
+        },
       ),
     );
   }

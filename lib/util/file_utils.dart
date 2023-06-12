@@ -1,6 +1,15 @@
+import 'dart:math';
+
 import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/generated/images.dart';
 import 'package:alist/util/file_type.dart';
+import 'package:flustars/flustars.dart';
+import 'package:intl/intl.dart';
+
+final isoDateFormat = DateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+final dateFormatThisYear = DateFormat("MM-dd HH:mm");
+final dateFormatThatYear = DateFormat("yyyy-MM-dd HH:mm");
+final now = DateTime.now();
 
 extension FileListRespContentExtensions on FileListRespContent {
   FileType getFileType() {
@@ -91,6 +100,10 @@ extension FileListRespContentExtensions on FileListRespContent {
       case "dpt":
       case "potx":
         return FileType.ppt;
+      case "xlsx":
+      case "xls":
+      case "csv":
+        return FileType.excel;
       case "psd":
         return FileType.psd;
       case "txt":
@@ -219,5 +232,41 @@ extension FileListRespContentExtensions on FileListRespContent {
       path = "$parentPath/$name";
     }
     return path;
+  }
+
+  String? formatBytes() {
+    if (isDir) return null;
+    var size = this.size ?? 0;
+    if (size <= 0) return "0B";
+    const suffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+    var i = (log(size) / log(1024)).floor();
+    return "${(size / pow(1024, i)).toStringAsFixed(2)}${suffixes[i]}";
+  }
+
+  DateTime? parseModifiedTime(FileListRespContent resp) {
+    var modifyTimeStr = resp.modified;
+    var indexOnMs = modifyTimeStr.lastIndexOf(".");
+    if (indexOnMs > -1) {
+      modifyTimeStr = "${modifyTimeStr.substring(0, indexOnMs)}Z";
+    }
+    DateTime? modifyTime;
+    try {
+      modifyTime = isoDateFormat.parse(modifyTimeStr);
+    } catch (e) {
+      LogUtil.e(e);
+    }
+    return modifyTime;
+  }
+
+  String getReformatModified(DateTime? modifyTime) {
+    String? modifyTimeStr;
+    if (now.year == modifyTime?.year) {
+      modifyTimeStr = dateFormatThisYear.format(modifyTime!);
+    } else if (modifyTime != null) {
+      modifyTimeStr = dateFormatThatYear.format(modifyTime);
+    } else {
+      modifyTimeStr = modified;
+    }
+    return modifyTimeStr;
   }
 }

@@ -2,28 +2,35 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:alist/generated/l10n.dart';
+import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/widget/slider.dart';
 import 'package:auto_orientation/auto_orientation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_aliplayer/flutter_aliplayer.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:get/get.dart';
+import 'package:screen_brightness/screen_brightness.dart';
+import 'package:volume_controller/volume_controller.dart';
 import 'package:wakelock/wakelock.dart';
+
+typedef OnPlayProgressChange = Function(int currentPostion, int duration);
+typedef OnRateMenuTap = Function(Rate);
 
 /// Default Panel Widget
 class AlistPlayerSkin extends StatefulWidget {
   final FlutterAliplayer player;
   final BuildContext buildContext;
   final String videoTitle;
-  final VoidCallback retryCallback;
+  final OnPlayProgressChange onPlayProgressChange;
 
   const AlistPlayerSkin({
     super.key,
     required this.player,
     required this.buildContext,
     required this.videoTitle,
-    required this.retryCallback,
+    required this.onPlayProgressChange,
   });
 
   @override
@@ -46,6 +53,15 @@ String _duration2String(Duration duration) {
       : "$twoDigitMinutes:$twoDigitSeconds";
 }
 
+final _rateList = [
+  const Rate("0.5x", 0.5),
+  const Rate("0.75x", 0.75),
+  const Rate("1.0x", 1.0),
+  const Rate("1.25x", 1.25),
+  const Rate("1.5x", 1.5),
+  const Rate("2.0x", 2.0),
+];
+
 class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   static const String tag = "AlistPlayerSkinState";
 
@@ -63,12 +79,30 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   // is wakelock enable
   bool _wakelockEnable = false;
 
+  VerticalDragType? _verticalDragType;
+  bool _verticalDragging = false;
+  double _systemVolumeListenValue = 0;
+  double _systemVolumeDragStartValue = 0;
+  double _systemVolumeDragIndicatorValue = 0;
+  double _systemBrightnessListenValue = 0;
+  double _systemBrightnessDragStartValue = 0;
+  double _screenWidth = 0;
+  double _screenHeight = 0;
+  double _verticalDragStartY = 0;
+
+  bool _horizontalDragging = false;
+  double _horizontalDragStartX = 0;
+  Duration? _dragStartPosition;
+  Duration _dragCurrentPosition = const Duration();
+
   // whether the video is playing in full screen
   bool _fullscreen = false;
   bool _playing = false;
   bool _prepared = false;
   String? _exception;
   bool _locked = false;
+  double _rate = 1.0;
+  String _rateStr = "1.0x";
 
   double _seekPos = -1.0;
   StreamSubscription? _currentPosSubs;
@@ -97,6 +131,10 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       if (infoCode == FlutterAvpdef.CURRENTPOSITION) {
         setState(() {
           _currentPos = Duration(milliseconds: extraValue!);
+          if (_duration.inMilliseconds > 0) {
+            widget.onPlayProgressChange(
+                _currentPos.inMilliseconds, _duration.inMilliseconds);
+          }
         });
       } else if (infoCode == FlutterAvpdef.BUFFEREDPOSITION) {
         setState(() {
@@ -161,6 +199,16 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       Log.d("errorCode=$errorCode errorMsg=$errorMsg", tag: tag);
       _setPlaying(false, exception: errorMsg);
     });
+
+    VolumeController().listener((volume) {
+      setState(() {
+        Log.d("VolumeController listener volume $volume");
+        _systemVolumeListenValue = volume;
+      });
+    });
+    ScreenBrightness()
+        .current
+        .then((value) => _systemBrightnessListenValue = value);
   }
 
   void _setPlaying(bool playing, {String? exception}) {
@@ -195,6 +243,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   }
 
   void _playOrPause() async {
+    if (_locked) {
+      return;
+    }
     if (_playing == true) {
       _player.pause();
     } else {
@@ -214,6 +265,8 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     _hideTimer?.cancel();
     _disableWakelock();
 
+    ScreenBrightness().resetScreenBrightness();
+    VolumeController().removeListener();
     _currentPosSubs?.cancel();
     _bufferPosSubs?.cancel();
   }
@@ -247,6 +300,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       icon: Icon(iconData, color: Colors.white),
       padding: const EdgeInsets.only(left: 10.0, right: 10.0),
       onPressed: () {
+        if (_locked) {
+          return;
+        }
         setState(() {
           _volume = _volume > 0 ? 0.0 : 1.0;
           _player.setVolume(_volume);
@@ -262,6 +318,8 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     currentValue = min(currentValue, duration);
     currentValue = max(currentValue, 0);
     var screenSize = MediaQuery.of(context).size;
+    _screenWidth = screenSize.width;
+    _screenHeight = screenSize.height;
     // use 'MediaQuery.of(context).orientation' or OrientationBuilder is not work for ios
     _fullscreen = screenSize.width > screenSize.height;
 
@@ -291,6 +349,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
                       padding: const EdgeInsets.only(right: 0, left: 0),
                       child: FijkSlider(
                         value: currentValue,
+                        enable: !_locked,
                         cacheValue: _bufferPos.inMilliseconds.toDouble(),
                         min: 0.0,
                         max: duration,
@@ -320,12 +379,57 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
             ),
 
             IconButton(
+              onPressed: () {
+                if (_locked) {
+                  return;
+                }
+                _hideTimer?.cancel();
+                Widget dialog;
+                onMenuTap(element) {
+                  if (_rate != element.rate) {
+                    _rate = element.rate;
+                    _rateStr = element.name;
+                    _player.setRate(_rate);
+                    setState(() {});
+                  }
+                  SmartDialog.dismiss();
+                }
+
+                if (_fullscreen) {
+                  dialog = VerticalRateMenuDialog(
+                    rate: _rate,
+                    onMenuTap: onMenuTap,
+                  );
+                } else {
+                  dialog = HorizontalRateMenuDialog(
+                    rate: _rate,
+                    onMenuTap: onMenuTap,
+                  );
+                }
+                SmartDialog.show(
+                  builder: (context) => dialog,
+                  alignment: _fullscreen
+                      ? Alignment.centerRight
+                      : Alignment.bottomCenter,
+                  onDismiss: () => _startHideTimer(),
+                );
+              },
+              icon: Text(
+                _rateStr,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+
+            IconButton(
               icon: Icon(
                 _fullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
                 color: Colors.white,
               ),
               padding: const EdgeInsets.only(left: 10.0, right: 10.0),
               onPressed: () {
+                if (_locked) {
+                  return;
+                }
                 if (_fullscreen) {
                   _exitFullScreen();
                 } else {
@@ -412,7 +516,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
                   backgroundColor: Colors.white,
                 ),
                 child: Text(
-                  S.of(context).playerSkin_tips_playVideoFailed,
+                  Intl.playerSkin_tips_playVideoFailed.tr,
                   style: const TextStyle(color: Colors.black),
                 ),
               )
@@ -440,9 +544,20 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     );
   }
 
-  GestureDetector _buildContainer(BuildContext context) {
-    return GestureDetector(
+  Widget _buildContainer(BuildContext context) {
+    Widget widget = GestureDetector(
       onTap: _cancelAndRestartTimer,
+      onDoubleTap: _onDoubleTap(),
+      onVerticalDragDown: _onVerticalDragDown(),
+      onVerticalDragStart: _onVerticalDragStart(),
+      onVerticalDragUpdate: _onVerticalDragUpdate(),
+      onVerticalDragEnd: _onVerticalDragEnd(),
+      onVerticalDragCancel: _onVerticalDragCancel(),
+      onHorizontalDragDown: _onHorizontalDragDown(),
+      onHorizontalDragStart: _onHorizontalDragStart(),
+      onHorizontalDragUpdate: _onHorizontalDragUpdate(),
+      onHorizontalDragEnd: _onHorizontalDragEnd(),
+      onHorizontalDragCancel: _onHorizontalDragCancel(),
       child: AbsorbPointer(
         absorbing: _hideStuff,
         child: Column(
@@ -457,6 +572,215 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         ),
       ),
     );
+    return Stack(
+      // alignment: Alignment.topCenter,
+      children: [
+        widget,
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 50,
+          child: VerticalDragIndicator(
+            verticalDragging: _verticalDragging,
+            verticalDragType: _verticalDragType,
+            volumeIndicatorValue: _systemVolumeDragIndicatorValue,
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 50,
+          child: HorizontalDragIndicator(
+            horizontalDragging: _horizontalDragging,
+            dragCurrentPos: _dragCurrentPosition,
+            duration: _duration,
+          ),
+        ),
+      ],
+    );
+  }
+
+  GestureTapCallback? _onDoubleTap() {
+    return _locked
+        ? null
+        : () {
+            _playOrPause();
+          };
+  }
+
+  GestureDragCancelCallback? _onHorizontalDragCancel() {
+    return _locked
+        ? null
+        : () {
+            _startHideTimer();
+            setState(() {
+              _horizontalDragging = false;
+            });
+          };
+  }
+
+  GestureDragEndCallback? _onHorizontalDragEnd() {
+    return _locked
+        ? null
+        : (dragDetails) {
+            setState(() {
+              _horizontalDragging = false;
+            });
+            _startHideTimer();
+            _player.seekTo(
+                _dragCurrentPosition.inMilliseconds, FlutterAvpdef.INACCURATE);
+          };
+  }
+
+  GestureDragUpdateCallback? _onHorizontalDragUpdate() {
+    return _locked
+        ? null
+        : (dragDetails) {
+            final dragStartX = _horizontalDragStartX;
+            final currentY = dragDetails.localPosition.dx;
+            final ratio = (currentY - dragStartX) / _screenWidth.toDouble();
+            var durationMilliseconds = _duration.inMilliseconds;
+            durationMilliseconds = min(durationMilliseconds, 1000 * 60 * 30);
+
+            int newPosition = ((ratio * durationMilliseconds) +
+                    _dragStartPosition!.inMilliseconds)
+                .round();
+            if (newPosition < 0) {
+              newPosition = 0;
+            } else if (newPosition > _duration.inMilliseconds) {
+              newPosition = _duration.inMilliseconds;
+            }
+
+            setState(() {
+              _dragCurrentPosition = Duration(milliseconds: newPosition);
+            });
+          };
+  }
+
+  GestureDragDownCallback? _onHorizontalDragDown() {
+    return _locked ? null : (dragDetails) {};
+  }
+
+  GestureDragStartCallback? _onHorizontalDragStart() {
+    return _locked
+        ? null
+        : (dragDetails) {
+            _hideTimer?.cancel();
+            setState(() {
+              _horizontalDragStartX = dragDetails.localPosition.dx;
+              _dragStartPosition = _currentPos;
+              setState(() {
+                _hideStuff = false;
+                _horizontalDragging = true;
+              });
+            });
+          };
+  }
+
+  GestureDragCancelCallback? _onVerticalDragCancel() {
+    return (_locked)
+        ? null
+        : () {
+            if (!_fullscreen) {
+              return;
+            }
+            setState(() {
+              _verticalDragging = false;
+            });
+            Log.d("onVerticalDragCancel", tag: tag);
+          };
+  }
+
+  GestureDragEndCallback? _onVerticalDragEnd() {
+    return (_locked)
+        ? null
+        : (dragDetails) {
+            if (!_fullscreen) {
+              return;
+            }
+            setState(() {
+              _verticalDragging = false;
+            });
+            Log.d("onVerticalDragEnd ${dragDetails.velocity}", tag: tag);
+          };
+  }
+
+  GestureDragDownCallback? _onVerticalDragDown() {
+    return _locked
+        ? null
+        : (dragDetails) {
+            Log.d("onVerticalDragDown ${dragDetails.localPosition.dy}",
+                tag: tag);
+          };
+  }
+
+  GestureDragUpdateCallback? _onVerticalDragUpdate() {
+    return _locked
+        ? null
+        : (dragDetails) {
+            if (!_fullscreen) {
+              return;
+            }
+            Log.d("onVerticalDragUpdate ${dragDetails.localPosition.dy}",
+                tag: tag);
+            final dragStartY = _verticalDragStartY;
+            final currentY = dragDetails.localPosition.dy;
+            final ratio = (currentY - dragStartY) / _screenHeight.toDouble();
+
+            if (_verticalDragType == VerticalDragType.volume) {
+              _updateCurrentVolume(ratio);
+            } else {
+              _updateCurrentBrightness(ratio);
+            }
+          };
+  }
+
+  GestureDragStartCallback? _onVerticalDragStart() {
+    return (_locked)
+        ? null
+        : (dragDetails) {
+            if (!_fullscreen) {
+              return;
+            }
+            Log.d("onVerticalDragStart ${dragDetails.localPosition.dy}",
+                tag: tag);
+            var dx = dragDetails.globalPosition.dx;
+            if (dx > _screenWidth / 2) {
+              _verticalDragType = VerticalDragType.volume;
+              _systemVolumeDragStartValue = _systemVolumeListenValue;
+              _systemVolumeDragIndicatorValue = _systemVolumeListenValue;
+            } else {
+              _verticalDragType = VerticalDragType.brightness;
+              _systemBrightnessDragStartValue = _systemBrightnessListenValue;
+            }
+            setState(() {
+              _verticalDragging = true;
+            });
+
+            _verticalDragStartY = dragDetails.localPosition.dy;
+          };
+  }
+
+  void _updateCurrentVolume(double ratio) {
+    final newVolumeValue =
+        min(max(_systemVolumeDragStartValue - ratio, 0.0), 1.0);
+    Log.d(
+        "lastVolume=$_systemVolumeDragStartValue ratio=$ratio _volume=$newVolumeValue",
+        tag: tag);
+    setState(() {
+      _systemVolumeDragIndicatorValue = newVolumeValue;
+    });
+    VolumeController().setVolume(newVolumeValue, showSystemUI: false);
+  }
+
+  void _updateCurrentBrightness(double ratio) {
+    final newBrightnessValue =
+        min(max(_systemBrightnessDragStartValue - ratio, 0.0), 1.0);
+    Log.d(
+        "lastBrightness=$_systemBrightnessDragStartValue ratio=$ratio _brightness=$newBrightnessValue",
+        tag: tag);
+    ScreenBrightness().setScreenBrightness(newBrightnessValue);
+    _systemBrightnessListenValue = newBrightnessValue;
   }
 
   Widget _buildContainerWithoutAppbar(BuildContext context) {
@@ -576,7 +900,7 @@ class _VideoLockWrapper extends StatelessWidget {
       duration: const Duration(milliseconds: 400),
       child: IconButton(
         style: const ButtonStyle(
-          backgroundColor: MaterialStatePropertyAll<Color?>(Color(0x70000000)),
+          backgroundColor: MaterialStatePropertyAll<Color?>(Color(0x70333333)),
         ),
         color: Colors.white,
         onPressed: onTap,
@@ -593,6 +917,249 @@ class _VideoLockWrapper extends StatelessWidget {
           child: lockBtn,
         )
       ],
+    );
+  }
+}
+
+enum VerticalDragType { brightness, volume }
+
+class VerticalDragIndicator extends StatelessWidget {
+  const VerticalDragIndicator({
+    Key? key,
+    required this.verticalDragging,
+    required this.verticalDragType,
+    required this.volumeIndicatorValue,
+  }) : super(key: key);
+  final VerticalDragType? verticalDragType;
+  final double volumeIndicatorValue;
+  final bool verticalDragging;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget indicator;
+    if (verticalDragType == VerticalDragType.brightness) {
+      indicator = StreamBuilder<double>(
+          stream: ScreenBrightness().onCurrentBrightnessChanged,
+          builder: (context, snapshot) {
+            return LinearProgressIndicator(
+              minHeight: 2,
+              value: snapshot.data ?? 0,
+            );
+          });
+    } else {
+      indicator = LinearProgressIndicator(
+        minHeight: 2,
+        value: volumeIndicatorValue,
+      );
+    }
+
+    final icon = verticalDragType == VerticalDragType.volume
+        ? Icons.volume_up_rounded
+        : Icons.brightness_7;
+
+    return Center(
+      child: AnimatedOpacity(
+        opacity: verticalDragging ? 0.7 : 0,
+        duration: const Duration(milliseconds: 400),
+        child: Container(
+          width: 150,
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: const BoxDecoration(
+              color: Color(0xff000000),
+              borderRadius: BorderRadius.all(Radius.circular(4))),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 5),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                ),
+              ),
+              Expanded(child: indicator)
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class HorizontalDragIndicator extends StatelessWidget {
+  const HorizontalDragIndicator({
+    Key? key,
+    required this.horizontalDragging,
+    required this.dragCurrentPos,
+    required this.duration,
+  }) : super(key: key);
+  final bool horizontalDragging;
+  final Duration dragCurrentPos;
+  final Duration duration;
+
+  @override
+  Widget build(BuildContext context) {
+    var durationStr = _duration2String(duration);
+    var currentPosStr = _duration2String(dragCurrentPos);
+    var ratio = 0.0;
+    if (duration.inMilliseconds != 0) {
+      ratio =
+          dragCurrentPos.inMilliseconds.toDouble() / duration.inMilliseconds;
+    }
+
+    return Center(
+      child: AnimatedOpacity(
+        opacity: horizontalDragging ? 0.7 : 0,
+        duration: const Duration(milliseconds: 400),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+          decoration: const BoxDecoration(
+              color: Color(0xff000000),
+              borderRadius: BorderRadius.all(Radius.circular(4))),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("$currentPosStr / $durationStr",
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(color: Colors.white)),
+              Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: SizedBox(
+                  width: 145,
+                  child: LinearProgressIndicator(
+                    minHeight: 2,
+                    value: ratio,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class RatioMenuItem extends StatelessWidget {
+  const RatioMenuItem(
+      {Key? key,
+      required this.text,
+      this.check = false,
+      required this.direction,
+      this.onTap})
+      : super(key: key);
+  final String text;
+  final GestureTapCallback? onTap;
+  final bool check;
+  final Axis direction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Flex(
+          direction: direction,
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              text,
+              style: TextStyle(
+                  color: check
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.white),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class Rate {
+  final String name;
+  final double rate;
+
+  const Rate(this.name, this.rate);
+}
+
+class VerticalRateMenuDialog extends StatelessWidget {
+  const VerticalRateMenuDialog({Key? key, required this.rate, this.onMenuTap})
+      : super(key: key);
+  final double rate;
+  final OnRateMenuTap? onMenuTap;
+
+  @override
+  Widget build(BuildContext context) {
+    List<Widget> widgets = [
+      RatioMenuItem(text: Intl.playerSkin_rate.tr, direction: Axis.horizontal)
+    ];
+    for (var element in _rateList) {
+      widgets.add(RatioMenuItem(
+        text: element.name,
+        check: rate == element.rate,
+        direction: Axis.horizontal,
+        onTap: () {
+          onMenuTap?.call(element);
+        },
+      ));
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      color: const Color(0xff777777),
+      child: SafeArea(
+        left: false,
+        child: Column(
+          children: widgets,
+        ),
+      ),
+    );
+  }
+}
+
+class HorizontalRateMenuDialog extends StatelessWidget {
+  const HorizontalRateMenuDialog({Key? key, required this.rate, this.onMenuTap})
+      : super(key: key);
+  final double rate;
+  final OnRateMenuTap? onMenuTap;
+
+  @override
+  Widget build(BuildContext context) {
+    List<Widget> widgets = [];
+    for (var element in _rateList) {
+      widgets.add(RatioMenuItem(
+        text: element.name,
+        direction: Axis.vertical,
+        check: rate == element.rate,
+        onTap: () {
+          onMenuTap?.call(element);
+        },
+      ));
+    }
+    return Container(
+      color: const Color(0xff777777),
+      padding: const EdgeInsets.symmetric(vertical: 17),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 17),
+              child: Text(
+                Intl.playerSkin_rate.tr,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+            Row(children: widgets)
+          ],
+        ),
+      ),
     );
   }
 }

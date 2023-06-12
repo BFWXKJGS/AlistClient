@@ -1,4 +1,5 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 /// FijkSlider is like Slider in Flutter SDK.
@@ -12,6 +13,7 @@ class FijkSlider extends StatefulWidget {
   final ValueChanged<double> onChanged;
   final ValueChanged<double>? onChangeStart;
   final ValueChanged<double>? onChangeEnd;
+  final bool enable;
 
   final double min;
   final double max;
@@ -25,6 +27,7 @@ class FijkSlider extends StatefulWidget {
     this.cacheValue = 0.0,
     this.onChangeStart,
     this.onChangeEnd,
+    this.enable = true,
     this.min = 0.0,
     this.max = 1.0,
     this.colors = const FijkSliderColors(),
@@ -52,7 +55,7 @@ class _FijkSliderState extends State<FijkSlider> {
 
     return GestureDetector(
       child: Container(
-        margin: EdgeInsets.only(left: margin, right: margin),
+        margin: const EdgeInsets.only(left: margin, right: margin),
         height: double.infinity,
         width: double.infinity,
         color: Colors.transparent,
@@ -60,7 +63,9 @@ class _FijkSliderState extends State<FijkSlider> {
           painter: _SliderPainter(v, cv, dragging, colors: widget.colors),
         ),
       ),
+      onTap: () {},
       onHorizontalDragStart: (DragStartDetails details) {
+        if (!widget.enable) return;
         setState(() {
           dragging = true;
         });
@@ -68,6 +73,7 @@ class _FijkSliderState extends State<FijkSlider> {
         widget.onChangeStart?.call(dragValue);
       },
       onHorizontalDragUpdate: (DragUpdateDetails details) {
+        if (!widget.enable) return;
         final box = context.findRenderObject() as RenderBox;
         final dx = details.localPosition.dx;
         dragValue = (dx - margin) / (box.size.width - 2 * margin);
@@ -76,6 +82,7 @@ class _FijkSliderState extends State<FijkSlider> {
         widget.onChanged(dragValue);
       },
       onHorizontalDragEnd: (DragEndDetails details) {
+        if (!widget.enable) return;
         setState(() {
           dragging = false;
         });
@@ -108,7 +115,7 @@ class FijkSliderColors {
 
   @override
   int get hashCode =>
-      hashValues(playedColor, bufferedColor, cursorColor, baselineColor);
+      Object.hash(playedColor, bufferedColor, cursorColor, baselineColor);
 }
 
 class _SliderPainter extends CustomPainter {

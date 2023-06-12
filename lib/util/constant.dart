@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-class Constant {
+class AlistConstant {
   /// App运行在Release环境时，inProduction为true；当App运行在Debug和Profile环境时，inProduction为false
   static const bool inProduction = kReleaseMode;
 
@@ -11,12 +11,15 @@ class Constant {
   static const String message = 'message';
   static const String code = 'code';
 
-  static const String address = 'address';
+  static const String serverUrl = 'address';
   static const String baseUrl = 'baseUrl';
   static const String username = 'username';
   static const String password = 'password';
   static const String token = 'token';
   static const String guest = 'guest';
+  static const String useDemoServer = 'useDemoServer';
+  static const String isAgreePrivacyPolicy = 'isAgreePrivacyPolicy';
+  static const String ignoreSSLError = "ignoreSSLError";
 
   static const String locale = 'locale';
 }

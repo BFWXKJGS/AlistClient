@@ -1,10 +1,16 @@
 import 'dart:convert';
 
 import 'package:alist/net/json_parse_error.dart';
+import 'package:alist/net/net_error_handler.dart';
+import 'package:alist/net/redirect_exception.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/log_utils.dart';
+import 'package:alist/util/named_router.dart';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
+import 'package:flustars/flustars.dart';
 import 'package:flutter/foundation.dart';
+import 'package:get/route_manager.dart';
 
 import 'base_entity.dart';
 
@@ -14,25 +20,27 @@ Duration _receiveTimeout = const Duration(seconds: 15);
 Duration _sendTimeout = const Duration(seconds: 10);
 String _baseUrl = '';
 List<Interceptor> _interceptors = [];
+bool? _ignoreSSLError;
 
 /// 初始化Dio配置
-void configDio({
-  Duration? connectTimeout,
-  Duration? receiveTimeout,
-  Duration? sendTimeout,
-  String? baseUrl,
-  List<Interceptor>? interceptors,
-}) {
+void configDio(
+    {Duration? connectTimeout,
+    Duration? receiveTimeout,
+    Duration? sendTimeout,
+    String? baseUrl,
+    List<Interceptor>? interceptors,
+    bool ignoreSSLError = false}) {
   _connectTimeout = connectTimeout ?? _connectTimeout;
   _receiveTimeout = receiveTimeout ?? _receiveTimeout;
   _sendTimeout = sendTimeout ?? _sendTimeout;
   _baseUrl = baseUrl ?? _baseUrl;
   _interceptors = interceptors ?? _interceptors;
+  _ignoreSSLError = ignoreSSLError;
 }
 
 typedef NetSuccessCallback<T> = Function(T data);
 typedef NetSuccessListCallback<T> = Function(List<T> data);
-typedef NetErrorCallback = Function(int? code, String? msg, dynamic exception);
+typedef NetErrorCallback = Function(int code, String msg);
 
 /// @weilu https://github.com/simplezhli
 class DioUtils {
@@ -42,7 +50,7 @@ class DioUtils {
     _dioInit();
   }
 
-  void _dioInit() {
+  void _dioInit({bool? ignoreSSLError}) {
     final BaseOptions options = BaseOptions(
       connectTimeout: _connectTimeout,
       receiveTimeout: _receiveTimeout,
@@ -58,6 +66,14 @@ class DioUtils {
       //      contentType: Headers.formUrlEncodedContentType, // 适用于post form表单提交
     );
     _dio = Dio(options);
+
+    ignoreSSLError ??= _ignoreSSLError;
+    if (ignoreSSLError == true) {
+      _dioIgnoreSSLError(dio);
+      _dioIgnoreSSLError(_downloadDio);
+    } else {
+      _downloadDio.httpClientAdapter = IOHttpClientAdapter();
+    }
 
     /// 添加拦截器
     void addInterceptor(Interceptor interceptor) {
@@ -94,28 +110,42 @@ class DioUtils {
     );
 
     try {
+      if (options?.followRedirects == false &&
+          (response.statusCode == 301 ||
+              response.statusCode == 302 ||
+              response.statusCode == 307 ||
+              response.statusCode == 308)) {
+        for (var entity in response.headers.map.entries) {
+          if (entity.key.toLowerCase() == "location") {
+            if (entity.value.isNotEmpty) {
+              throw RedirectException(entity.value.first);
+            }
+          }
+        }
+      }
       final String responseData = response.data.toString();
 
       /// 集成测试无法使用 isolate https://github.com/flutter/flutter/issues/24703
       /// 使用compute条件：数据大于10KB（粗略使用10 * 1024）且当前不是集成测试（后面可能会根据Web环境进行调整）
       /// 主要目的减少不必要的性能开销
       final bool isCompute =
-          !Constant.isDriverTest && responseData.length > 10 * 1024;
+          !AlistConstant.isDriverTest && responseData.length > 10 * 1024;
       Log.d('isCompute:$isCompute');
       final Map<String, dynamic> map = isCompute
           ? await compute(parseData, responseData)
           : parseData(responseData);
       return BaseEntity<T>.fromJson(map);
     } catch (e) {
+      if (e is RedirectException) {
+        rethrow;
+      }
       throw JsonParseException(e.toString());
     }
   }
 
-  void configBaseUrlAgain(String baseUrl) {
-    if (_baseUrl != baseUrl) {
-      _baseUrl = baseUrl;
-      _dioInit();
-    }
+  void configAgain(String baseUrl, bool ignoreSSLError) {
+    _baseUrl = baseUrl;
+    _dioInit(ignoreSSLError: ignoreSSLError);
   }
 
   Options _checkOptions(String method, Options? options) {
@@ -146,18 +176,24 @@ class DioUtils {
         if (result.code == 200) {
           onSuccess?.call(result.data);
         } else {
-          _onError(result.code, result.message, null, onError);
+          if (result.code == 401) {
+            Get.offAllNamed(NamedRouter.login);
+          }
+          _onError(result.code, result.message, onError);
         }
       }
     }, onError: (dynamic e) {
+      LogUtil.d(e);
       if (cancelToken?.isCancelled != true) {
-        _onError(null, null, e, onError);
+        _onError(e is RedirectException ? 301 : -1,
+            NetErrorHandler.netErrorToMessage(e), onError);
       } else {
         _cancelLogPrint(e, url);
       }
     }).catchError((e) {
       if (cancelToken?.isCancelled != true) {
-        _onError(null, null, e, onError);
+        _onError(e is RedirectException ? 301 : -1,
+            NetErrorHandler.netErrorToMessage(e), onError);
       }
     });
   }
@@ -186,41 +222,39 @@ class DioUtils {
     );
   }
 
-  /// 统一处理(onSuccess返回T对象，onSuccessList返回 List<T>)
-  void asyncRequestNetwork<T>(
+  Future<void> requestForString(
     Method method,
     String url, {
-    NetSuccessCallback<T?>? onSuccess,
+    NetSuccessCallback<String?>? onSuccess,
     NetErrorCallback? onError,
     Object? params,
     Map<String, dynamic>? queryParameters,
     CancelToken? cancelToken,
     Options? options,
-  }) {
-    Stream.fromFuture(_request<T>(
-      method.value,
-      url,
-      data: params,
-      queryParameters: queryParameters,
-      options: options,
-      cancelToken: cancelToken,
-    )).asBroadcastStream().listen((result) {
-      if (cancelToken?.isCancelled != true) {
-        if (result.code == 200) {
-          if (onSuccess != null) {
-            onSuccess(result.data);
-          }
-        } else {
-          _onError(result.code, result.message, null, onError);
+  }) async {
+    try {
+      Response<String> response = await _downloadDio.request<String>(
+        url,
+        data: params,
+        queryParameters: queryParameters,
+        options: _checkOptions(method.value, options),
+        cancelToken: cancelToken,
+      );
+
+      if (response.statusCode == 200) {
+        if (onSuccess != null) {
+          onSuccess(response.data);
+        }
+      } else {
+        if (onError != null) {
+          onError(-1, response.data ?? "");
         }
       }
-    }, onError: (dynamic e) {
-      if (cancelToken?.isCancelled != true) {
-        _onError(null, null, e, onError);
-      } else {
-        _cancelLogPrint(e, url);
+    } catch (e) {
+      if (onError != null) {
+        onError(-1, NetErrorHandler.netErrorToMessage(e));
       }
-    });
+    }
   }
 
   void _cancelLogPrint(dynamic e, String url) {
@@ -229,10 +263,21 @@ class DioUtils {
     }
   }
 
-  void _onError(
-      int? code, String? msg, dynamic exception, NetErrorCallback? onError) {
+  void _onError(int code, String msg, NetErrorCallback? onError) {
     Log.e('request error： code: $code, msg: $msg');
-    onError?.call(code, msg, exception);
+    onError?.call(code, msg);
+  }
+
+  void _dioIgnoreSSLError(Dio dio) {
+    dio.httpClientAdapter = IOHttpClientAdapter(
+      onHttpClientCreate: (client) {
+        client.badCertificateCallback = (cert, host, port) => true;
+        return client;
+      },
+      validateCertificate: (cert, host, port) {
+        return true;
+      },
+    );
   }
 }
 

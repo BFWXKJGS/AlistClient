@@ -1,15 +1,16 @@
+import 'dart:io';
+
 import 'package:alist/generated/images.dart';
-import 'package:alist/generated/l10n.dart';
-import 'package:alist/util/constant.dart';
+import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/util/global.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
+import 'package:alist/util/user_controller.dart';
 import 'package:alist/util/widget_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
-import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -18,7 +19,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlistScaffold(
-        appbarTitle: Text(S.of(context).screenName_settings),
+        appbarTitle: Text(Intl.screenName_settings.tr),
         body: const _SettingsContainer());
   }
 }
@@ -32,6 +33,7 @@ class _SettingsContainer extends StatefulWidget {
 
 class _SettingsContainerState extends State<_SettingsContainer> {
   PackageInfo? packageInfo;
+  final UserController _userController = Get.find();
 
   @override
   void initState() {
@@ -60,25 +62,48 @@ class _SettingsContainerState extends State<_SettingsContainer> {
       SettingsMenu settingsMenu, BuildContext context, bool isDarkMode) {
     return ListTile(
       onTap: () {
-        if (settingsMenu.route?.isNotEmpty == true) {
-          context.pushNamed(settingsMenu.route!);
-        } else {
-          if (settingsMenu.menuId == MenuId.account) {
+        switch (settingsMenu.menuId) {
+          case MenuId.signIn:
+            _userController.logout();
+            Get.offNamed(NamedRouter.login);
+            break;
+          case MenuId.account:
             _showAccountDialog(context);
-          } else if (settingsMenu.menuId == MenuId.signIn) {
-            SpUtil.remove(Constant.guest);
-            SpUtil.remove(Constant.token);
-            context.goNamed(NamedRouter.login);
-          } else if (settingsMenu.menuId == MenuId.about) {
-            Locale currentLocal = Localizations.localeOf(context);
+            break;
+          case MenuId.donate:
+            Get.toNamed(settingsMenu.route!);
+            break;
+          case MenuId.privacyPolicy:
+            String local = "en_US";
+            if (Get.locale?.toString().startsWith("zh_") == true) {
+              local = "zh";
+            }
+
             final url =
-                "https://${Global.configServerHost}/alist_h5/declaration?version=${packageInfo?.version ?? ""}&lang=$currentLocal";
+                "https://${Global.configServerHost}/alist_h5/privacyPolicy?version=${packageInfo?.version ?? ""}&lang=$local";
             Log.d("url:$url");
-            context.pushNamed(NamedRouter.web, queryParameters: {
-              "url": url,
-              "title": S.of(context).screenName_about
-            });
-          }
+            Get.toNamed(
+              NamedRouter.web,
+              arguments: {
+                "url": url,
+                "title": Intl.settingsScreen_item_privacyPolicy.tr
+              },
+            );
+            break;
+          case MenuId.about:
+            String local = "en_US";
+            if (Get.locale?.toString().startsWith("zh_") == true) {
+              local = "zh";
+            }
+
+            final url =
+                "https://${Global.configServerHost}/alist_h5/declaration?version=${packageInfo?.version ?? ""}&lang=$local";
+            Log.d("url:$url");
+            Get.toNamed(
+              NamedRouter.web,
+              arguments: {"url": url, "title": Intl.screenName_about.tr},
+            );
+            break;
         }
       },
       horizontalTitleGap: 2,
@@ -100,32 +125,43 @@ class _SettingsContainerState extends State<_SettingsContainer> {
   List<SettingsMenu> _buildSettingsMenuItems(BuildContext context) {
     final settingsMenus = [
       SettingsMenu(
-          menuId: MenuId.donate,
-          name: S.of(context).settingsScreen_item_donate,
-          icon: Images.settingsPageDonate,
+          menuId: MenuId.privacyPolicy,
+          name: Intl.settingsScreen_item_privacyPolicy.tr,
+          icon: Images.settingsScreenPrivacyPolicy,
           route: NamedRouter.donate),
       SettingsMenu(
         menuId: MenuId.about,
-        name: S.of(context).settingsScreen_item_about,
-        icon: Images.settingsPageAbout,
+        name: Intl.settingsScreen_item_about.tr,
+        icon: Images.settingsScreenAbout,
         // route: NamedRouter.about,
       ),
     ];
-    if (SpUtil.getBool(Constant.guest) == true) {
+    if (!Platform.isIOS) {
+      // ios app store no internal purchase allowed
+      settingsMenus.insert(
+        0,
+        SettingsMenu(
+            menuId: MenuId.donate,
+            name: Intl.settingsScreen_item_donate.tr,
+            icon: Images.settingsScreenDonate,
+            route: NamedRouter.donate),
+      );
+    }
+    if (_userController.user().guest == true) {
       settingsMenus.insert(
           0,
           SettingsMenu(
             menuId: MenuId.signIn,
-            name: S.of(context).settingsScreen_item_login,
-            icon: Images.settingsPageAccount,
+            name: Intl.settingsScreen_item_login.tr,
+            icon: Images.settingsScreenAccount,
           ));
     } else {
       settingsMenus.insert(
           0,
           SettingsMenu(
             menuId: MenuId.account,
-            name: S.of(context).settingsScreen_item_account,
-            icon: Images.settingsPageAccount,
+            name: Intl.settingsScreen_item_account.tr,
+            icon: Images.settingsScreenAccount,
           ));
     }
     return settingsMenus;
@@ -143,7 +179,7 @@ class _SettingsContainerState extends State<_SettingsContainer> {
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 15),
-                  child: Text(S.of(context).tips_logout),
+                  child: Text(Intl.tips_logout.tr),
                 ),
                 Container(
                   width: double.infinity,
@@ -151,12 +187,11 @@ class _SettingsContainerState extends State<_SettingsContainer> {
                       const EdgeInsets.only(left: 20, right: 20, bottom: 20),
                   child: FilledButton(
                     onPressed: () {
-                      SpUtil.remove(Constant.guest);
-                      SpUtil.remove(Constant.token);
+                      _userController.logout();
                       SmartDialog.dismiss();
-                      context.goNamed(NamedRouter.login);
+                      Get.offNamed(NamedRouter.login);
                     },
-                    child: Text(S.of(context).logout),
+                    child: Text(Intl.logout.tr),
                   ),
                 )
               ],
@@ -184,5 +219,6 @@ enum MenuId {
   signIn,
   account,
   donate,
+  privacyPolicy,
   about,
 }

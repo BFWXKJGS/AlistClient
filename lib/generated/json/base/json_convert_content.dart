@@ -8,6 +8,7 @@ import 'package:alist/entity/donate_config_entity.dart';
 import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/entity/login_resp_entity.dart';
+import 'package:alist/entity/my_info_resp.dart';
 
 JsonConvert jsonConvert = JsonConvert();
 typedef JsonConvertFunction<T> = T Function(Map<String, dynamic> json);
@@ -20,6 +21,7 @@ class JsonConvert {
 		(FileListRespEntity).toString(): FileListRespEntity.fromJson,
 		(FileListRespContent).toString(): FileListRespContent.fromJson,
 		(LoginRespEntity).toString(): LoginRespEntity.fromJson,
+		(MyInfoResp).toString(): MyInfoResp.fromJson,
 	};
 
   T? convert<T>(dynamic value, {EnumConvertFunction? enumConvert}) {
@@ -112,6 +114,9 @@ List<T>? convertListNotNull<T>(dynamic value, {EnumConvertFunction? enumConvert}
 		}
 		if(<LoginRespEntity>[] is M){
 			return data.map<LoginRespEntity>((Map<String, dynamic> e) => LoginRespEntity.fromJson(e)).toList() as M;
+		}
+		if(<MyInfoResp>[] is M){
+			return data.map<MyInfoResp>((Map<String, dynamic> e) => MyInfoResp.fromJson(e)).toList() as M;
 		}
 
 		debugPrint("${M.toString()} not found");

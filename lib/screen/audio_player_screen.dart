@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/net/dio_utils.dart';
-import 'package:alist/net/net_error_getter.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/slider.dart';
@@ -12,17 +11,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_aliplayer/flutter_aliplayer.dart';
 import 'package:flutter_aliplayer/flutter_aliplayer_factory.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:get/get.dart';
 
 class AudioPlayerScreen extends StatefulWidget {
-  const AudioPlayerScreen({Key? key, required this.path}) : super(key: key);
-
-  final String path;
+  const AudioPlayerScreen({Key? key}) : super(key: key);
 
   @override
   State<AudioPlayerScreen> createState() => _AudioPlayerScreenState();
 }
 
-class _AudioPlayerScreenState extends State<AudioPlayerScreen> with NetErrorGetterMixin{
+class _AudioPlayerScreenState extends State<AudioPlayerScreen>{
+  final String path = Get.arguments["path"];
   final FlutterAliplayer _audioPlayer =
       FlutterAliPlayerFactory.createAliPlayer();
   final CancelToken _cancelToken = CancelToken();
@@ -44,7 +43,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with NetErrorGett
   void initState() {
     super.initState();
     _audioPlayer.setAutoPlay(true);
-    var path = widget.path;
+    var path = this.path;
     _requestAudioUrlAndPlay(path);
     if (Platform.isIOS) {
       FlutterAliplayer.enableMix(true);
@@ -129,8 +128,8 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with NetErrorGett
           setState(() {});
         }
       },
-      onError: (code, message, error) {
-        SmartDialog.showToast(message ?? netErrorToMessage(error));
+      onError: (code, message) {
+        SmartDialog.showToast(message);
         debugPrint("code:$code,message:$message");
       },
     );

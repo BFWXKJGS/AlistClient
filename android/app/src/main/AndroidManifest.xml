@@ -1,17 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.github.alist">
+    package="com.github.alist.client">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
     <application
-        android:name=".App"
+        android:name="com.github.alist.App"
         android:icon="@mipmap/ic_launcher"
-        android:label="AList Client"
+        android:label="ALClient"
         tools:replace="android:label">
         <activity
-            android:name=".MainActivity"
+            android:name="com.github.alist.MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:exported="true"
             android:hardwareAccelerated="true"
@@ -38,7 +38,11 @@
             android:value="2" />
 
         <meta-data
+            android:name="com.aliyun.alivc_license.licensekey"
+            android:value="7od4xPYaUwm4scy4t57cd70e56f2d4196aed4167e6e4174c9" />
+
+        <meta-data
             android:name="com.aliyun.alivc_license.licensefile"
-            android:value="assets/license.crt" />
+            android:value="assets/cert/license.crt" />
     </application>
 </manifest>
