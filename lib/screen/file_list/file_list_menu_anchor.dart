@@ -9,10 +9,17 @@ final menuGroupOperations = MenuGroupEntity(
   menuGroupId: MenuGroupId.operations,
   children: [
     MenuItemEntity(
-        menuGroupId: MenuGroupId.operations,
-        menuId: MenuId.forceRefresh,
-        name: Intl.fileList_menu_forceRefresh.tr,
-        iconData: Icons.refresh)
+      menuGroupId: MenuGroupId.operations,
+      menuId: MenuId.forceRefresh,
+      name: Intl.fileList_menu_forceRefresh.tr,
+      iconData: Icons.refresh,
+    ),
+    MenuItemEntity(
+      menuGroupId: MenuGroupId.operations,
+      menuId: MenuId.newFolder,
+      name: Intl.fileList_menu_newFolder.tr,
+      iconData: Icons.create_new_folder,
+    ),
   ],
 );
 
@@ -47,7 +54,7 @@ class FileListMenuAnchor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const menuWidth = 150.0;
+    const menuWidth = 180.0;
     return MenuAnchor(
       style: const MenuStyle(
           fixedSize: MaterialStatePropertyAll(Size.fromWidth(menuWidth))),
@@ -130,8 +137,8 @@ class FileListMenuAnchor extends StatelessWidget {
           name: Intl.fileList_menu_fileType.tr,
           iconData: sortBy == MenuId.fileType
               ? (sortByUp
-              ? Icons.arrow_upward_rounded
-              : Icons.arrow_downward_rounded)
+                  ? Icons.arrow_upward_rounded
+                  : Icons.arrow_downward_rounded)
               : null,
           isUp: sortBy == MenuId.fileType ? sortByUp : null,
         ),
@@ -204,6 +211,7 @@ enum MenuGroupId {
 
 enum MenuId {
   forceRefresh,
+  newFolder,
   fileName,
   fileType,
   modifyTime,

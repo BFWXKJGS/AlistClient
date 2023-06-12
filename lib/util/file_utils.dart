@@ -283,8 +283,8 @@ extension FileListRespContentExtensions on FileListRespContent {
     return FileUtils.formatBytes(size);
   }
 
-  DateTime? parseModifiedTime(FileListRespContent resp) {
-    var modifyTimeStr = resp.modified;
+  DateTime? parseModifiedTime() {
+    var modifyTimeStr = modified;
     var indexOnMs = modifyTimeStr.lastIndexOf(".");
     if (indexOnMs > -1) {
       modifyTimeStr = "${modifyTimeStr.substring(0, indexOnMs)}Z";

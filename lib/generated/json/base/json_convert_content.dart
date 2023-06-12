@@ -7,8 +7,12 @@ import 'package:flutter/material.dart' show debugPrint;
 import 'package:alist/entity/donate_config_entity.dart';
 import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
+import 'package:alist/entity/file_remove_req.dart';
+import 'package:alist/entity/file_rename_req.dart';
 import 'package:alist/entity/login_resp_entity.dart';
 import 'package:alist/entity/my_info_resp.dart';
+import 'package:alist/generated/copy_move_req.dart';
+import 'package:alist/generated/mkdir_req.dart';
 
 JsonConvert jsonConvert = JsonConvert();
 typedef JsonConvertFunction<T> = T Function(Map<String, dynamic> json);
@@ -20,8 +24,12 @@ class JsonConvert {
 		(FileInfoRespEntity).toString(): FileInfoRespEntity.fromJson,
 		(FileListRespEntity).toString(): FileListRespEntity.fromJson,
 		(FileListRespContent).toString(): FileListRespContent.fromJson,
+		(FileRemoveReq).toString(): FileRemoveReq.fromJson,
+		(FileRenameReq).toString(): FileRenameReq.fromJson,
 		(LoginRespEntity).toString(): LoginRespEntity.fromJson,
 		(MyInfoResp).toString(): MyInfoResp.fromJson,
+		(CopyMoveReq).toString(): CopyMoveReq.fromJson,
+		(MkdirReq).toString(): MkdirReq.fromJson,
 	};
 
   T? convert<T>(dynamic value, {EnumConvertFunction? enumConvert}) {
@@ -112,11 +120,23 @@ List<T>? convertListNotNull<T>(dynamic value, {EnumConvertFunction? enumConvert}
 		if(<FileListRespContent>[] is M){
 			return data.map<FileListRespContent>((Map<String, dynamic> e) => FileListRespContent.fromJson(e)).toList() as M;
 		}
+		if(<FileRemoveReq>[] is M){
+			return data.map<FileRemoveReq>((Map<String, dynamic> e) => FileRemoveReq.fromJson(e)).toList() as M;
+		}
+		if(<FileRenameReq>[] is M){
+			return data.map<FileRenameReq>((Map<String, dynamic> e) => FileRenameReq.fromJson(e)).toList() as M;
+		}
 		if(<LoginRespEntity>[] is M){
 			return data.map<LoginRespEntity>((Map<String, dynamic> e) => LoginRespEntity.fromJson(e)).toList() as M;
 		}
 		if(<MyInfoResp>[] is M){
 			return data.map<MyInfoResp>((Map<String, dynamic> e) => MyInfoResp.fromJson(e)).toList() as M;
+		}
+		if(<CopyMoveReq>[] is M){
+			return data.map<CopyMoveReq>((Map<String, dynamic> e) => CopyMoveReq.fromJson(e)).toList() as M;
+		}
+		if(<MkdirReq>[] is M){
+			return data.map<MkdirReq>((Map<String, dynamic> e) => MkdirReq.fromJson(e)).toList() as M;
 		}
 
 		debugPrint("${M.toString()} not found");

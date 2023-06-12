@@ -8,13 +8,13 @@ class MyInfoResp {
 	late String username;
 	late String password;
 	@JSONField(name: "base_path")
-	late String basePath;
-	late int role;
-	late bool disabled;
-	late int permission;
+	String basePath = "";
+	int role = 0;
+	bool disabled = false;
+	int permission = -1;
 	@JSONField(name: "sso_id")
-	late String ssoId;
-	late bool otp;
+	String ssoId = "";
+	bool otp = false;
 
 	MyInfoResp();
 

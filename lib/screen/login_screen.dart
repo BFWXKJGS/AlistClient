@@ -6,6 +6,7 @@ import 'package:alist/generated/images.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/util/constant.dart';
+import 'package:alist/util/focus_node_utils.dart';
 import 'package:alist/util/global.dart';
 import 'package:alist/util/keyboard_utils.dart';
 import 'package:alist/util/named_router.dart';
@@ -77,12 +78,14 @@ class LoginScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: ElevatedButton(
-                    style: ButtonStyle(
-                        minimumSize:
-                            MaterialStateProperty.all(const Size(0, 30))),
-                    onPressed: () =>
-                        loginScreenController.appendServerUrlText(value1),
-                    child: Text(value1)),
+                  style: ButtonStyle(
+                      padding: MaterialStateProperty.all(EdgeInsets.zero),
+                      minimumSize:
+                          MaterialStateProperty.all(const Size(0, 30))),
+                  onPressed: () =>
+                      loginScreenController.appendServerUrlText(value1),
+                  child: Text(value1),
+                ),
               ),
             )
         ],
@@ -273,6 +276,11 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
       {required LoginSuccessCallback onSuccess,
       required LoginFailureCallback onFailure}) async {
     var address = addressController.text.trim();
+    if (address.isEmpty) {
+      SmartDialog.showToast(Intl.loginScreen_tips_serverUrlError.tr);
+      return;
+    }
+
     if (!address.endsWith("/")) {
       address = "$address/";
     }
@@ -519,6 +527,7 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
   }
 
   void _showType2FACodeDialog(BuildContext context) {
+    FocusNode focusNode = FocusNode().autoFocus();
     SmartDialog.show(
         clickMaskDismiss: false,
         builder: (_) {
@@ -526,6 +535,7 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
             title: Text(Intl.twofaCodeDialog_title.tr),
             content: TextField(
               controller: twofaController,
+              focusNode: focusNode,
               autofocus: true,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),

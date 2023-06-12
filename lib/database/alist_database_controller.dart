@@ -31,9 +31,9 @@ class AlistDatabaseController extends GetxController {
   // create migration
   final migration2to3 = Migration(2, 3, (database) async {
     await database.execute(
-        'ALTER TABLE `file_viewing_record` ADD COLUMN `path` TEXT NOT NULL DEFAULT ""');
+        'DROP TABLE `file_viewing_record`');
     await database.execute(
-        'ALTER TABLE `file_viewing_record` MODIFY `modified` INTEGER NOT NULL');
+        'CREATE TABLE IF NOT EXISTS `file_viewing_record` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `name` TEXT NOT NULL, `size` INTEGER NOT NULL, `sign` TEXT, `thumb` TEXT, `modified` INTEGER NOT NULL, `provider` TEXT NOT NULL, `create_time` INTEGER NOT NULL, `path` TEXT NOT NULL)');
   });
 
   Future<void> init() async {

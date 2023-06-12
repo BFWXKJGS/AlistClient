@@ -9,10 +9,13 @@ typedef DirectorPasswordCallback = Function(
 );
 
 class DirectorPasswordDialog extends StatefulWidget {
-  const DirectorPasswordDialog(
-      {Key? key, required this.directorPasswordCallback})
-      : super(key: key);
+  const DirectorPasswordDialog({
+    Key? key,
+    required this.focusNode,
+    required this.directorPasswordCallback,
+  }) : super(key: key);
   final DirectorPasswordCallback directorPasswordCallback;
+  final FocusNode focusNode;
 
   @override
   State<DirectorPasswordDialog> createState() => _DirectorPasswordDialogState();
@@ -32,6 +35,8 @@ class _DirectorPasswordDialogState extends State<DirectorPasswordDialog> {
           TextField(
             controller: _controller,
             obscureText: true,
+            focusNode: widget.focusNode,
+            autofocus: true,
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
               isCollapsed: true,

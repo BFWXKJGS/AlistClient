@@ -34,7 +34,8 @@ class FileDetailsDialog extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _buildInfoRow("${Intl.fileDetailsDialog_name.tr}:", name),
-        _buildInfoRow("${Intl.fileDetailsDialog_size.tr}:", size ?? ""),
+        if (size != null && size!.isNotEmpty)
+          _buildInfoRow("${Intl.fileDetailsDialog_size.tr}:", size!),
         _buildInfoRow("${Intl.fileDetailsDialog_where.tr}:", path),
         _buildInfoRow("${Intl.fileDetailsDialog_modified.tr}:", modified),
         if (thumb != null && thumb!.isNotEmpty)
@@ -70,7 +71,7 @@ class FileDetailsDialog extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: ExtendedImage.network(
         thumbnail,
-        width: 100,
+        width: 200,
         height: 100,
         loadStateChanged: (state) {
           if (state.extendedImageLoadState == LoadState.failed) {

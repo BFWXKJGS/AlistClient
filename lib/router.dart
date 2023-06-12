@@ -17,6 +17,7 @@ import 'package:get/get_navigation/src/routes/get_route.dart';
 
 class AlistRouter {
   static const fileListRouterStackId = 1;
+  static const fileListCopyMoveRouterStackId = 2;
 
   static final List<GetPage> screens = [
     GetPage(name: NamedRouter.root, page: () => const SplashScreen()),

@@ -2,32 +2,42 @@ import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/table/file_password.dart';
 import 'package:alist/database/table/file_viewing_record.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
+import 'package:alist/entity/file_remove_req.dart';
+import 'package:alist/entity/file_rename_req.dart';
 import 'package:alist/generated/images.dart';
+import 'package:alist/generated/mkdir_req.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/router.dart';
 import 'package:alist/screen/file_list/director_password_dialog.dart';
+import 'package:alist/screen/file_list/file_copy_move_dialog.dart';
 import 'package:alist/screen/file_list/file_list_menu_anchor.dart';
+import 'package:alist/screen/file_list/file_rename_dialog.dart';
+import 'package:alist/screen/file_list/mkdir_dialog.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
+import 'package:alist/util/focus_node_utils.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
+import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
+import 'package:alist/widget/file_details_dialog.dart';
 import 'package:alist/widget/file_list_item_view.dart';
+import 'package:alist/widget/overflow_position_middle_text.dart';
 import 'package:dio/dio.dart';
-import 'package:extended_text/extended_text.dart';
 import 'package:floor/floor.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
-typedef FileItemClickCallback = Function(
-  BuildContext context,
-  List<FileItemVO> files,
-  FileItemVO file,
-);
+typedef FileItemClickCallback = Function(BuildContext context, int index);
+
+typedef FileDeleteCallback = Function(BuildContext context, int index);
+
+typedef FileMoreIconClickCallback = Function(BuildContext context, int index);
 
 class FileListScreen extends StatefulWidget {
   const FileListScreen({
@@ -69,6 +79,7 @@ class _FileListScreenState extends State<FileListScreen>
   String path = "";
   bool _forceRefresh = false;
   int? stackId;
+  bool _hasWritePermission = false;
 
   @override
   void initState() {
@@ -137,8 +148,10 @@ class _FileListScreenState extends State<FileListScreen>
     return DioUtils.instance.requestNetwork<FileListRespEntity>(
         Method.post, "fs/list", cancelToken: _cancelToken, params: body,
         onSuccess: (data) {
+      _passwordRetrying = false;
       _forceRefresh = false;
       _menuAnchorController.hasWritePermission.value = data?.write == true;
+      _hasWritePermission = data?.write == true;
       setState(
         () {
           _data = data;
@@ -161,11 +174,13 @@ class _FileListScreenState extends State<FileListScreen>
   }
 
   Future<dynamic> _showDirectorPasswordDialog() {
+    FocusNode focusNode = FocusNode().autoFocus();
     return SmartDialog.show(
         clickMaskDismiss: false,
         backDismiss: false,
         builder: (context) {
           return DirectorPasswordDialog(
+            focusNode: focusNode,
             directorPasswordCallback: (password, remember) {
               _password = password;
               _passwordRetrying = true;
@@ -200,6 +215,8 @@ class _FileListScreenState extends State<FileListScreen>
             if (menu.menuId == MenuId.forceRefresh) {
               _forceRefresh = true;
               _refreshIndicatorKey.currentState?.show();
+            } else if (menu.menuId == MenuId.newFolder) {
+              _showNewFolderDialog();
             }
             break;
           case MenuGroupId.sort:
@@ -216,25 +233,26 @@ class _FileListScreenState extends State<FileListScreen>
 
   AlistScaffold _buildScaffold(BuildContext context) {
     return AlistScaffold(
-      appbarTitle: ExtendedText(
-        _pageName ?? Intl.screenName_fileListRoot.tr,
-        maxLines: 1,
-        overflowWidget: const TextOverflowWidget(
-          position: TextOverflowPosition.middle,
-          child: Text("..."),
-        ),
-      ),
+      appbarTitle: OverflowPositionMiddleText(
+          _pageName ?? Intl.screenName_fileListRoot.tr),
       appbarActions: [_menuMoreIcon()],
       onLeadingDoubleTap: () =>
           Get.until((route) => route.isFirst, id: stackId),
       body: RefreshIndicator(
         key: _refreshIndicatorKey,
         onRefresh: () => _loadFiles(),
-        child: _FileListView(
-          path: path,
-          readme: _data?.readme,
-          files: _files,
-          onFileItemClick: _onFileTap,
+        child: SlidableAutoCloseBehavior(
+          child: _FileListView(
+            path: path,
+            readme: _data?.readme,
+            files: _files,
+            hasWritePermission: _hasWritePermission,
+            onFileItemClick: _onFileTap,
+            onFileMoreIconButtonTap: _onFileMoreIconButtonTap,
+            fileDeleteCallback: (context, index) {
+              _tryDeleteFile(_files[index]);
+            },
+          ),
         ),
       ),
     );
@@ -251,7 +269,7 @@ class _FileListScreenState extends State<FileListScreen>
           var position = renderObject.localToGlobal(Offset.zero);
           var size = renderObject.size;
           menuController.open(
-              position: Offset(position.dx + size.width - 150 - 10,
+              position: Offset(position.dx + size.width - 180 - 10,
                   position.dy + size.height));
         }
       },
@@ -259,11 +277,9 @@ class _FileListScreenState extends State<FileListScreen>
     );
   }
 
-  void _onFileTap(
-    BuildContext context,
-    List<FileItemVO> files,
-    FileItemVO file,
-  ) {
+  void _onFileTap(BuildContext context, int index) {
+    var file = _files[index];
+    var files = _files;
     FileType fileType = file.type;
     if (!file.isDir) {
       _fileViewingRecord(file);
@@ -423,7 +439,7 @@ class _FileListScreenState extends State<FileListScreen>
   }
 
   FileItemVO _fileResp2VO(FileListRespContent resp) {
-    DateTime? modifyTime = resp.parseModifiedTime(resp);
+    DateTime? modifyTime = resp.parseModifiedTime();
     String? modifyTimeStr = resp.getReformatModified(modifyTime);
 
     return FileItemVO(
@@ -441,6 +457,267 @@ class _FileListScreenState extends State<FileListScreen>
       modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
     );
   }
+
+  _showBottomMenuDialog(
+      BuildContext widgetContext, FileItemVO file, int index) {
+    showModalBottomSheet(
+        context: Get.context!,
+        builder: (context) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 20),
+            child: SafeArea(
+              child: Wrap(
+                children: [
+                  FileListItemView(
+                    icon: FileUtils.getFileIcon(file.isDir, file.name),
+                    fileName: file.name,
+                    thumbnail: file.thumb,
+                    time: file.modified,
+                    sizeDesc: file.sizeDesc,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _onFileTap(context, index);
+                    },
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.open_in_new),
+                    title: Text(Intl.fileList_menu_open.tr),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _onFileTap(context, index);
+                    },
+                  ),
+                  if (_hasWritePermission)
+                    ListTile(
+                      leading: const Icon(Icons.file_copy),
+                      title: Text(Intl.fileList_menu_copy.tr),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _copyMoveStart(file, true);
+                      },
+                    ),
+                  if (_hasWritePermission)
+                    ListTile(
+                      leading: const Icon(Icons.drive_file_move_rounded),
+                      title: Text(Intl.fileList_menu_move.tr),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _copyMoveStart(file, false);
+                      },
+                    ),
+                  if (_hasWritePermission)
+                    ListTile(
+                      leading:
+                          const Icon(Icons.drive_file_rename_outline_rounded),
+                      title: Text(Intl.fileList_menu_rename.tr),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showRenameDialog(file);
+                      },
+                    ),
+                  if (_hasWritePermission)
+                    ListTile(
+                      leading: const Icon(Icons.delete),
+                      title: Text(Intl.fileList_menu_delete.tr),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _tryDeleteFile(file);
+                      },
+                    ),
+                  ListTile(
+                    leading: const Icon(Icons.info),
+                    title: Text(Intl.fileList_menu_details.tr),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showDetailsDialog(file);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
+  void _copyMoveStart(FileItemVO file, bool isCopy) {
+    LogUtil.d("showBottomSheet");
+    String originalFolder = file.path.substringBeforeLast("/")!;
+    if (originalFolder.isEmpty) {
+      originalFolder = "/";
+    }
+
+    var future = Get.bottomSheet(
+      FileCopyMoveDialog(
+        originalFolder: originalFolder,
+        names: [file.name],
+        isCopy: isCopy,
+      ),
+      isScrollControlled: true,
+    );
+    future.then((value) {
+      if (value != null && value["result"] == true) {
+        _refreshIndicatorKey.currentState?.show();
+      }
+    });
+  }
+
+  void _showDetailsDialog(FileItemVO file) {
+    showModalBottomSheet(
+      context: Get.context!,
+      builder: (context) => FileDetailsDialog(
+        name: file.name,
+        size: file.sizeDesc,
+        path: file.path,
+        modified: file.modified,
+        thumb: file.thumb,
+      ),
+    );
+  }
+
+  _tryDeleteFile(file) {
+    SmartDialog.show(
+        clickMaskDismiss: false,
+        builder: (context) {
+          return AlertDialog(
+            title: Text(Intl.deleteFileDialog_title.tr),
+            content: Text.rich(
+              TextSpan(
+                text: Intl.deleteFileDialog_content_part1.tr,
+                children: [
+                  TextSpan(
+                      text: file.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  TextSpan(text: Intl.deleteFileDialog_content_part2.tr),
+                ],
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  SmartDialog.dismiss();
+                },
+                child: Text(Intl.deleteFileDialog_btn_cancel.tr),
+              ),
+              TextButton(
+                onPressed: () {
+                  SmartDialog.dismiss();
+                  _httpDeleteFile(file);
+                },
+                child: Text(Intl.deleteFileDialog_btn_ok.tr),
+              ),
+            ],
+          );
+        });
+  }
+
+  void _httpDeleteFile(FileItemVO file) {
+    FileRemoveReq req = FileRemoveReq();
+    req.dir = file.path.substringBeforeLast("/${file.name}")!;
+    if (req.dir == "") {
+      req.dir = "/";
+    }
+    req.names = [file.name];
+
+    SmartDialog.showLoading(msg: Intl.fileList_tips_deleting.tr);
+    DioUtils.instance.requestNetwork(Method.post, "fs/remove",
+        params: req.toJson(), onSuccess: (data) {
+      SmartDialog.dismiss();
+      _files.remove(file);
+      setState(() {});
+    }, onError: (code, msg) {
+      SmartDialog.showToast(msg);
+      SmartDialog.dismiss();
+    });
+  }
+
+  _onFileMoreIconButtonTap(BuildContext context, int index) {
+    _showBottomMenuDialog(context, _files[index], index);
+  }
+
+  void _showRenameDialog(FileItemVO file) {
+    final textEditingController = TextEditingController(text: file.name);
+    final focusNode = FocusNode().autoFocus();
+    SmartDialog.show(builder: (context) {
+      return FileRenameDialog(
+        controller: textEditingController,
+        focusNode: focusNode,
+        onCancel: () => SmartDialog.dismiss(),
+        onConfirm: () {
+          SmartDialog.dismiss();
+          _httpRenameFile(file, textEditingController.text.trim());
+        },
+      );
+    });
+  }
+
+  void _httpRenameFile(FileItemVO file, String newName) {
+    if (file.name == newName) {
+      return;
+    }
+
+    FileRenameReq req = FileRenameReq();
+    req.path = file.path;
+    req.name = newName;
+    SmartDialog.showLoading(msg: Intl.fileList_tips_renaming.tr);
+    DioUtils.instance.requestNetwork(Method.post, "fs/rename",
+        params: req.toJson(), onSuccess: (data) {
+      file.path = "${file.path.substringBeforeLast(file.name)!}$newName";
+      file.name = newName;
+      setState(() {});
+      SmartDialog.dismiss();
+    }, onError: (code, msg) {
+      SmartDialog.dismiss();
+      SmartDialog.showToast(msg);
+    });
+  }
+
+  void _showNewFolderDialog() {
+    SmartDialog.show(builder: (context) {
+      TextEditingController textController = TextEditingController();
+      FocusNode focusNode = FocusNode().autoFocus();
+      return MkdirDialog(
+        controller: textController,
+        focusNode: focusNode,
+        onCancel: () => SmartDialog.dismiss(),
+        onConfirm: () {
+          SmartDialog.dismiss();
+          _httpMkdir(textController.text.trim());
+        },
+      );
+    });
+  }
+
+  void _httpMkdir(String text) {
+    MkdirReq req = MkdirReq();
+    if (path == "/") {
+      req.path = "/$text";
+    } else {
+      req.path = "$path/$text";
+    }
+
+    SmartDialog.showLoading();
+    DioUtils.instance.requestNetwork(
+      Method.post,
+      "fs/mkdir",
+      params: req.toJson(),
+      onSuccess: (data) {
+        SmartDialog.dismiss();
+        SmartDialog.showToast(Intl.mkdirDialog_createSuccess.tr);
+        _refreshIndicatorKey.currentState?.show();
+        Get.toNamed(
+          NamedRouter.fileList,
+          arguments: {"path": req.path},
+          id: AlistRouter.fileListCopyMoveRouterStackId,
+        );
+      },
+      onError: (code, msg) {
+        SmartDialog.dismiss();
+        SmartDialog.showToast(msg);
+      },
+    );
+  }
 }
 
 class _FileListView extends StatelessWidget {
@@ -450,11 +727,17 @@ class _FileListView extends StatelessWidget {
     required this.path,
     required this.readme,
     required this.onFileItemClick,
+    this.hasWritePermission = false,
+    this.onFileMoreIconButtonTap,
+    this.fileDeleteCallback,
   }) : super(key: key);
   final String? path;
   final String? readme;
   final List<FileItemVO> files;
+  final bool hasWritePermission;
   final FileItemClickCallback onFileItemClick;
+  final FileMoreIconClickCallback? onFileMoreIconButtonTap;
+  final FileDeleteCallback? fileDeleteCallback;
 
   @override
   Widget build(BuildContext context) {
@@ -492,16 +775,59 @@ class _FileListView extends StatelessWidget {
         } else {
           // it's file
           final file = files[index];
-          return FileListItemView(
-            icon: file.icon,
-            fileName: file.name,
-            thumbnail: file.thumb,
-            time: file.modified,
-            sizeDesc: file.sizeDesc,
-            onTap: () => onFileItemClick(context, files, file),
+          return Slidable(
+            key: Key(file.path),
+            endActionPane: ActionPane(
+              motion: const DrawerMotion(),
+              children: [
+                SlidableAction(
+                  onPressed: (context) => _showDetailsDialog(context, file),
+                  backgroundColor: Get.theme.colorScheme.secondary,
+                  foregroundColor: Colors.white,
+                  label: Intl.recentsScreen_menu_details.tr,
+                ),
+                if (hasWritePermission)
+                  SlidableAction(
+                    onPressed: (context) {
+                      if (null != fileDeleteCallback) {
+                        fileDeleteCallback!(context, index);
+                      }
+                    },
+                    backgroundColor: const Color(0xFFFE4A49),
+                    foregroundColor: Colors.white,
+                    label: Intl.recentsScreen_menu_delete.tr,
+                  ),
+              ],
+            ),
+            child: FileListItemView(
+              icon: file.icon,
+              fileName: file.name,
+              thumbnail: file.thumb,
+              time: file.modified,
+              sizeDesc: file.sizeDesc,
+              onTap: () => onFileItemClick(context, index),
+              onMoreIconButtonTap: () {
+                if (onFileMoreIconButtonTap != null) {
+                  onFileMoreIconButtonTap!(context, index);
+                }
+              },
+            ),
           );
         }
       },
+    );
+  }
+
+  _showDetailsDialog(BuildContext context, FileItemVO file) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => FileDetailsDialog(
+        name: file.name,
+        size: file.sizeDesc,
+        path: file.path,
+        modified: file.modified,
+        thumb: file.thumb,
+      ),
     );
   }
 }
