@@ -108,4 +108,8 @@ const translationsZhCN = {
   "mkdirDialog_cancel": "取消",
   "mkdirDialog_ok": "确认",
   "mkdirDialog_createSuccess": "创建成功",
+  "davTipsDialog_title": "提示",
+  "davTipsDialog_content": "您填写的服务器地址似乎是一个 WebDAV 服务，本软件并非通过 WebDAV 挂载实现的，所以您可能需要修改服务器地址。",
+  "davTipsDialog_btn_ok": "我填写的没错",
+  "davTipsDialog_btn_cancel": "返回修改",
 };

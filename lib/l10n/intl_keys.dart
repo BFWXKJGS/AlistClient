@@ -107,4 +107,8 @@ class Intl {
   static const String mkdirDialog_cancel = "mkdirDialog_cancel";
   static const String mkdirDialog_ok = "mkdirDialog_ok";
   static const String mkdirDialog_createSuccess = "mkdirDialog_createSuccess";
+  static const String davTipsDialog_title = "davTipsDialog_title";
+  static const String davTipsDialog_content = "davTipsDialog_content";
+  static const String davTipsDialog_btn_ok = "davTipsDialog_btn_ok";
+  static const String davTipsDialog_btn_cancel = "davTipsDialog_btn_cancel";
 }

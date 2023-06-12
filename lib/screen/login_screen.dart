@@ -273,7 +273,8 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
   }
 
   Future<void> _login(
-      {required LoginSuccessCallback onSuccess,
+      {bool ignoreDavCheck = false,
+      required LoginSuccessCallback onSuccess,
       required LoginFailureCallback onFailure}) async {
     var address = addressController.text.trim();
     if (address.isEmpty) {
@@ -283,6 +284,11 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
 
     if (!address.endsWith("/")) {
       address = "$address/";
+    }
+
+    if (!ignoreDavCheck && address.endsWith("/dav/")) {
+      _showDavTipsDialog(isLogin: true);
+      return;
     }
 
     var username = usernameController.text.trim();
@@ -344,7 +350,8 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
     return true;
   }
 
-  _enterVisitorMode(String address, {bool useDemoServer = false}) {
+  _enterVisitorMode(String address,
+      {bool useDemoServer = false, bool ignoreDavCheck = false}) {
     if (!address.endsWith("/")) {
       address = "$address/";
     }
@@ -354,6 +361,10 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
     }
     if (!address.startsWith("http://") && !address.startsWith("https://")) {
       address = "http://$address";
+    }
+    if (!ignoreDavCheck && address.endsWith("/dav/")) {
+      _showDavTipsDialog(isLogin: false);
+      return;
     }
 
     var baseUrl = "${address}api/";
@@ -427,8 +438,9 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
     });
   }
 
-  _onLoginButtonClick(BuildContext context) {
+  _onLoginButtonClick(BuildContext context, {bool ignoreDavCheck = false}) {
     _login(
+      ignoreDavCheck: ignoreDavCheck,
       onSuccess: () {
         SmartDialog.dismiss();
         Get.offNamed(NamedRouter.home);
@@ -584,6 +596,39 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
     addressController.text = "${addressController.text}$text";
     addressController.selection = TextSelection.fromPosition(
         TextPosition(offset: addressController.text.length));
+  }
+
+  void _showDavTipsDialog({bool isLogin = false}) {
+    SmartDialog.show(builder: (context) {
+      return AlertDialog(
+        title: Text(Intl.davTipsDialog_title.tr),
+        content: Text(Intl.davTipsDialog_content.tr),
+        actions: [
+          TextButton(
+            onPressed: () {
+              SmartDialog.dismiss();
+            },
+            child: Text(
+              Intl.davTipsDialog_btn_cancel.tr,
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              SmartDialog.dismiss();
+              if (isLogin) {
+                _onLoginButtonClick(context, ignoreDavCheck: true);
+              } else {
+                var address = addressController.text.trim();
+                _enterVisitorMode(address, ignoreDavCheck: true);
+              }
+            },
+            child: Text(
+              Intl.davTipsDialog_btn_ok.tr,
+            ),
+          ),
+        ],
+      );
+    });
   }
 }
 

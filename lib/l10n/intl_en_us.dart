@@ -111,4 +111,8 @@ const translationsEnUS = {
   "mkdirDialog_cancel":"Cancel",
   "mkdirDialog_ok":"Confirm",
   "mkdirDialog_createSuccess": "Folder created successfully.",
+  "davTipsDialog_title": "Tips",
+  "davTipsDialog_content": "The server url you filled in seems to be a WebDAV service, and the software is not implemented through WebDAV mounts, so you may need to change the server url.",
+  "davTipsDialog_btn_ok": "Continue to sign in",
+  "davTipsDialog_btn_cancel": "Back",
 };
