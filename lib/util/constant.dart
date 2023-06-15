@@ -13,6 +13,7 @@ class AlistConstant {
 
   static const String serverUrl = 'address';
   static const String baseUrl = 'baseUrl';
+  static const String basePath = 'basePath';
   static const String username = 'username';
   static const String password = 'password';
   static const String token = 'token';

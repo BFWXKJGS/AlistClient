@@ -221,6 +221,14 @@ class _RecentsScreenState extends State<RecentsScreen>
                     },
                   ),
                   ListTile(
+                    leading: const Icon(Icons.link_rounded),
+                    title: Text(Intl.fileList_menu_copyLink.tr),
+                    onTap: () {
+                      Navigator.pop(context);
+                      FileUtils.copyFileLink(record.path, record.sign);
+                    },
+                  ),
+                  ListTile(
                     leading: const Icon(Icons.delete),
                     title: Text(Intl.recentsScreen_menu_delete.tr),
                     onTap: () {

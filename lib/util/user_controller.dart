@@ -1,21 +1,29 @@
+import 'package:alist/entity/my_info_resp.dart';
+import 'package:alist/net/dio_utils.dart';
+import 'package:dio/dio.dart';
+import 'package:flustars/flustars.dart';
 import 'package:get/get.dart';
-import 'package:sp_util/sp_util.dart';
 
 import 'constant.dart';
 
 class UserController extends GetxController {
   var user = User(baseUrl: "", serverUrl: "").obs;
 
-  void login(User user) {
+  void login(User user, {bool fromCache = false}) {
     this.user.value = user;
 
     SpUtil.putString(AlistConstant.serverUrl, user.serverUrl);
     SpUtil.putString(AlistConstant.baseUrl, user.baseUrl);
-    SpUtil.putString(AlistConstant.username, user.username ?? "");
+    SpUtil.putString(AlistConstant.username, user.username);
     SpUtil.putString(AlistConstant.password, user.password ?? "");
     SpUtil.putString(AlistConstant.token, user.token ?? "");
+    SpUtil.putString(AlistConstant.basePath, user.basePath ?? "");
     SpUtil.putBool(AlistConstant.guest, user.guest);
     SpUtil.putBool(AlistConstant.useDemoServer, user.useDemoServer);
+
+    if (fromCache || user.basePath == null || user.basePath!.isEmpty) {
+      requestBasePath(user);
+    }
   }
 
   void logout() {
@@ -23,15 +31,17 @@ class UserController extends GetxController {
     var isUseDemoServer = currentUserValue.useDemoServer;
     var guest = currentUserValue.guest;
     var newUserValue = User(
-        baseUrl: isUseDemoServer ? "" : currentUserValue.baseUrl,
-        serverUrl: isUseDemoServer ? "" : currentUserValue.serverUrl,
-        guest: false,
-        username: currentUserValue.username,
-        password: currentUserValue.password,
-        token: null);
+      baseUrl: isUseDemoServer ? "" : currentUserValue.baseUrl,
+      serverUrl: isUseDemoServer ? "" : currentUserValue.serverUrl,
+      guest: false,
+      username: currentUserValue.username,
+      password: currentUserValue.password,
+      token: null,
+    );
     user.value = newUserValue;
     SpUtil.remove(AlistConstant.guest);
     SpUtil.remove(AlistConstant.token);
+    SpUtil.remove(AlistConstant.basePath);
     if (isUseDemoServer) {
       SpUtil.remove(AlistConstant.useDemoServer);
       SpUtil.remove(AlistConstant.serverUrl);
@@ -40,6 +50,35 @@ class UserController extends GetxController {
     if (guest) {
       SpUtil.remove(AlistConstant.username);
     }
+  }
+
+  Future<void> requestBasePath(User requestUser) async {
+    DioUtils.instance.requestNetwork<MyInfoResp>(
+      Method.get,
+      "me",
+      options: Options(followRedirects: false),
+      onSuccess: (data) {
+        User originalUser = user.value;
+        if (requestUser == originalUser &&
+            data?.basePath != null &&
+            data!.basePath.isNotEmpty) {
+          SpUtil.putString(AlistConstant.basePath, data.basePath);
+          user.value = User(
+            baseUrl: originalUser.baseUrl,
+            serverUrl: originalUser.serverUrl,
+            guest: originalUser.guest,
+            username: originalUser.username,
+            password: originalUser.password,
+            token: originalUser.token,
+            basePath: data.basePath,
+            useDemoServer: originalUser.useDemoServer,
+          );
+        }
+      },
+      onError: (code, msg) {
+        LogUtil.d("requestBasePath error: $msg");
+      },
+    );
   }
 }
 
@@ -50,6 +89,7 @@ class User {
   final String username;
   final String? password;
   final String? token;
+  final String? basePath;
   final bool useDemoServer;
 
   User({
@@ -59,6 +99,7 @@ class User {
     this.username = "guest",
     this.password,
     this.token,
+    this.basePath,
     this.useDemoServer = false,
   });
 }

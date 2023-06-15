@@ -376,8 +376,13 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
       if (data?.disabled == true) {
         SmartDialog.showToast(Intl.loginScreen_tips_guestAccountDisabled.tr);
       } else {
-        _doAfterEnterVisitorMode(baseUrl, address, data?.username,
-            useDemoServer: useDemoServer);
+        _doAfterEnterVisitorMode(
+          baseUrl,
+          address,
+          data?.username,
+          data?.basePath,
+          useDemoServer: useDemoServer,
+        );
       }
       SmartDialog.dismiss();
     }, onError: (code, message) {
@@ -393,7 +398,7 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
   }
 
   void _doAfterEnterVisitorMode(
-      String baseUrl, String address, String? username,
+      String baseUrl, String address, String? username, String? basePath,
       {bool useDemoServer = false}) {
     SpUtil.putBool(AlistConstant.ignoreSSLError, ignoreSSLError.value);
     userController.login(User(
@@ -403,6 +408,7 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
       password: null,
       token: null,
       guest: true,
+      basePath: basePath,
       useDemoServer: useDemoServer,
     ));
     Get.offNamed(NamedRouter.home);

@@ -28,6 +28,7 @@ import 'package:dio/dio.dart';
 import 'package:floor/floor.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -486,6 +487,15 @@ class _FileListScreenState extends State<FileListScreen>
                       _onFileTap(context, index);
                     },
                   ),
+                  if (!file.isDir)
+                    ListTile(
+                      leading: const Icon(Icons.link_rounded),
+                      title: Text(Intl.fileList_menu_copyLink.tr),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _copyFileLink(file);
+                      },
+                    ),
                   if (_hasWritePermission)
                     ListTile(
                       leading: const Icon(Icons.file_copy),
@@ -716,6 +726,10 @@ class _FileListScreenState extends State<FileListScreen>
         SmartDialog.showToast(msg);
       },
     );
+  }
+
+  void _copyFileLink(FileItemVO file) async {
+    FileUtils.copyFileLink(file.path, file.sign);
   }
 }
 

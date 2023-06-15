@@ -2,9 +2,14 @@ import 'dart:math';
 
 import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/generated/images.dart';
+import 'package:alist/l10n/intl_keys.dart' as ikeys;
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/file_type.dart';
+import 'package:alist/util/user_controller.dart';
 import 'package:flustars/flustars.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 final isoDateFormat = DateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -224,6 +229,34 @@ class FileUtils {
     }
   }
 
+  static void copyFileLink(String path, String? sign) async {
+    UserController userController = Get.find();
+    var user = userController.user.value;
+    String? basePath = user.basePath;
+    if (basePath == null || basePath.isEmpty) {
+      SmartDialog.showLoading();
+      await userController.requestBasePath(user);
+      SmartDialog.dismiss();
+      user = userController.user.value;
+      basePath = user.basePath;
+    }
+
+    if (basePath == null || basePath.isEmpty) {
+      SmartDialog.showToast(ikeys.Intl.photo_load_failed.tr);
+      return;
+    }
+
+    var filePath = user.basePath!.endsWith("/") ? path.substring(1) : path;
+    String url = "${user.serverUrl}d${user.basePath}$filePath";
+    if (sign != null && sign.isNotEmpty) {
+      url = "$url?sign=$sign";
+    }
+
+    Uri uri = Uri.parse(url);
+    Clipboard.setData(ClipboardData(text: uri.toString()));
+    SmartDialog.showToast(ikeys.Intl.tips_link_copied.tr);
+  }
+
   static String? formatBytes(int size) {
     if (size <= 0) return "0B";
     const suffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
@@ -243,13 +276,12 @@ class FileUtils {
     return modifyTimeStr;
   }
 
-  static String? getCompleteThumbnail(String? thumbnail){
-    if(thumbnail == null || thumbnail.isEmpty){
+  static String? getCompleteThumbnail(String? thumbnail) {
+    if (thumbnail == null || thumbnail.isEmpty) {
       return null;
     }
 
-    if (!thumbnail.startsWith("http://") &&
-        !thumbnail.startsWith("https://")) {
+    if (!thumbnail.startsWith("http://") && !thumbnail.startsWith("https://")) {
       String serverUrl = SpUtil.getString(AlistConstant.serverUrl) ?? "";
       Uri uri = Uri.parse(serverUrl);
       thumbnail = "${uri.scheme}://${uri.host}:${uri.port}$thumbnail";

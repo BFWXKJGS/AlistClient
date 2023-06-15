@@ -59,15 +59,20 @@ class _SplashScreenState extends State<SplashScreen> {
     String? username = SpUtil.getString(AlistConstant.username, defValue: null);
     String? password = SpUtil.getString(AlistConstant.password, defValue: null);
     String? token = SpUtil.getString(AlistConstant.token, defValue: null);
+    String? basePath = SpUtil.getString(AlistConstant.basePath, defValue: null);
     bool guest = SpUtil.getBool(AlistConstant.guest) ?? false;
-    userController.login(User(
-      baseUrl: baseUrl ?? "",
-      serverUrl: serverUrl ?? "",
-      username: username ?? "guest",
-      password: password,
-      guest: guest,
-      token: token,
-    ));
+    userController.login(
+      User(
+        baseUrl: baseUrl ?? "",
+        serverUrl: serverUrl ?? "",
+        username: username ?? "guest",
+        password: password,
+        guest: guest,
+        token: token,
+        basePath: basePath,
+      ),
+      fromCache: true,
+    );
   }
 
   @override

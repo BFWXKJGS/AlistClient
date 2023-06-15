@@ -65,6 +65,7 @@ const translationsZhCN = {
   "fileList_menu_delete": "删除",
   "fileList_menu_details": "详情",
   "fileList_menu_open": "打开",
+  "fileList_menu_copyLink": "复制链接",
   "fileList_menu_copy": "复制",
   "fileList_menu_move": "移动",
   "fileList_menu_rename": "重命名",
@@ -109,7 +110,10 @@ const translationsZhCN = {
   "mkdirDialog_ok": "确认",
   "mkdirDialog_createSuccess": "创建成功",
   "davTipsDialog_title": "提示",
-  "davTipsDialog_content": "您填写的服务器地址似乎是一个 WebDAV 服务，本软件并非通过 WebDAV 挂载实现的，所以您可能需要修改服务器地址。",
+  "davTipsDialog_content":
+      "您填写的服务器地址似乎是一个 WebDAV 服务，本软件并非通过 WebDAV 挂载实现的，所以您可能需要修改服务器地址。",
   "davTipsDialog_btn_ok": "我填写的没错",
   "davTipsDialog_btn_cancel": "返回修改",
+  "tips_link_copied": "链接已复制~",
+  "tips_getBasePathFailed":"获取base path失败"
 };

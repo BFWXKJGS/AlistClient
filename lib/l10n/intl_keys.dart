@@ -64,6 +64,7 @@ class Intl {
   static const String fileList_menu_delete = "fileList_menu_delete";
   static const String fileList_menu_details = "fileList_menu_details";
   static const String fileList_menu_open = "fileList_menu_open";
+  static const String fileList_menu_copyLink = "fileList_menu_copyLink";
   static const String fileList_menu_copy = "fileList_menu_copy";
   static const String fileList_menu_move = "fileList_menu_move";
   static const String fileList_menu_rename = "fileList_menu_rename";
@@ -111,4 +112,6 @@ class Intl {
   static const String davTipsDialog_content = "davTipsDialog_content";
   static const String davTipsDialog_btn_ok = "davTipsDialog_btn_ok";
   static const String davTipsDialog_btn_cancel = "davTipsDialog_btn_cancel";
+  static const String tips_link_copied = "tips_link_copied";
+  static const String tips_getBasePathFailed = "tips_getBasePathFailed";
 }
