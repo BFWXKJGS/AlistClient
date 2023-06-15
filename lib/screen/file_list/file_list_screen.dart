@@ -24,7 +24,6 @@ import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/file_details_dialog.dart';
 import 'package:alist/widget/file_list_item_view.dart';
-import 'package:alist/widget/overflow_position_middle_text.dart';
 import 'package:dio/dio.dart';
 import 'package:floor/floor.dart';
 import 'package:flustars/flustars.dart';
@@ -233,8 +232,7 @@ class _FileListScreenState extends State<FileListScreen>
 
   AlistScaffold _buildScaffold(BuildContext context) {
     return AlistScaffold(
-      appbarTitle: OverflowPositionMiddleText(
-          _pageName ?? Intl.screenName_fileListRoot.tr),
+      appbarTitle: Text(_pageName ?? Intl.screenName_fileListRoot.tr),
       appbarActions: [_menuMoreIcon()],
       onLeadingDoubleTap: () =>
           Get.until((route) => route.isFirst, id: stackId),
@@ -443,20 +441,19 @@ class _FileListScreenState extends State<FileListScreen>
     String? modifyTimeStr = resp.getReformatModified(modifyTime);
 
     return FileItemVO(
-      name: resp.name,
-      path: resp.getCompletePath(path),
-      size: resp.isDir ? null : resp.size,
-      sizeDesc: resp.formatBytes(),
-      isDir: resp.isDir,
-      modified: modifyTimeStr,
-      typeInt: resp.type,
-      type: resp.getFileType(),
-      thumb: resp.thumb,
-      sign: resp.sign,
-      icon: resp.getFileIcon(),
-      modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
-      provider: _data?.provider
-    );
+        name: resp.name,
+        path: resp.getCompletePath(path),
+        size: resp.isDir ? null : resp.size,
+        sizeDesc: resp.formatBytes(),
+        isDir: resp.isDir,
+        modified: modifyTimeStr,
+        typeInt: resp.type,
+        type: resp.getFileType(),
+        thumb: resp.thumb,
+        sign: resp.sign,
+        icon: resp.getFileIcon(),
+        modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
+        provider: _data?.provider);
   }
 
   _showBottomMenuDialog(

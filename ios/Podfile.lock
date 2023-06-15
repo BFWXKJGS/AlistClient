@@ -2,8 +2,6 @@ PODS:
   - AliPlayerSDK_iOS (5.4.9.1-26507944):
     - AliPlayerSDK_iOS/AliPlayerSDK (= 5.4.9.1-26507944)
   - AliPlayerSDK_iOS/AliPlayerSDK (5.4.9.1-26507944)
-  - auto_orientation (0.0.1):
-    - Flutter
   - Flutter (1.0.0)
   - flutter_aliplayer (0.0.1):
     - AliPlayerSDK_iOS (= 5.4.9.1-26507944)
@@ -22,7 +20,7 @@ PODS:
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - permission_handler_apple (9.0.4):
+  - permission_handler_apple (9.1.0):
     - Flutter
   - screen_brightness_ios (0.1.0):
     - Flutter
@@ -42,7 +40,6 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
-  - auto_orientation (from `.symlinks/plugins/auto_orientation/ios`)
   - Flutter (from `Flutter`)
   - flutter_aliplayer (from `.symlinks/plugins/flutter_aliplayer/ios`)
   - flutter_pdfview (from `.symlinks/plugins/flutter_pdfview/ios`)
@@ -65,8 +62,6 @@ SPEC REPOS:
     - MJExtension
 
 EXTERNAL SOURCES:
-  auto_orientation:
-    :path: ".symlinks/plugins/auto_orientation/ios"
   Flutter:
     :path: Flutter
   flutter_aliplayer:
@@ -98,7 +93,6 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   AliPlayerSDK_iOS: e6a135eea616e85e4aea6fde5aaa7c6afa258229
-  auto_orientation: 102ed811a5938d52c86520ddd7ecd3a126b5d39d
   Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
   flutter_aliplayer: ade3b95c37b64e61b2f23a590937d8e61fe47bdc
   flutter_pdfview: 25f53dd6097661e6395b17de506e6060585946bd
@@ -107,7 +101,7 @@ SPEC CHECKSUMS:
   open_file: 02eb5cb6b21264bd3a696876f5afbfb7ca4f4b7d
   package_info_plus: 6c92f08e1f853dc01228d6f553146438dafcd14e
   path_provider_foundation: eaf5b3e458fc0e5fbb9940fb09980e853fe058b8
-  permission_handler_apple: 44366e37eaf29454a1e7b1b7d736c2cceaeb17ce
+  permission_handler_apple: 8f116445eff3c0e7c65ad60f5fef5490aa94b4e4
   screen_brightness_ios: 715ca807df953bf676d339f11464e438143ee625
   shared_preferences_foundation: e2dae3258e06f44cc55f49d42024fd8dd03c590c
   sqflite: 31f7eba61e3074736dff8807a9b41581e4f7f15a

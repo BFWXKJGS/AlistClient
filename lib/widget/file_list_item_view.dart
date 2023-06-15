@@ -2,7 +2,6 @@ import 'package:alist/generated/images.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/widget_utils.dart';
-import 'package:alist/widget/overflow_position_middle_text.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -43,9 +42,10 @@ class FileListItemView extends StatelessWidget {
         ],
       ),
       trailing: _moreIconButton(isDarkMode),
-      title: OverflowPositionMiddleText(
+      title: Text(
         fileName,
-        maxLines: 1,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
       subtitle: time != null
           ? Row(

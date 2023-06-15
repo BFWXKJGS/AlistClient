@@ -5,7 +5,6 @@ import 'dart:math';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/widget/slider.dart';
-import 'package:auto_orientation/auto_orientation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_aliplayer/flutter_aliplayer.dart';
@@ -249,7 +248,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     if (_playing == true) {
       _player.pause();
     } else {
-      if (_duration.inMilliseconds == _currentPos.inMilliseconds) {
+      if (_duration.inMilliseconds <= _currentPos.inMilliseconds) {
         await _player.seekTo(0, FlutterAvpdef.ACCURATE);
       }
       _player.play();
@@ -445,19 +444,21 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   }
 
   void _enterFullScreen() async {
-    await AutoOrientation.landscapeAutoMode();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+    await SystemChrome.setPreferredOrientations(
+        [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: []);
     setState(() {
       _fullscreen = true;
     });
   }
 
   void _exitFullScreen() async {
-    await AutoOrientation.portraitAutoMode();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-        overlays: [SystemUiOverlay.bottom, SystemUiOverlay.top]).then((value) {
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
-    });
+    await SystemChrome.setPreferredOrientations(
+        [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: [SystemUiOverlay.bottom, SystemUiOverlay.top]);
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
     setState(() {
       _fullscreen = false;
     });

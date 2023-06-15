@@ -15,7 +15,6 @@ import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_will_pop_scope.dart';
 import 'package:alist/widget/file_list_item_view.dart';
-import 'package:alist/widget/overflow_position_middle_text.dart';
 import 'package:dio/dio.dart';
 import 'package:floor/floor.dart';
 import 'package:flustars/flustars.dart';
@@ -106,7 +105,7 @@ class FileCopyMoveDialog extends StatelessWidget {
                   }
                 },
               ),
-              title: OverflowPositionMiddleText(name),
+              title: Text(name),
               actions: [
                 TextButton(
                   onPressed: () => Get.back(),
@@ -121,9 +120,10 @@ class FileCopyMoveDialog extends StatelessWidget {
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
               color: Get.theme.colorScheme.surfaceVariant,
-              child: OverflowPositionMiddleText(
+              child: Text(
                 "${Intl.fileCopyMoveDialog_targetFolder.tr}${controller.path}",
                 maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             Expanded(

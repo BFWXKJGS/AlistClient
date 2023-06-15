@@ -52,7 +52,7 @@ dependencies:
       url: https://github.com/GeekTR/flutter_aliplayer.git
       ref: feature/5.4.9.1
   # screen orientation controller
-  auto_orientation: ^2.3.1
+#  auto_orientation: ^2.2.1
   # Dialog
   flutter_smart_dialog: ^4.9.0+6
   # package info in android、ios...
@@ -84,8 +84,6 @@ dependencies:
   flutter_pdfview: ^1.3.1
   # date time format
   intl: ^0.18.1
-  # text
-  extended_text: ^11.0.1
 
 dev_dependencies:
   flutter_test:
