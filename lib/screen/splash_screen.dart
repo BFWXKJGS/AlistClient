@@ -1,4 +1,5 @@
 import 'package:alist/database/alist_database_controller.dart';
+import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/net/intercept.dart';
 import 'package:alist/util/constant.dart';
@@ -6,6 +7,7 @@ import 'package:alist/util/global.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/user_controller.dart';
+import 'package:alist/util/widget_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -78,7 +80,34 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     _context = context;
-    return const SizedBox();
+    var colorScheme = Theme.of(context).colorScheme;
+    Color startColor = colorScheme.primaryContainer;
+    const Color endColor = Colors.white;
+    var colors = [startColor, endColor];
+    bool isDarkMode = WidgetUtils.isDarkMode(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: isDarkMode
+            ? null
+            : LinearGradient(
+                colors: colors,
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+        color: isDarkMode ? colorScheme.background : null,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(),
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Text(Intl.splashScreen_loading.tr),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

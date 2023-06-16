@@ -122,4 +122,5 @@ class Intl {
   static const String uploadingFileScreen_status_uploading = "uploadingFileScreen_status_uploading";
   static const String uploadingFileScreen_status_waiting = "uploadingFileScreen_status_waiting";
   static const String uploadingFileScreen_status_completed = "uploadingFileScreen_status_completed";
+  static const String splashScreen_loading = "splashScreen_loading";
 }

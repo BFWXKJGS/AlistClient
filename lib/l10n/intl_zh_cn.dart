@@ -124,4 +124,5 @@ const translationsZhCN = {
   "uploadingFileScreen_status_uploading": "上传中",
   "uploadingFileScreen_status_waiting": "等待中",
   "uploadingFileScreen_status_completed": "上传完成",
+  "splashScreen_loading": "加载中...",
 };

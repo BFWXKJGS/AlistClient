@@ -128,4 +128,5 @@ const translationsEnUS = {
   "uploadingFileScreen_status_uploading": "Uploading",
   "uploadingFileScreen_status_waiting": "Waiting",
   "uploadingFileScreen_status_completed": "Completed",
+  "splashScreen_loading": "Loading...",
 };
