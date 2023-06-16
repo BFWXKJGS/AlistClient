@@ -1,0 +1,10 @@
+/* 
+  InfoPlist.strings
+  Runner
+
+  Created by tangrui on 2023/6/15.
+  
+*/
+NSPhotoLibraryUsageDescription = "上传图片/视频功能需要您授予相册访问权限";
+NSCameraUsageDescription = "拍照/拍视频上传功能需要您授予相机权限";
+NSMicrophoneUsageDescription = "录视频/录音上传功能需要您授予麦克风权限";

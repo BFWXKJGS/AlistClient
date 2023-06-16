@@ -24,7 +24,7 @@ import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/file_details_dialog.dart';
 import 'package:alist/widget/file_list_item_view.dart';
-import 'package:dio/dio.dart';
+import 'package:dio/dio.dart' as dio;
 import 'package:floor/floor.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
@@ -32,6 +32,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 
 typedef FileItemClickCallback = Function(BuildContext context, int index);
 
@@ -72,7 +73,7 @@ class _FileListScreenState extends State<FileListScreen>
 
   // use key to get the more icon's location and size
   final GlobalKey _moreIconKey = GlobalKey();
-  final CancelToken _cancelToken = CancelToken();
+  final dio.CancelToken _cancelToken = dio.CancelToken();
   String? _pageName;
   String? _password;
   bool _passwordRetrying = false;
@@ -217,6 +218,8 @@ class _FileListScreenState extends State<FileListScreen>
               _refreshIndicatorKey.currentState?.show();
             } else if (menu.menuId == MenuId.newFolder) {
               _showNewFolderDialog();
+            } else if (menu.menuId == MenuId.uploadFiles) {
+              _uploadFiles();
             }
             break;
           case MenuGroupId.sort:
@@ -229,6 +232,36 @@ class _FileListScreenState extends State<FileListScreen>
         }
       },
     );
+  }
+
+  Future<void> _uploadFiles() async {
+    ImagePicker picker = ImagePicker();
+    SmartDialog.showLoading(msg: Intl.fileList_tip_processing.tr);
+    List<XFile> medias = await picker
+        .pickMultipleMedia(requestFullMetadata: false)
+        .catchError((e) {
+      if (e is PlatformException) {
+        if (e.code == "photo_access_denied") {
+          SmartDialog.showToast(Intl.fileList_tips_permissionGalleyDenied.tr);
+        }
+      }
+      LogUtil.e(e);
+      return <XFile>[];
+    });
+    SmartDialog.dismiss();
+    var filePaths = medias.map((e) => e.path).toList();
+    if (filePaths.isNotEmpty) {
+      var originalFileNames = _files.map((e) => e.name).toSet();
+      await Get.toNamed(
+        NamedRouter.uploadingFiles,
+        arguments: {
+          "filePaths": filePaths,
+          "remotePath": path,
+          "originalFileNames": originalFileNames,
+        },
+      );
+      _refreshIndicatorKey.currentState?.show();
+    }
   }
 
   AlistScaffold _buildScaffold(BuildContext context) {
@@ -587,6 +620,7 @@ class _FileListScreenState extends State<FileListScreen>
   _tryDeleteFile(file) {
     SmartDialog.show(
         clickMaskDismiss: false,
+        keepSingle: true,
         builder: (context) {
           return AlertDialog(
             title: Text(Intl.deleteFileDialog_title.tr),

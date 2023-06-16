@@ -11,7 +11,7 @@ import 'package:alist/entity/file_remove_req.dart';
 import 'package:alist/entity/file_rename_req.dart';
 import 'package:alist/entity/login_resp_entity.dart';
 import 'package:alist/entity/my_info_resp.dart';
-import 'package:alist/generated/copy_move_req.dart';
+import 'package:alist/entity/copy_move_req.dart';
 import 'package:alist/generated/mkdir_req.dart';
 
 JsonConvert jsonConvert = JsonConvert();

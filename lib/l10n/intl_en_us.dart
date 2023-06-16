@@ -7,6 +7,7 @@ const translationsEnUS = {
   "screenName_donate": "Donate",
   "screenName_about": "About",
   "screenName_recents": "Recents",
+  "screenName_uploadingFiles": "File upload",
   "loginScreen_label_username": "Username",
   "loginScreen_label_password": "Password",
   "loginScreen_label_serverUrl": "Server URL",
@@ -61,6 +62,7 @@ const translationsEnUS = {
   "loadingStatusWidget_retry": "Retry",
   "fileList_menu_forceRefresh": "Refresh",
   "fileList_menu_newFolder": "New folder",
+  "fileList_menu_uploadFiles": "Upload files",
   "fileList_menu_fileName": "Name",
   "fileList_menu_fileType": "Type",
   "fileList_menu_modifyTime": "Time",
@@ -73,6 +75,9 @@ const translationsEnUS = {
   "fileList_menu_rename": "Rename",
   "fileList_tips_deleting": "Deleting...",
   "fileList_tips_renaming": "Renaming...",
+  "fileList_tips_permissionGalleyDenied":
+      "Please grant access to the album and try again.",
+  "fileList_tip_processing": "Processing...",
   "installPermissionDialog_title": "Install permission",
   "installPermissionDialog_content":
       "Please grant the permission to install the apk file, otherwise the installation will fail",
@@ -119,4 +124,8 @@ const translationsEnUS = {
   "davTipsDialog_btn_cancel": "Back",
   "tips_link_copied": "Link copied",
   "tips_getBasePathFailed": "Failed to get base",
+  "uploadingFileScreen_status_error": "Failed, click retry",
+  "uploadingFileScreen_status_uploading": "Uploading",
+  "uploadingFileScreen_status_waiting": "Waiting",
+  "uploadingFileScreen_status_completed": "Completed",
 };

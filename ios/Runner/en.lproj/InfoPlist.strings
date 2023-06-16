@@ -1,0 +1,10 @@
+/* 
+  InfoPlist.strings
+  Runner
+
+  Created by tangrui on 2023/6/15.
+  
+*/
+NSPhotoLibraryUsageDescription = "Uploading pictures/videos requires you to grant access to the album";
+NSCameraUsageDescription = "Photo/video upload function requires you to grant camera access";
+NSMicrophoneUsageDescription = "The video/recording upload feature requires you to grant microphone access";

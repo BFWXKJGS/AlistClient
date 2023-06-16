@@ -8,6 +8,7 @@ import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/player_skin.dart';
 import 'package:dio/dio.dart';
+import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_aliplayer/flutter_aliplayer.dart';

@@ -88,7 +88,7 @@ class _FileReaderContainerState extends State<_FileReaderContainer> {
       return Text("$_downloadProgress%");
     } else if (!_isOpenSuccessfully &&
         failedMessage == null &&
-        (widget.fileType == FileType.apk && Platform.isAndroid)) {
+        !(widget.fileType == FileType.apk && Platform.isAndroid)) {
       return Text("$_downloadProgress%");
     } else if (_isOpenSuccessfully ||
         (widget.fileType == FileType.apk && Platform.isAndroid)) {

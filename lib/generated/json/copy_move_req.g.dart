@@ -1,5 +1,5 @@
 import 'package:alist/generated/json/base/json_convert_content.dart';
-import 'package:alist/generated/copy_move_req.dart';
+import 'package:alist/entity/copy_move_req.dart';
 
 CopyMoveReq $CopyMoveReqFromJson(Map<String, dynamic> json) {
 	final CopyMoveReq copyMoveReq = CopyMoveReq();

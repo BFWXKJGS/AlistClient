@@ -20,6 +20,12 @@ final menuGroupOperations = MenuGroupEntity(
       name: Intl.fileList_menu_newFolder.tr,
       iconData: Icons.create_new_folder,
     ),
+    MenuItemEntity(
+      menuGroupId: MenuGroupId.operations,
+      menuId: MenuId.uploadFiles,
+      name: Intl.fileList_menu_uploadFiles.tr,
+      iconData: Icons.upload,
+    ),
   ],
 );
 
@@ -215,6 +221,7 @@ enum MenuId {
   fileName,
   fileType,
   modifyTime,
+  uploadFiles,
 }
 
 class MenuGroupEntity {

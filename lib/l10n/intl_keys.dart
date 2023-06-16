@@ -7,6 +7,7 @@ class Intl {
   static const String screenName_donate = "screenName_donate";
   static const String screenName_about = "screenName_about";
   static const String screenName_recents = "screenName_recents";
+  static const String screenName_uploadingFiles = "screenName_uploadingFiles";
   static const String loginScreen_label_username = "loginScreen_label_username";
   static const String loginScreen_label_password = "loginScreen_label_password";
   static const String loginScreen_label_serverUrl = "loginScreen_label_serverUrl";
@@ -58,6 +59,7 @@ class Intl {
   static const String loadingStatusWidget_retry = "loadingStatusWidget_retry";
   static const String fileList_menu_forceRefresh = "fileList_menu_forceRefresh";
   static const String fileList_menu_newFolder = "fileList_menu_newFolder";
+  static const String fileList_menu_uploadFiles = "fileList_menu_uploadFiles";
   static const String fileList_menu_fileName = "fileList_menu_fileName";
   static const String fileList_menu_fileType = "fileList_menu_fileType";
   static const String fileList_menu_modifyTime = "fileList_menu_modifyTime";
@@ -70,6 +72,8 @@ class Intl {
   static const String fileList_menu_rename = "fileList_menu_rename";
   static const String fileList_tips_deleting = "fileList_tips_deleting";
   static const String fileList_tips_renaming = "fileList_tips_renaming";
+  static const String fileList_tips_permissionGalleyDenied = "fileList_tips_permissionGalleyDenied";
+  static const String fileList_tip_processing = "fileList_tip_processing";
   static const String installPermissionDialog_title = "installPermissionDialog_title";
   static const String installPermissionDialog_content = "installPermissionDialog_content";
   static const String installPermissionDialog_btn_ok = "installPermissionDialog_btn_ok";
@@ -114,4 +118,8 @@ class Intl {
   static const String davTipsDialog_btn_cancel = "davTipsDialog_btn_cancel";
   static const String tips_link_copied = "tips_link_copied";
   static const String tips_getBasePathFailed = "tips_getBasePathFailed";
+  static const String uploadingFileScreen_status_error = "uploadingFileScreen_status_error";
+  static const String uploadingFileScreen_status_uploading = "uploadingFileScreen_status_uploading";
+  static const String uploadingFileScreen_status_waiting = "uploadingFileScreen_status_waiting";
+  static const String uploadingFileScreen_status_completed = "uploadingFileScreen_status_completed";
 }

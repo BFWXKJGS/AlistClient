@@ -10,6 +10,7 @@ import 'package:alist/screen/markdown_reader_screen.dart';
 import 'package:alist/screen/pdf_reader_screen.dart';
 import 'package:alist/screen/settings_screen.dart';
 import 'package:alist/screen/splash_screen.dart';
+import 'package:alist/screen/uploading_files_screen.dart';
 import 'package:alist/screen/video_player_screen.dart';
 import 'package:alist/screen/web_screen.dart';
 import 'package:alist/util/named_router.dart';
@@ -37,5 +38,6 @@ class AlistRouter {
     GetPage(
         name: NamedRouter.markdownReader, page: () => MarkdownReaderScreen()),
     GetPage(name: NamedRouter.pdfReader, page: () => PdfReaderScreen()),
+    GetPage(name: NamedRouter.uploadingFiles, page: () => const UploadingFilesScreen()),
   ];
 }

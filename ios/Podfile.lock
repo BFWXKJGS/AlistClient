@@ -12,6 +12,8 @@ PODS:
   - FMDB (2.7.5):
     - FMDB/standard (= 2.7.5)
   - FMDB/standard (2.7.5)
+  - image_picker_ios (0.0.1):
+    - Flutter
   - MJExtension (3.4.1)
   - open_file (0.0.1):
     - Flutter
@@ -43,6 +45,7 @@ DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_aliplayer (from `.symlinks/plugins/flutter_aliplayer/ios`)
   - flutter_pdfview (from `.symlinks/plugins/flutter_pdfview/ios`)
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - open_file (from `.symlinks/plugins/open_file/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
@@ -68,6 +71,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_aliplayer/ios"
   flutter_pdfview:
     :path: ".symlinks/plugins/flutter_pdfview/ios"
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
   open_file:
     :path: ".symlinks/plugins/open_file/ios"
   package_info_plus:
@@ -97,6 +102,7 @@ SPEC CHECKSUMS:
   flutter_aliplayer: ade3b95c37b64e61b2f23a590937d8e61fe47bdc
   flutter_pdfview: 25f53dd6097661e6395b17de506e6060585946bd
   FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
+  image_picker_ios: 4a8aadfbb6dc30ad5141a2ce3832af9214a705b5
   MJExtension: 21c5f6f8c4d5d8844b7ae8fbae08fed0b501f961
   open_file: 02eb5cb6b21264bd3a696876f5afbfb7ca4f4b7d
   package_info_plus: 6c92f08e1f853dc01228d6f553146438dafcd14e

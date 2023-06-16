@@ -1,7 +1,7 @@
 import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/table/file_password.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
-import 'package:alist/generated/copy_move_req.dart';
+import 'package:alist/entity/copy_move_req.dart';
 import 'package:alist/generated/mkdir_req.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';

@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'dart:io';
 import 'package:alist/net/json_parse_error.dart';
 import 'package:alist/net/net_error_handler.dart';
 import 'package:alist/net/redirect_exception.dart';
@@ -70,21 +70,22 @@ class DioUtils {
     ignoreSSLError ??= _ignoreSSLError;
     if (ignoreSSLError == true) {
       _dioIgnoreSSLError(dio);
-      _dioIgnoreSSLError(_downloadDio);
+      _dioIgnoreSSLError(_streamDio);
     } else {
-      _downloadDio.httpClientAdapter = IOHttpClientAdapter();
+      _streamDio.httpClientAdapter = IOHttpClientAdapter();
     }
 
     /// 添加拦截器
     void addInterceptor(Interceptor interceptor) {
       _dio.interceptors.add(interceptor);
+      _streamDio.interceptors.add(interceptor);
     }
 
     _interceptors.forEach(addInterceptor);
   }
 
   static final DioUtils _singleton = DioUtils._();
-  final Dio _downloadDio = Dio();
+  final Dio _streamDio = Dio();
 
   static DioUtils get instance => DioUtils();
 
@@ -209,7 +210,7 @@ class DioUtils {
     Object? data,
     Options? options,
   }) {
-    return _downloadDio.download(
+    return _streamDio.download(
       urlPath,
       savePath,
       onReceiveProgress: onReceiveProgress,
@@ -218,6 +219,39 @@ class DioUtils {
       deleteOnError: deleteOnError,
       lengthHeader: lengthHeader,
       data: data,
+      options: options,
+    );
+  }
+
+  Future<Response<Map<String, dynamic>>> upload(
+    String urlPath,
+    File file,
+    String remotePath, {
+    ProgressCallback? onSendProgress,
+    Map<String, dynamic>? queryParameters,
+    CancelToken? cancelToken,
+    Options? options,
+  }) {
+    var fileStream = file.openRead();
+    options = options ?? Options();
+    options.headers ??= {};
+    options.headers!.addAll({
+      "File-Path": remotePath,
+      Headers.contentTypeHeader: "application/octet-stream",
+      Headers.contentLengthHeader: file.lengthSync(),
+    });
+
+    var url = urlPath;
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "${SpUtil.getString(AlistConstant.baseUrl)}$urlPath";
+    }
+
+    return _streamDio.put(
+      url,
+      data: fileStream,
+      onSendProgress: onSendProgress,
+      queryParameters: queryParameters,
+      cancelToken: cancelToken,
       options: options,
     );
   }
@@ -233,7 +267,7 @@ class DioUtils {
     Options? options,
   }) async {
     try {
-      Response<String> response = await _downloadDio.request<String>(
+      Response<String> response = await _streamDio.request<String>(
         url,
         data: params,
         queryParameters: queryParameters,
@@ -270,7 +304,8 @@ class DioUtils {
 
   void _dioIgnoreSSLError(Dio dio) {
     dio.httpClientAdapter = IOHttpClientAdapter(
-      onHttpClientCreate: (client) {
+      createHttpClient: () {
+        var client = HttpClient()..idleTimeout = const Duration(seconds: 3);
         client.badCertificateCallback = (cert, host, port) => true;
         return client;
       },

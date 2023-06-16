@@ -40,4 +40,7 @@ class NamedRouter {
 
   // pdfReader
   static const pdfReader = "/pdfReader";
+
+  // uploadingFiles
+  static const uploadingFiles = "/uploadingFiles";
 }
