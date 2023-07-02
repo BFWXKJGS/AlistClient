@@ -177,7 +177,7 @@ class DioUtils {
         if (result.code == 200) {
           onSuccess?.call(result.data);
         } else {
-          if (result.code == 401) {
+          if (result.code == 401 && Get.currentRoute != NamedRouter.login) {
             Get.offAllNamed(NamedRouter.login);
           }
           _onError(result.code, result.message, onError);
@@ -307,6 +307,10 @@ class DioUtils {
       createHttpClient: () {
         var client = HttpClient()..idleTimeout = const Duration(seconds: 3);
         client.badCertificateCallback = (cert, host, port) => true;
+        // client.findProxy = (uri) {
+        //   // Forward all request to proxy "localhost:8888".
+        //   return 'PROXY 192.168.11.217:8888';
+        // };
         return client;
       },
       validateCertificate: (cert, host, port) {

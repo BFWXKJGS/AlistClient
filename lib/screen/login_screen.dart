@@ -268,7 +268,6 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
   @override
   void onClose() {
     WidgetsBinding.instance.removeObserver(this);
-    _cancelToken.cancel();
     super.onClose();
   }
 
