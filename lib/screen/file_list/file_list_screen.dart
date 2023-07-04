@@ -337,10 +337,7 @@ class _FileListScreenState extends State<FileListScreen>
         );
         break;
       case FileType.audio:
-        Get.toNamed(
-          NamedRouter.audioPlayer,
-          arguments: {"path": file.path},
-        );
+        _goAudioPlayerScreen(file, files);
         break;
       case FileType.image:
         List<String> paths = [];
@@ -388,6 +385,17 @@ class _FileListScreenState extends State<FileListScreen>
         );
         break;
     }
+  }
+
+  void _goAudioPlayerScreen(FileItemVO file, List<FileItemVO> files) async {
+    var audios =
+        files.where((element) => element.type == FileType.audio).toList();
+    final index = audios.indexOf(file);
+
+    Get.toNamed(
+      NamedRouter.audioPlayer,
+      arguments: {"audios": audios, "index": index},
+    );
   }
 
   @transaction

@@ -129,4 +129,9 @@ const translationsEnUS = {
   "uploadingFileScreen_status_waiting": "Waiting",
   "uploadingFileScreen_status_completed": "Completed",
   "splashScreen_loading": "Loading...",
+  "audioPlayListDialog_title": "Playlist",
+  "audioPlayListDialog_tips_deleteTheLast": "Unable to delete the last audio.",
+  "audioPlayerScreen_btn_sequence": "Sequential play",
+  "audioPlayerScreen_btn_repeatOne": "Single cycle",
+  "audioPlayerScreen_btn_shuffle": "Shuffle play",
 };

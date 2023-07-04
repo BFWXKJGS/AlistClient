@@ -29,7 +29,7 @@ class AlistRouter {
     GetPage(
         name: NamedRouter.videoPlayer, page: () => const VideoPlayerScreen()),
     GetPage(
-        name: NamedRouter.audioPlayer, page: () => const AudioPlayerScreen()),
+        name: NamedRouter.audioPlayer, page: () => AudioPlayerScreen()),
     GetPage(name: NamedRouter.donate, page: () => const DonateScreen()),
     GetPage(name: NamedRouter.about, page: () => const AboutScreen()),
     GetPage(name: NamedRouter.gallery, page: () => GalleryScreen()),

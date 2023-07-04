@@ -24,8 +24,8 @@ class _RecentsScreenState extends State<RecentsScreen>
     with AutomaticKeepAliveClientMixin {
   final UserController _userController = Get.find();
   final AlistDatabaseController _databaseController = Get.find();
-  var _loading = true;
-  List<FileViewingRecord> _list = [];
+  final _loading = true.obs;
+  final _list = <FileViewingRecord>[].obs;
 
   @override
   void initState() {
@@ -36,14 +36,14 @@ class _RecentsScreenState extends State<RecentsScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return AlistScaffold(
-      appbarTitle: Text(Intl.screenName_recents.tr),
-      body: !_loading && _list.isEmpty
-          ? Center(
-              child: Text(Intl.recentsScreen_noRecord.tr),
-            )
-          : _fileListView(),
-    );
+    return Obx(() => AlistScaffold(
+          appbarTitle: Text(Intl.screenName_recents.tr),
+          body: !_loading.value && _list.isEmpty
+              ? Center(
+                  child: Text(Intl.recentsScreen_noRecord.tr),
+                )
+              : _fileListView(),
+        ));
   }
 
   Widget _fileListView() {
@@ -100,10 +100,8 @@ class _RecentsScreenState extends State<RecentsScreen>
     _databaseController.fileViewingRecordDao
         .recordList(user.serverUrl, user.username)
         .listen((list) {
-      setState(() {
-        _list = list ?? [];
-        _loading = false;
-      });
+      _list.value = list ?? [];
+      _loading.value = false;
     });
   }
 
