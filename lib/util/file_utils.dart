@@ -229,7 +229,7 @@ class FileUtils {
     }
   }
 
-  static void copyFileLink(String path, String? sign) async {
+  static Future<String?> makeFileLink(String path, String? sign) async {
     UserController userController = Get.find();
     var user = userController.user.value;
     String? basePath = user.basePath;
@@ -243,7 +243,7 @@ class FileUtils {
 
     if (basePath == null || basePath.isEmpty) {
       SmartDialog.showToast(ikeys.Intl.photo_load_failed.tr);
-      return;
+      return null;
     }
 
     var filePath = user.basePath!.endsWith("/") ? path.substring(1) : path;
@@ -251,10 +251,17 @@ class FileUtils {
     if (sign != null && sign.isNotEmpty) {
       url = "$url?sign=$sign";
     }
+    return url;
+  }
 
-    Uri uri = Uri.parse(url);
-    Clipboard.setData(ClipboardData(text: uri.toString()));
-    SmartDialog.showToast(ikeys.Intl.tips_link_copied.tr);
+  static void copyFileLink(String path, String? sign) async {
+    String? url = await makeFileLink(path, sign);
+
+    if (url != null && url.isNotEmpty) {
+      Uri uri = Uri.parse(url);
+      Clipboard.setData(ClipboardData(text: uri.toString()));
+      SmartDialog.showToast(ikeys.Intl.tips_link_copied.tr);
+    }
   }
 
   static String? formatBytes(int size) {

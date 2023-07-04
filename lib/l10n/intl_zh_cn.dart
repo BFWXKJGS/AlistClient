@@ -125,4 +125,9 @@ const translationsZhCN = {
   "uploadingFileScreen_status_waiting": "等待中",
   "uploadingFileScreen_status_completed": "上传完成",
   "splashScreen_loading": "加载中...",
+  "audioPlayListDialog_title": "播放列表",
+  "audioPlayListDialog_tips_deleteTheLast": "无法删除最后一个音频",
+  "audioPlayerScreen_btn_sequence": "顺序播放",
+  "audioPlayerScreen_btn_repeatOne": "单曲循环",
+  "audioPlayerScreen_btn_shuffle": "随机播放",
 };

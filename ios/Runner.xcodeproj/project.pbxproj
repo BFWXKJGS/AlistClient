@@ -398,6 +398,9 @@
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ALClient;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSCameraUsageDescription = "拍照/拍视频上传功能需要您授予相机权限";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "录视频/录音上传功能需要您授予麦克风权限";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "上传图片/视频功能需要您授予相册访问权限";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -538,6 +541,9 @@
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ALClient;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSCameraUsageDescription = "拍照/拍视频上传功能需要您授予相机权限";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "录视频/录音上传功能需要您授予麦克风权限";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "上传图片/视频功能需要您授予相册访问权限";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -570,6 +576,9 @@
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ALClient;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSCameraUsageDescription = "拍照/拍视频上传功能需要您授予相机权限";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "录视频/录音上传功能需要您授予麦克风权限";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "上传图片/视频功能需要您授予相册访问权限";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;

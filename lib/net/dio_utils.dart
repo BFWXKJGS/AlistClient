@@ -292,7 +292,7 @@ class DioUtils {
   }
 
   void _cancelLogPrint(dynamic e, String url) {
-    if (e is DioError && CancelToken.isCancel(e)) {
+    if (e is DioException && CancelToken.isCancel(e)) {
       Log.e('request cancel： $url');
     }
   }
