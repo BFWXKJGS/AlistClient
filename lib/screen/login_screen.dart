@@ -19,6 +19,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:alist/database/alist_database_controller.dart';
+import 'package:alist/database/table/server.dart';
 
 typedef LoginSuccessCallback = Function();
 typedef LoginFailureCallback = Function(int code, String msg);
@@ -150,6 +152,7 @@ class LoginScreenContainer extends StatelessWidget {
               loginScreenController.twofaController.text = "";
               KeyboardUtil.hideKeyboard(context);
               loginScreenController._onLoginButtonClick(context);
+
             },
             child: Center(
               child: Text(Intl.loginScreen_button_login.tr),
@@ -215,6 +218,7 @@ class LoginInputDecoration extends InputDecoration {
 
 class LoginScreenController extends GetxController with WidgetsBindingObserver {
   final UserController userController = Get.find();
+  final AlistDatabaseController _databaseController = Get.find();
   final FocusNode addressFocusNode = FocusNode();
   final addressController = TextEditingController();
   final usernameController = TextEditingController();
@@ -270,6 +274,10 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _cancelToken.cancel();
     super.onClose();
+  }
+
+  static int currentTimeMillis() {
+    return new DateTime.now().millisecondsSinceEpoch;
   }
 
   Future<void> _login(
@@ -334,6 +342,16 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
           guest: false,
         ));
         SpUtil.putBool(AlistConstant.ignoreSSLError, ignoreSSLError.value);
+        _databaseController.serverDao.insertServer(Server(
+          name: username,
+          serverUrl: address,
+          guest: false,
+          userId: username,
+          password: password,
+          ignoreSSLError: ignoreSSLError.value,
+          createTime:currentTimeMillis(),
+          updateTime:currentTimeMillis()
+        ));
         onSuccess();
       },
       onError: (code, message) => onFailure(code, message),

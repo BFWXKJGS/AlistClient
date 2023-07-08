@@ -129,4 +129,7 @@ const translationsEnUS = {
   "uploadingFileScreen_status_waiting": "Waiting",
   "uploadingFileScreen_status_completed": "Completed",
   "splashScreen_loading": "Loading...",
+  "accountScreen_create": "Create",
+  "delete_success": "Delete success",
+  "delete_disable": "Delete disable",
 };

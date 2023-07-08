@@ -125,4 +125,7 @@ const translationsZhCN = {
   "uploadingFileScreen_status_waiting": "等待中",
   "uploadingFileScreen_status_completed": "上传完成",
   "splashScreen_loading": "加载中...",
+  "accountScreen_create": "新建",
+  "delete_success": "删除成功",
+  "delete_disable": "禁止删除",
 };

@@ -487,7 +487,7 @@ class _$ServerDao extends ServerDao {
         'SELECT * FROM server WHERE server_url = ?1 AND user_id=?2 LIMIT 1',
         mapper: (Map<String, Object?> row) => Server(
             id: row['id'] as int?,
-            name: row['name'] as String?,
+            name: row['name'] as String,
             serverUrl: row['server_url'] as String,
             userId: row['user_id'] as String,
             password: row['password'] as String,
@@ -504,7 +504,7 @@ class _$ServerDao extends ServerDao {
         'SELECT * FROM server ORDER BY id desc LIMIT 100',
         mapper: (Map<String, Object?> row) => Server(
             id: row['id'] as int?,
-            name: row['name'] as String?,
+            name: row['name'] as String,
             serverUrl: row['server_url'] as String,
             userId: row['user_id'] as String,
             password: row['password'] as String,

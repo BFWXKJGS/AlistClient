@@ -6,7 +6,7 @@ class Server {
   final int? id;
 
   @ColumnInfo(name: 'name')
-  final String? name;
+  final String name;
 
   @ColumnInfo(name: 'server_url')
   final String serverUrl;

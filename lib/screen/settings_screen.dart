@@ -68,7 +68,8 @@ class _SettingsContainerState extends State<_SettingsContainer> {
             Get.offNamed(NamedRouter.login);
             break;
           case MenuId.account:
-            _showAccountDialog(context);
+            Get.offNamed(NamedRouter.account);
+            // _showAccountDialog(context);
             break;
           case MenuId.donate:
             Get.toNamed(settingsMenu.route!);
