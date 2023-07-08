@@ -11,6 +11,7 @@ import 'package:alist/util/widget_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:sp_util/sp_util.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -33,6 +34,11 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> init() async {
     await _databaseController.init();
     await SpUtil.getInstance();
+    await JustAudioBackground.init(
+      androidNotificationChannelId: 'com.github.alist.client.audio',
+      androidNotificationChannelName: 'Audio playback',
+      androidNotificationOngoing: true,
+    );
     initDio();
     var token = SpUtil.getString(AlistConstant.token, defValue: null);
     while (_context == null) {

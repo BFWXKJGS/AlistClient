@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/widget/slider.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_aliplayer/flutter_aliplayer.dart';
@@ -15,6 +16,8 @@ import 'package:volume_controller/volume_controller.dart';
 import 'package:wakelock/wakelock.dart';
 
 typedef OnPlayProgressChange = Function(int currentPostion, int duration);
+typedef PlayNextCallback = Function();
+typedef PlayPreviousCallback = Function();
 typedef OnRateMenuTap = Function(Rate);
 
 /// Default Panel Widget
@@ -23,6 +26,8 @@ class AlistPlayerSkin extends StatefulWidget {
   final BuildContext buildContext;
   final String videoTitle;
   final OnPlayProgressChange onPlayProgressChange;
+  final PlayNextCallback? playNextCallback;
+  final PlayPreviousCallback? playPreviousCallback;
 
   const AlistPlayerSkin({
     super.key,
@@ -30,6 +35,8 @@ class AlistPlayerSkin extends StatefulWidget {
     required this.buildContext,
     required this.videoTitle,
     required this.onPlayProgressChange,
+    required this.playNextCallback,
+    required this.playPreviousCallback,
   });
 
   @override
@@ -78,6 +85,8 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   // is wakelock enable
   bool _wakelockEnable = false;
 
+  bool _isPad = false;
+
   VerticalDragType? _verticalDragType;
   bool _verticalDragging = false;
   double _systemVolumeListenValue = 0;
@@ -114,6 +123,11 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
 
   final barHeight = 40.0;
 
+  void _readIfIpad() async {
+    final iosInfo = await DeviceInfoPlugin().iosInfo;
+    _isPad = iosInfo.model.contains("iPad");
+  }
+
   @override
   void initState() {
     super.initState();
@@ -121,8 +135,14 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
 
     //开启混音模式
     if (Platform.isIOS) {
-      FlutterAliplayer.enableMix(true);
+      FlutterAliplayer.setAudioSessionTypeForIOS(
+          AliPlayerAudioSesstionType.mix);
+      _readIfIpad();
+    } else if (Platform.isAndroid) {
+      var shortestSide = MediaQuery.of(Get.context!).size.shortestSide;
+      _isPad = shortestSide > 600;
     }
+
     _player.setOnInfo((infoCode, extraValue, extraMsg, playerId) {
       Log.d(
           "OnInfo infoCode=$infoCode extraValue=$extraValue extraMsg=$extraMsg",
@@ -259,7 +279,8 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   void dispose() {
     super.dispose();
     if (Platform.isIOS) {
-      FlutterAliplayer.enableMix(true);
+      FlutterAliplayer.setAudioSessionTypeForIOS(
+          AliPlayerAudioSesstionType.sdkDefault);
     }
     _hideTimer?.cancel();
     _disableWakelock();
@@ -467,10 +488,10 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: !_locked && !_fullscreen
+      onWillPop: !_locked && (!_fullscreen || _isPad)
           ? null
           : () async {
-              if (_fullscreen) {
+              if (_fullscreen && !_isPad) {
                 _exitFullScreen();
                 return false;
               }
@@ -801,6 +822,16 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   }
 
   Widget _buildCenter() {
+    Color previousIconColor = Colors.white;
+    if (widget.playPreviousCallback == null) {
+      previousIconColor = Colors.white.withAlpha(80);
+    }
+
+    Color nextIconColor = Colors.white;
+    if (widget.playNextCallback == null) {
+      previousIconColor = Colors.white.withAlpha(80);
+    }
+
     final Widget centerWidgetWithoutLock = Center(
         child: _exception != null
             ? Text(
@@ -814,12 +845,38 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
                 ? AnimatedOpacity(
                     opacity: (_hideStuff || _locked) ? 0.0 : 0.7,
                     duration: const Duration(milliseconds: 400),
-                    child: IconButton(
-                        iconSize: barHeight * 2,
-                        icon: Icon(_playing ? Icons.pause : Icons.play_arrow,
-                            color: Colors.white),
-                        padding: const EdgeInsets.only(left: 10.0, right: 10.0),
-                        onPressed: _playOrPause))
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          iconSize: 60,
+                          icon: Icon(Icons.skip_previous_rounded,
+                              color: previousIconColor),
+                          padding:
+                              const EdgeInsets.only(left: 10.0, right: 10.0),
+                          onPressed: widget.playPreviousCallback,
+                        ),
+                        IconButton(
+                          iconSize: 60,
+                          icon: Icon(_playing ? Icons.pause : Icons.play_arrow,
+                              color: Colors.white),
+                          padding:
+                              const EdgeInsets.only(left: 10.0, right: 10.0),
+                          onPressed: _playOrPause,
+                        ),
+                        IconButton(
+                          iconSize: 60,
+                          icon: Icon(
+                            Icons.skip_next_rounded,
+                            color: nextIconColor,
+                          ),
+                          padding:
+                              const EdgeInsets.only(left: 10.0, right: 10.0),
+                          onPressed: widget.playNextCallback,
+                        ),
+                      ],
+                    ),
+                  )
                 : SizedBox(
                     width: barHeight * 1.5,
                     height: barHeight * 1.5,

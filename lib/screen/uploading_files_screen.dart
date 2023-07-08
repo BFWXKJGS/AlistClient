@@ -172,9 +172,17 @@ class UploadingFilesController extends GetxController {
 
       var file = File(uploadingFile.filePath);
       String? remoteFileName = _makeRemoteFileName(file);
-      var remotePath = "${this.remotePath}/$remoteFileName";
-      if (remotePath == "/") {
-        remotePath = "/$remoteFileName";
+      var remotePathOriginal = "${this.remotePath}/$remoteFileName";
+      if(remotePathOriginal.startsWith("//")){
+        remotePathOriginal = remotePathOriginal.substring(1);
+      }
+
+      var remotePath = "";
+      for (var value in remotePathOriginal.split("/")) {
+        remotePath += "/${Uri.encodeComponent(value)}";
+      }
+      if(remotePath.startsWith("//")){
+        remotePath = remotePath.substring(1);
       }
 
       dio.Response<Map<String, dynamic>>? response;

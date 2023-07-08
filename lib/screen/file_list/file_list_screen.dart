@@ -331,10 +331,7 @@ class _FileListScreenState extends State<FileListScreen>
         );
         break;
       case FileType.video:
-        Get.toNamed(
-          NamedRouter.videoPlayer,
-          arguments: {"path": file.path},
-        );
+        _goVideoPlayerScreen(file, files);
         break;
       case FileType.audio:
         _goAudioPlayerScreen(file, files);
@@ -502,6 +499,7 @@ class _FileListScreenState extends State<FileListScreen>
       BuildContext widgetContext, FileItemVO file, int index) {
     showModalBottomSheet(
         context: Get.context!,
+        isScrollControlled: true,
         builder: (context) {
           return Padding(
             padding: const EdgeInsets.only(top: 20),
@@ -579,7 +577,7 @@ class _FileListScreenState extends State<FileListScreen>
                     title: Text(Intl.fileList_menu_details.tr),
                     onTap: () {
                       Navigator.pop(context);
-                      _showDetailsDialog(file);
+                      _showDetailsDialog(widgetContext, file);
                     },
                   ),
                 ],
@@ -609,20 +607,6 @@ class _FileListScreenState extends State<FileListScreen>
         _refreshIndicatorKey.currentState?.show();
       }
     });
-  }
-
-  void _showDetailsDialog(FileItemVO file) {
-    showModalBottomSheet(
-      context: Get.context!,
-      builder: (context) => FileDetailsDialog(
-        name: file.name,
-        size: file.sizeDesc,
-        path: file.path,
-        modified: file.modified,
-        thumb: file.thumb,
-        provider: file.provider,
-      ),
-    );
   }
 
   _tryDeleteFile(file) {
@@ -773,6 +757,17 @@ class _FileListScreenState extends State<FileListScreen>
   void _copyFileLink(FileItemVO file) async {
     FileUtils.copyFileLink(file.path, file.sign);
   }
+
+  void _goVideoPlayerScreen(FileItemVO file, List<FileItemVO> files) {
+    var videos =
+        files.where((element) => element.type == FileType.video).toList();
+    final index = videos.indexOf(file);
+
+    Get.toNamed(
+      NamedRouter.videoPlayer,
+      arguments: {"videos": videos, "index": index},
+    );
+  }
 }
 
 class _FileListView extends StatelessWidget {
@@ -872,20 +867,20 @@ class _FileListView extends StatelessWidget {
       },
     );
   }
+}
 
-  _showDetailsDialog(BuildContext context, FileItemVO file) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => FileDetailsDialog(
-        name: file.name,
-        size: file.sizeDesc,
-        path: file.path,
-        modified: file.modified,
-        thumb: file.thumb,
-        provider: file.provider,
-      ),
-    );
-  }
+_showDetailsDialog(BuildContext context, FileItemVO file) {
+  showModalBottomSheet(
+    context: Get.context!,
+    builder: (context) => FileDetailsDialog(
+      name: file.name,
+      size: file.sizeDesc,
+      path: file.path,
+      modified: file.modified,
+      thumb: file.thumb,
+      provider: file.provider,
+    ),
+  );
 }
 
 class FileListWrapper extends StatelessWidget {

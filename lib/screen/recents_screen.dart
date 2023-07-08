@@ -1,16 +1,21 @@
 import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/table/file_viewing_record.dart';
+import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/l10n/intl_keys.dart';
+import 'package:alist/net/dio_utils.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/named_router.dart';
+import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/file_details_dialog.dart';
 import 'package:alist/widget/file_list_item_view.dart';
+import 'package:dio/dio.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
 class RecentsScreen extends StatefulWidget {
@@ -23,6 +28,7 @@ class RecentsScreen extends StatefulWidget {
 class _RecentsScreenState extends State<RecentsScreen>
     with AutomaticKeepAliveClientMixin {
   final UserController _userController = Get.find();
+  final CancelToken _cancelToken = CancelToken();
   final AlistDatabaseController _databaseController = Get.find();
   final _loading = true.obs;
   final _list = <FileViewingRecord>[].obs;
@@ -31,6 +37,12 @@ class _RecentsScreenState extends State<RecentsScreen>
   void initState() {
     super.initState();
     _queryRecents();
+  }
+
+  @override
+  void dispose() {
+    _cancelToken.cancel();
+    super.dispose();
   }
 
   @override
@@ -110,16 +122,10 @@ class _RecentsScreenState extends State<RecentsScreen>
 
     switch (fileType) {
       case FileType.video:
-        Get.toNamed(
-          NamedRouter.videoPlayer,
-          arguments: {"path": file.path},
-        );
+        _gotoVideoPlayer(file);
         break;
       case FileType.audio:
-        Get.toNamed(
-          NamedRouter.audioPlayer,
-          arguments: {"path": file.path},
-        );
+        _gotoAudioPlayer(file);
         break;
       case FileType.image:
         List<String> paths = [file.path];
@@ -259,6 +265,122 @@ class _RecentsScreenState extends State<RecentsScreen>
     Get.toNamed(
       NamedRouter.fileList,
       arguments: {"path": path},
+    );
+  }
+
+  Future<List<FileItemVO>?> _loadFilesPrepare(
+    String folderPath,
+    String filePath,
+    FileType fileType,
+  ) async {
+    final userController = Get.find<UserController>();
+    final databaseController = Get.find<AlistDatabaseController>();
+    final user = userController.user.value;
+
+    // query file's password from database.
+    var filePassword = await databaseController.filePasswordDao
+        .findPasswordByPath(user.serverUrl, user.username, folderPath);
+    String? password;
+    if (filePassword != null) {
+      password = filePassword.password;
+    }
+    return await _loadFiles(folderPath, filePath, password, fileType);
+  }
+
+  Future<List<FileItemVO>?> _loadFiles(
+    String folderPath,
+    String filePath,
+    String? password,
+    FileType fileType,
+  ) async {
+    var body = {
+      "path": folderPath,
+      "password": password ?? "",
+      "page": 1,
+      "per_page": 0,
+      "refresh": false
+    };
+
+    List<FileItemVO>? result;
+    await DioUtils.instance.requestNetwork<FileListRespEntity>(
+        Method.post, "fs/list", cancelToken: _cancelToken, params: body,
+        onSuccess: (data) {
+      var files = data?.content
+          ?.map((e) => _fileResp2VO(folderPath, data.provider, e))
+          .where((element) => element.type == fileType)
+          .toList();
+      files?.sort((a, b) => a.name.compareTo(b.name));
+      result = files;
+    }, onError: (code, msg) {
+      SmartDialog.showToast(msg);
+      debugPrint(msg);
+    });
+    return result;
+  }
+
+  FileItemVO _fileResp2VO(
+      String path, String provider, FileListRespContent resp) {
+    DateTime? modifyTime = resp.parseModifiedTime();
+    String? modifyTimeStr = resp.getReformatModified(modifyTime);
+
+    return FileItemVO(
+      name: resp.name,
+      path: resp.getCompletePath(path),
+      size: resp.isDir ? null : resp.size,
+      sizeDesc: resp.formatBytes(),
+      isDir: resp.isDir,
+      modified: modifyTimeStr,
+      typeInt: resp.type,
+      type: resp.getFileType(),
+      thumb: resp.thumb,
+      sign: resp.sign,
+      icon: resp.getFileIcon(),
+      modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
+      provider: provider,
+    );
+  }
+
+  void _gotoVideoPlayer(FileViewingRecord file) async {
+    SmartDialog.showLoading();
+    var files = await _loadFilesPrepare(
+        file.path.substringBeforeLast("/")!, file.path, FileType.video);
+    SmartDialog.dismiss();
+    if (files == null) {
+      return;
+    }
+
+    var index = files.lastIndexWhere((element) => element.path == file.path);
+    if (index == -1) {
+      index = 0;
+    }
+    Get.toNamed(
+      NamedRouter.videoPlayer,
+      arguments: {
+        "videos": files,
+        "index": index,
+      },
+    );
+  }
+
+  void _gotoAudioPlayer(FileViewingRecord file) async {
+    SmartDialog.showLoading();
+    var files = await _loadFilesPrepare(
+        file.path.substringBeforeLast("/")!, file.path, FileType.audio);
+    SmartDialog.dismiss();
+    if (files == null) {
+      return;
+    }
+
+    var index = files.lastIndexWhere((element) => element.path == file.path);
+    if (index == -1) {
+      index = 0;
+    }
+    Get.toNamed(
+      NamedRouter.audioPlayer,
+      arguments: {
+        "audios": files,
+        "index": index,
+      },
     );
   }
 }

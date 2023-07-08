@@ -246,7 +246,16 @@ class FileUtils {
       return null;
     }
 
-    var filePath = user.basePath!.endsWith("/") ? path.substring(1) : path;
+    var encodedPath = "";
+    path.split("/").forEach((element) {
+      encodedPath += "/${Uri.encodeComponent(element)}";
+    });
+    if (encodedPath.startsWith("//")) {
+      encodedPath = encodedPath.substring(1);
+    }
+
+    var filePath =
+        user.basePath!.endsWith("/") ? encodedPath.substring(1) : encodedPath;
     String url = "${user.serverUrl}d${user.basePath}$filePath";
     if (sign != null && sign.isNotEmpty) {
       url = "$url?sign=$sign";
@@ -330,7 +339,11 @@ extension FileListRespContentExtensions on FileListRespContent {
     }
     DateTime? modifyTime;
     try {
-      modifyTime = isoDateFormat.parse(modifyTimeStr);
+      if (modifyTimeStr.contains("+")) {
+        modifyTime = DateTime.parse(modifyTimeStr);
+      } else {
+        modifyTime = isoDateFormat.parse(modifyTimeStr);
+      }
     } catch (e) {
       LogUtil.e(e);
     }

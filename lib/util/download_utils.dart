@@ -71,6 +71,7 @@ class DownloadUtils {
           path,
           fileName,
           fileUrl,
+          provider: data?.provider,
           sign: fileSign,
           fileType: fileType,
           onSuccess: onSuccess,
@@ -87,6 +88,7 @@ class DownloadUtils {
     String remotePath,
     String fileName,
     String fileUrl, {
+    required String? provider,
     required String? sign,
     required String fileType,
     OnDownloadSuccessful? onSuccess,
@@ -152,12 +154,20 @@ class DownloadUtils {
       await tempFile.delete();
     }
 
+    var option = Options();
+    if (provider == "BaiduNetdisk") {
+      option.headers = {
+        "User-Agent": "pan.baidu.com",
+      };
+    }
+
     DioUtils.instance
         .download(
       fileUrl,
       tmpFilePath,
       cancelToken: cancelToken,
-      onReceiveProgress: onReceiveProgress
+      onReceiveProgress: onReceiveProgress,
+      options: option,
     )
         .then((value) async {
       if (await downloadFile.exists()) {

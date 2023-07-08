@@ -237,6 +237,7 @@ class DioUtils {
     options.headers ??= {};
     options.headers!.addAll({
       "File-Path": remotePath,
+      "As-Task": true,
       Headers.contentTypeHeader: "application/octet-stream",
       Headers.contentLengthHeader: file.lengthSync(),
     });

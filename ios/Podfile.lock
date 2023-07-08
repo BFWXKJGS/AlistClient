@@ -1,12 +1,16 @@
 PODS:
-  - AliPlayerSDK_iOS (5.4.9.1-26507944):
-    - AliPlayerSDK_iOS/AliPlayerSDK (= 5.4.9.1-26507944)
-  - AliPlayerSDK_iOS/AliPlayerSDK (5.4.9.1-26507944)
-  - audioplayers_darwin (0.0.1):
+  - AliPlayerSDK_iOS (5.5.6.0):
+    - AliPlayerSDK_iOS/AliPlayerSDK (= 5.5.6.0)
+  - AliPlayerSDK_iOS/AliPlayerSDK (5.5.6.0)
+  - audio_service (0.0.1):
+    - Flutter
+  - audio_session (0.0.1):
+    - Flutter
+  - device_info_plus (0.0.1):
     - Flutter
   - Flutter (1.0.0)
-  - flutter_aliplayer (0.0.1):
-    - AliPlayerSDK_iOS (= 5.4.9.1-26507944)
+  - flutter_aliplayer (5.5.6):
+    - AliPlayerSDK_iOS (= 5.5.6.0)
     - Flutter
     - MJExtension
   - flutter_pdfview (1.0.2):
@@ -15,6 +19,8 @@ PODS:
     - FMDB/standard (= 2.7.5)
   - FMDB/standard (2.7.5)
   - image_picker_ios (0.0.1):
+    - Flutter
+  - just_audio (0.0.1):
     - Flutter
   - MJExtension (3.4.1)
   - open_file (0.0.1):
@@ -44,11 +50,14 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
-  - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/ios`)
+  - audio_service (from `.symlinks/plugins/audio_service/ios`)
+  - audio_session (from `.symlinks/plugins/audio_session/ios`)
+  - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - Flutter (from `Flutter`)
   - flutter_aliplayer (from `.symlinks/plugins/flutter_aliplayer/ios`)
   - flutter_pdfview (from `.symlinks/plugins/flutter_pdfview/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+  - just_audio (from `.symlinks/plugins/just_audio/ios`)
   - open_file (from `.symlinks/plugins/open_file/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
@@ -68,8 +77,12 @@ SPEC REPOS:
     - MJExtension
 
 EXTERNAL SOURCES:
-  audioplayers_darwin:
-    :path: ".symlinks/plugins/audioplayers_darwin/ios"
+  audio_service:
+    :path: ".symlinks/plugins/audio_service/ios"
+  audio_session:
+    :path: ".symlinks/plugins/audio_session/ios"
+  device_info_plus:
+    :path: ".symlinks/plugins/device_info_plus/ios"
   Flutter:
     :path: Flutter
   flutter_aliplayer:
@@ -78,6 +91,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_pdfview/ios"
   image_picker_ios:
     :path: ".symlinks/plugins/image_picker_ios/ios"
+  just_audio:
+    :path: ".symlinks/plugins/just_audio/ios"
   open_file:
     :path: ".symlinks/plugins/open_file/ios"
   package_info_plus:
@@ -102,13 +117,16 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/webview_flutter_wkwebview/ios"
 
 SPEC CHECKSUMS:
-  AliPlayerSDK_iOS: e6a135eea616e85e4aea6fde5aaa7c6afa258229
-  audioplayers_darwin: 877d9a4d06331c5c374595e46e16453ac7eafa40
+  AliPlayerSDK_iOS: fa379587f1f6b9c7dc588f8328ad64f1f550b826
+  audio_service: f509d65da41b9521a61f1c404dd58651f265a567
+  audio_session: 4f3e461722055d21515cf3261b64c973c062f345
+  device_info_plus: 7545d84d8d1b896cb16a4ff98c19f07ec4b298ea
   Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
-  flutter_aliplayer: ade3b95c37b64e61b2f23a590937d8e61fe47bdc
+  flutter_aliplayer: cf3da3d18dffe2ac1b0cef462f9dfec027a0d53c
   flutter_pdfview: 25f53dd6097661e6395b17de506e6060585946bd
   FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
   image_picker_ios: 4a8aadfbb6dc30ad5141a2ce3832af9214a705b5
+  just_audio: baa7252489dbcf47a4c7cc9ca663e9661c99aafa
   MJExtension: 21c5f6f8c4d5d8844b7ae8fbae08fed0b501f961
   open_file: 02eb5cb6b21264bd3a696876f5afbfb7ca4f4b7d
   package_info_plus: 6c92f08e1f853dc01228d6f553146438dafcd14e

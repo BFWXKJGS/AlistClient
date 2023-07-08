@@ -1,8 +1,9 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:alist/database/alist_database_controller.dart';
-import 'package:alist/entity/file_info_resp_entity.dart';
+import 'package:alist/database/table/file_viewing_record.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
@@ -13,28 +14,24 @@ import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/file_list_item_view.dart';
 import 'package:alist/widget/slider.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:dio/dio.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
 class AudioPlayerScreen extends StatelessWidget {
   AudioPlayerScreen({Key? key}) : super(key: key);
   final List<FileItemVO> _audios = Get.arguments["audios"] ?? [];
   final int _index = Get.arguments["index"] ?? 0;
-  final String? _path = Get.arguments["path"];
 
   @override
   Widget build(BuildContext context) {
     final AudioPlayerScreenController controller =
-        Get.put(AudioPlayerScreenController(
-      audios: _audios,
-      index: _index,
-      path: _path,
-    ));
+        Get.put(AudioPlayerScreenController(audios: _audios, index: _index));
     return AlistScaffold(
       appbarTitle: const SizedBox(),
       body: Center(
@@ -131,7 +128,7 @@ class AudioPlayerScreen extends StatelessWidget {
       value: currentValue,
       cacheValue: currentValue,
       min: 0.0,
-      max: duration,
+      max: max(duration, 1),
       onChanged: (v) {
         controller._seekPos.value = v;
       },
@@ -258,19 +255,14 @@ class AudioPlayerScreen extends StatelessWidget {
 }
 
 class AudioPlayerScreenController extends GetxController {
-  final String? _path;
   final RxList<FileItemVO> _audios;
-  List<FileItemVO> _audioListShuffle = [];
   int _index;
   final _playMode = PlayMode.list.obs;
 
   AudioPlayerScreenController(
-      {required List<FileItemVO> audios,
-      required int index,
-      required String? path})
+      {required List<FileItemVO> audios, required int index})
       : _audios = audios.obs,
-        _index = index,
-        _path = path {
+        _index = index {
     if (_audios.isNotEmpty) {
       _name.value = _audios[_index].name;
     }
@@ -279,13 +271,13 @@ class AudioPlayerScreenController extends GetxController {
   final _audioPlayer = AudioPlayer();
   final CancelToken _cancelToken = CancelToken();
   final _name = "".obs;
+  late ConcatenatingAudioSource _playList;
 
   final _duration = const Duration().obs;
   final _currentPos = const Duration().obs;
 
   final _playing = false.obs;
   final _prepared = false.obs;
-  final _audioUrl = "".obs;
 
   final _seekPos = (-1.0).obs;
   StreamSubscription? _currentPosSubs;
@@ -297,149 +289,105 @@ class AudioPlayerScreenController extends GetxController {
     if (_index < 0 || _index >= _audios.length) {
       _index = 0;
     }
+    _createPlayListAndPlay();
 
-    if (_path != null && _path!.isNotEmpty) {
-      _requestPlayListAndPlay(_path!);
-    } else {
-      var audio = _audios[_index];
-      _startPlay(audio);
-    }
-
-    _audioPlayer.setAudioContext(const AudioContext(
-        iOS: AudioContextIOS(
-      category: AVAudioSessionCategory.playback,
-      options: [
-        AVAudioSessionOptions.mixWithOthers,
-      ],
-    )));
-    _audioPlayer.onDurationChanged.listen((Duration d) {
-      LogUtil.d("duration=${d.inMilliseconds}s");
-      _duration.value = d;
-    });
-    _audioPlayer.onPositionChanged.listen((Duration p) {
-      if (p.inMilliseconds > _duration.value.inMilliseconds) {
-        _duration.value = p;
+    _audioPlayer.durationStream.listen((event) {
+      if (event != null) {
+        _duration.value = event;
       }
-      _currentPos.value = p;
     });
-    _audioPlayer.onPlayerComplete.listen((_) {
-      _playNext();
+    _audioPlayer.positionStream.listen((event) {
+      _currentPos.value = event;
+      if (_duration.value.inMilliseconds < _currentPos.value.inMilliseconds) {
+        _currentPos.value = _duration.value;
+      }
     });
-
-    _audioPlayer.onPlayerStateChanged.listen((PlayerState s) {
-      if (s == PlayerState.playing) {
-        LogUtil.d("playing");
+    _audioPlayer.sequenceStateStream.listen((event) {
+      if (event != null && _audios.isNotEmpty) {
+        _index = event.currentIndex;
+        var item = event.currentSource?.tag as MediaItem?;
+        LogUtil.d("itemId=${item?.id}");
+        if (item?.id == _audios[_index].path) {
+          _name.value = _audios[_index].name;
+        }
+      }
+    });
+    _audioPlayer.playerStateStream.listen((state) {
+      if (state.playing) {
         _prepared.value = true;
         _playing.value = true;
       } else {
         _playing.value = false;
       }
+      if (state.processingState == ProcessingState.completed) {
+        _playNext();
+      }
     });
+    // _audioPlayer.playbackEventStream.listen((event) {}, onError: (Object e, StackTrace st) {
+    //   _playNext();
+    // });
+  }
+
+  void _createPlayListAndPlay() async {
+    var sources = <AudioSource>[];
+    for (var audio in _audios) {
+      var uri = await FileUtils.makeFileLink(audio.path, audio.sign);
+      if (uri != null) {
+        sources.add(
+          _audioToUri(uri, audio),
+        );
+      }
+    }
+
+    _playList = ConcatenatingAudioSource(
+      useLazyPreparation: true,
+      shuffleOrder: DefaultShuffleOrder(),
+      children: sources,
+    );
+    _audioPlayer.setAudioSource(_playList, initialIndex: _index);
+    _audioPlayer.play();
+  }
+
+  UriAudioSource _audioToUri(String uri, FileItemVO audio) {
+    var headers = <String, String>{};
+    if (audio.provider == "BaiduNetdisk") {
+      headers["User-Agent"] = "pan.baidu.com";
+    }
+    return AudioSource.uri(
+      Uri.parse(uri),
+      headers: headers,
+      tag: MediaItem(
+        id: audio.path,
+        title: audio.name,
+      ),
+    );
   }
 
   void _playNext() {
     _currentPos.value = const Duration(milliseconds: 0);
-    switch (_playMode.value) {
-      case PlayMode.list:
-        _index = (_index + 1) % _audios.length;
-        break;
-      case PlayMode.random:
-        var indexShuffle = _audioListShuffle.indexOf(_audios[_index]);
-        var nextIndexShuffle = (indexShuffle + 1) % _audioListShuffle.length;
-        _index = _audios.indexOf(_audioListShuffle[nextIndexShuffle]);
-        break;
-      case PlayMode.single:
-        break;
-    }
-
-    var path = _audios[_index];
-    _startPlay(path);
+    _audioPlayer.seekToNext();
   }
 
   void _playPrevious() {
     _currentPos.value = const Duration(milliseconds: 0);
-    if (_playMode.value == PlayMode.random) {
-      var indexShuffle = _audioListShuffle.indexOf(_audios[_index]);
-      if (indexShuffle == 0 && _audioListShuffle.length == 1) {
-        var nextIndexShuffle = _audioListShuffle.length - 1;
-        _index = _audios.indexOf(_audioListShuffle[nextIndexShuffle]);
-      } else {
-        var nextIndexShuffle = (indexShuffle - 1) % _audioListShuffle.length;
-        _index = _audios.indexOf(_audioListShuffle[nextIndexShuffle]);
-      }
-    } else {
-      if (_index == 0) {
-        _index = _audios.length - 1;
-      } else {
-        _index = (_index - 1) % _audios.length;
-      }
-    }
-    var path = _audios[_index];
-    _startPlay(path);
-  }
-
-  void _startPlay(FileItemVO audio) async {
-    _name.value = audio.name;
-    _requestAudioUrlAndPlay(audio.path);
-  }
-
-  void _requestAudioUrlAndPlay(String path, {int retryTimes = 0}) {
-    var body = {
-      "path": path,
-      "password": "",
-    };
-    DioUtils.instance.requestNetwork<FileInfoRespEntity>(
-      Method.post,
-      cancelToken: _cancelToken,
-      "fs/get",
-      params: body,
-      onSuccess: (data) async {
-        if (!_cancelToken.isCancelled) {
-          String cacheKey = data?.sign ?? path.md5String();
-          cacheKey = "${cacheKey}_${data?.size ?? 0}";
-
-          var url = data?.rawUrl;
-          _name.value = data?.name ?? "";
-          _audioUrl.value = url ?? "";
-          _playWithUrl(url);
-        }
-      },
-      onError: (code, message) {
-        if (retryTimes < 2) {
-          Future.delayed(const Duration(milliseconds: 200), () {
-            _requestAudioUrlAndPlay(path, retryTimes: retryTimes + 1);
-          });
-        } else {
-          SmartDialog.showToast(message);
-          _playNext();
-        }
-        debugPrint("code:$code,message:$message");
-      },
-    );
-  }
-
-  void _playWithUrl(String? url, {int retryTimes = 0}) {
-    _audioPlayer.play(UrlSource(url ?? "")).catchError((e) {
-      if (retryTimes < 2) {
-        Future.delayed(const Duration(milliseconds: 200), () {
-          _playWithUrl(url, retryTimes: retryTimes + 1);
-        });
-      } else {
-        _playNext();
-      }
-    });
+    _audioPlayer.seekToPrevious();
   }
 
   void _playOrPause() async {
     if (_playing.value == true) {
+      LogUtil.d("pause");
       await _audioPlayer.pause();
     } else {
+      LogUtil.d("play");
       if (_duration.value.inMilliseconds <= _currentPos.value.inMilliseconds) {
-        if (_audioUrl.value.isNotEmpty) {
-          await _audioPlayer.play(UrlSource(_audioUrl.value));
-        }
+        LogUtil.d("play3");
+        await _audioPlayer.seek(const Duration(milliseconds: 0));
+        LogUtil.d("play4");
+        await _audioPlayer.play();
+        LogUtil.d("play1");
       } else {
-        await _audioPlayer.resume();
+        LogUtil.d("play2");
+        await _audioPlayer.play();
       }
     }
   }
@@ -462,8 +410,7 @@ class AudioPlayerScreenController extends GetxController {
   void _play(int index) {
     _index = index;
     _currentPos.value = const Duration(milliseconds: 0);
-    var file = _audios[_index];
-    _startPlay(file);
+    _audioPlayer.seek(Duration.zero, index: index);
   }
 
   void _remove(int index) {
@@ -472,106 +419,29 @@ class AudioPlayerScreenController extends GetxController {
       return;
     }
 
-    _audioListShuffle.remove(_audios[index]);
-    _audios.removeAt(index);
     if (_index == index) {
-      _currentPos.value = const Duration(milliseconds: 0);
-
-      if (index >= _audios.length) {
-        _index = _audios.length - 1;
-      }
-      var file = _audios[_index];
-      _startPlay(file);
+      _playNext();
     }
+    _playList.removeAt(index);
+    _audios.removeAt(index);
   }
 
   void _changePlayMode() {
     if (_playMode.value == PlayMode.single) {
       _playMode.value = PlayMode.list;
       SmartDialog.showToast(Intl.audioPlayerScreen_btn_sequence.tr);
+      _audioPlayer.setLoopMode(LoopMode.all);
+      _audioPlayer.setShuffleModeEnabled(false);
     } else if (_playMode.value == PlayMode.list) {
       _playMode.value = PlayMode.random;
       SmartDialog.showToast(Intl.audioPlayerScreen_btn_shuffle.tr);
-      _audioListShuffle = _audios.toList();
-      _audioListShuffle.shuffle();
+      _audioPlayer.setLoopMode(LoopMode.all);
+      _audioPlayer.setShuffleModeEnabled(true);
     } else if (_playMode.value == PlayMode.random) {
       _playMode.value = PlayMode.single;
+      _audioPlayer.setLoopMode(LoopMode.one);
       SmartDialog.showToast(Intl.audioPlayerScreen_btn_repeatOne.tr);
     }
-  }
-
-  void _requestPlayListAndPlay(String path) {
-    _requestAudioUrlAndPlay(path);
-    _loadAudiosPrepare(path.substringBeforeLast("/")!, path);
-  }
-
-  Future<void> _loadAudiosPrepare(String folderPath, String filePath) async {
-    final userController = Get.find<UserController>();
-    final databaseController = Get.find<AlistDatabaseController>();
-    final user = userController.user.value;
-
-    // query file's password from database.
-    var filePassword = await databaseController.filePasswordDao
-        .findPasswordByPath(user.serverUrl, user.username, folderPath);
-    String? password;
-    if (filePassword != null) {
-      password = filePassword.password;
-    }
-    if (!isClosed) {
-      _loadAudios(folderPath, filePath, password);
-    }
-  }
-
-  Future<void> _loadAudios(
-      String folderPath, String filePath, String? password) async {
-    var body = {
-      "path": folderPath,
-      "password": password ?? "",
-      "page": 1,
-      "per_page": 0,
-      "refresh": false
-    };
-
-    return DioUtils.instance.requestNetwork<FileListRespEntity>(
-        Method.post, "fs/list", cancelToken: _cancelToken, params: body,
-        onSuccess: (data) {
-      var audios = data?.content
-          ?.map((e) => _fileResp2VO(folderPath, data.provider, e))
-          .where((element) => element.type == FileType.audio)
-          .toList();
-      audios?.sort((a, b) => a.name.compareTo(b.name));
-      var index = audios?.indexWhere((element) => element.path == filePath);
-      if (index != null && index >= 0) {
-        _index = index;
-      }
-      _audios.value = audios ?? [];
-      LogUtil.d("index=$_index audios=${_audios.length}");
-    }, onError: (code, msg) {
-      SmartDialog.showToast(msg);
-      debugPrint(msg);
-    });
-  }
-
-  FileItemVO _fileResp2VO(
-      String path, String provider, FileListRespContent resp) {
-    DateTime? modifyTime = resp.parseModifiedTime();
-    String? modifyTimeStr = resp.getReformatModified(modifyTime);
-
-    return FileItemVO(
-      name: resp.name,
-      path: resp.getCompletePath(path),
-      size: resp.isDir ? null : resp.size,
-      sizeDesc: resp.formatBytes(),
-      isDir: resp.isDir,
-      modified: modifyTimeStr,
-      typeInt: resp.type,
-      type: resp.getFileType(),
-      thumb: resp.thumb,
-      sign: resp.sign,
-      icon: resp.getFileIcon(),
-      modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
-      provider: provider,
-    );
   }
 }
 
