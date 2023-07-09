@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/table/file_password.dart';
 import 'package:alist/database/table/file_viewing_record.dart';
@@ -66,8 +68,8 @@ class _FileListScreenState extends State<FileListScreen>
       FileListMenuAnchorController();
 
   static const String tag = "_FileListScreenState";
-  FileListRespEntity? _data;
-  List<FileItemVO> _files = [];
+  final Rx<FileListRespEntity?> _data = Rx<FileListRespEntity?>(null);
+  final _files = <FileItemVO>[].obs;
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
 
@@ -81,6 +83,8 @@ class _FileListScreenState extends State<FileListScreen>
   bool _forceRefresh = false;
   int? stackId;
   bool _hasWritePermission = false;
+  User? _currentUser;
+  StreamSubscription? _userStreamSubscription;
 
   @override
   void initState() {
@@ -102,7 +106,20 @@ class _FileListScreenState extends State<FileListScreen>
     Log.d("path=$path pageName=$_pageName}", tag: tag);
 
     var user = _userController.user.value;
+    _currentUser = user;
     _loadFilesPrepare(user, path);
+    if (path == "/") {
+      _userStreamSubscription = _userController.user.stream.listen((event) {
+        if (_currentUser?.username != event.username ||
+            _currentUser?.serverUrl != event.serverUrl) {
+          _currentUser = event;
+          _loadFilesPrepare(event, "/");
+          _data.value = null;
+          _files.value = [];
+          LogUtil.d("切换User ${_userController.user.value.username}");
+        }
+      });
+    }
     Log.d("initState", tag: tag);
   }
 
@@ -153,13 +170,10 @@ class _FileListScreenState extends State<FileListScreen>
       _forceRefresh = false;
       _menuAnchorController.hasWritePermission.value = data?.write == true;
       _hasWritePermission = data?.write == true;
-      setState(
-        () {
-          _data = data;
-          _files = data?.content?.map((e) => _fileResp2VO(e)).toList() ?? [];
-          _sort(_files);
-        },
-      );
+      var files = data?.content?.map((e) => _fileResp2VO(e)).toList() ?? [];
+      _sort(files);
+      _files.value = files;
+      _data.value = data;
     }, onError: (code, msg) {
       _forceRefresh = false;
       if (code == 403) {
@@ -200,6 +214,7 @@ class _FileListScreenState extends State<FileListScreen>
   @override
   void dispose() {
     super.dispose();
+    _userStreamSubscription?.cancel();
     _cancelToken.cancel();
     Log.d("dispose", tag: tag);
   }
@@ -225,9 +240,7 @@ class _FileListScreenState extends State<FileListScreen>
           case MenuGroupId.sort:
             _menuAnchorController.sortBy.value = menu.menuId;
             _menuAnchorController.sortByUp.value = menu.isUp ?? false;
-            setState(() {
-              _sort(_files);
-            });
+            _sort(_files);
             break;
         }
       },
@@ -274,17 +287,17 @@ class _FileListScreenState extends State<FileListScreen>
         key: _refreshIndicatorKey,
         onRefresh: () => _loadFiles(),
         child: SlidableAutoCloseBehavior(
-          child: _FileListView(
-            path: path,
-            readme: _data?.readme,
-            files: _files,
-            hasWritePermission: _hasWritePermission,
-            onFileItemClick: _onFileTap,
-            onFileMoreIconButtonTap: _onFileMoreIconButtonTap,
-            fileDeleteCallback: (context, index) {
-              _tryDeleteFile(_files[index]);
-            },
-          ),
+          child: Obx(() => _FileListView(
+                path: path,
+                readme: _data.value?.readme,
+                files: _files,
+                hasWritePermission: _hasWritePermission,
+                onFileItemClick: _onFileTap,
+                onFileMoreIconButtonTap: _onFileMoreIconButtonTap,
+                fileDeleteCallback: (context, index) {
+                  _tryDeleteFile(_files[index]);
+                },
+              )),
         ),
       ),
     );
@@ -492,7 +505,7 @@ class _FileListScreenState extends State<FileListScreen>
         sign: resp.sign,
         icon: resp.getFileIcon(),
         modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
-        provider: _data?.provider);
+        provider: _data.value?.provider);
   }
 
   _showBottomMenuDialog(
@@ -656,11 +669,10 @@ class _FileListScreenState extends State<FileListScreen>
     req.names = [file.name];
 
     SmartDialog.showLoading(msg: Intl.fileList_tips_deleting.tr);
-    DioUtils.instance.requestNetwork(Method.post, "fs/remove",
+    DioUtils.instance.requestNetwork<String?>(Method.post, "fs/remove",
         params: req.toJson(), onSuccess: (data) {
       SmartDialog.dismiss();
-      _files.remove(file);
-      setState(() {});
+      _refreshIndicatorKey.currentState?.show();
     }, onError: (code, msg) {
       SmartDialog.showToast(msg);
       SmartDialog.dismiss();
@@ -700,7 +712,8 @@ class _FileListScreenState extends State<FileListScreen>
         params: req.toJson(), onSuccess: (data) {
       file.path = "${file.path.substringBeforeLast(file.name)!}$newName";
       file.name = newName;
-      setState(() {});
+      _files[_files.indexOf(file)] = file;
+      _refreshIndicatorKey.currentState?.show();
       SmartDialog.dismiss();
     }, onError: (code, msg) {
       SmartDialog.dismiss();
@@ -733,7 +746,7 @@ class _FileListScreenState extends State<FileListScreen>
     }
 
     SmartDialog.showLoading();
-    DioUtils.instance.requestNetwork(
+    DioUtils.instance.requestNetwork<String?>(
       Method.post,
       "fs/mkdir",
       params: req.toJson(),
@@ -741,11 +754,6 @@ class _FileListScreenState extends State<FileListScreen>
         SmartDialog.dismiss();
         SmartDialog.showToast(Intl.mkdirDialog_createSuccess.tr);
         _refreshIndicatorKey.currentState?.show();
-        Get.toNamed(
-          NamedRouter.fileList,
-          arguments: {"path": req.path},
-          id: AlistRouter.fileListCopyMoveRouterStackId,
-        );
       },
       onError: (code, msg) {
         SmartDialog.dismiss();

@@ -6,6 +6,7 @@ import 'package:alist/net/redirect_exception.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:flustars/flustars.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 class NetErrorHandler {

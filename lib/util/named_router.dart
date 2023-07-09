@@ -43,4 +43,7 @@ class NamedRouter {
 
   // uploadingFiles
   static const uploadingFiles = "/uploadingFiles";
+
+  // account
+  static const account = "/account";
 }

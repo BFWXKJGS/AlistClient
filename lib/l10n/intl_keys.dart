@@ -123,6 +123,9 @@ class Intl {
   static const String uploadingFileScreen_status_waiting = "uploadingFileScreen_status_waiting";
   static const String uploadingFileScreen_status_completed = "uploadingFileScreen_status_completed";
   static const String splashScreen_loading = "splashScreen_loading";
+  static const String accountScreen_create = "accountScreen_create";
+  static const String delete_success = "delete_success";
+  static const String delete_disable = "delete_disable";
   static const String audioPlayListDialog_title = "audioPlayListDialog_title";
   static const String audioPlayListDialog_tips_deleteTheLast = "audioPlayListDialog_tips_deleteTheLast";
   static const String audioPlayerScreen_btn_sequence = "audioPlayerScreen_btn_sequence";

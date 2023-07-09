@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/table/file_viewing_record.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
@@ -32,30 +34,46 @@ class _RecentsScreenState extends State<RecentsScreen>
   final AlistDatabaseController _databaseController = Get.find();
   final _loading = true.obs;
   final _list = <FileViewingRecord>[].obs;
+  StreamSubscription? _recordListSubscription;
+  StreamSubscription? _userStreamSubscription;
+  User? _currentUser;
 
   @override
   void initState() {
     super.initState();
+    _currentUser = _userController.user.value;
+    _userStreamSubscription = _userController.user.stream.listen((event) {
+      if (_currentUser?.serverUrl != event.serverUrl ||
+          _currentUser?.username != event.username) {
+        _currentUser = event;
+        _recordListSubscription?.cancel();
+        _queryRecents();
+      }
+    });
     _queryRecents();
   }
 
   @override
   void dispose() {
     _cancelToken.cancel();
+    _userStreamSubscription?.cancel();
+    _recordListSubscription?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Obx(() => AlistScaffold(
-          appbarTitle: Text(Intl.screenName_recents.tr),
-          body: !_loading.value && _list.isEmpty
-              ? Center(
-                  child: Text(Intl.recentsScreen_noRecord.tr),
-                )
-              : _fileListView(),
-        ));
+    return AlistScaffold(
+      appbarTitle: Text(Intl.screenName_recents.tr),
+      body: Obx(
+        () => !_loading.value && _list.isEmpty
+            ? Center(
+                child: Text(Intl.recentsScreen_noRecord.tr),
+              )
+            : _fileListView(),
+      ),
+    );
   }
 
   Widget _fileListView() {
@@ -109,7 +127,7 @@ class _RecentsScreenState extends State<RecentsScreen>
 
   void _queryRecents() {
     var user = _userController.user.value;
-    _databaseController.fileViewingRecordDao
+    _recordListSubscription = _databaseController.fileViewingRecordDao
         .recordList(user.serverUrl, user.username)
         .listen((list) {
       _list.value = list ?? [];

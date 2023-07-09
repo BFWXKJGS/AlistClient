@@ -1,15 +1,18 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/generated/images.dart';
 import 'package:alist/l10n/intl_keys.dart';
+import 'package:alist/util/constant.dart';
 import 'package:alist/util/global.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/util/widget_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
+import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -31,14 +34,29 @@ class _SettingsContainer extends StatefulWidget {
   State<_SettingsContainer> createState() => _SettingsContainerState();
 }
 
-class _SettingsContainerState extends State<_SettingsContainer> {
+class _SettingsContainerState extends State<_SettingsContainer>
+    with AutomaticKeepAliveClientMixin {
   PackageInfo? packageInfo;
+  final AlistDatabaseController _databaseController = Get.find();
   final UserController _userController = Get.find();
+  StreamSubscription? _serverStreamSubscription;
+  final _userCnt = 0.obs;
 
   @override
   void initState() {
     super.initState();
     _initPackageInfo();
+
+    _serverStreamSubscription =
+        _databaseController.serverDao.serverList().listen((event) {
+      _userCnt.value = event?.length ?? 0;
+    });
+  }
+
+  @override
+  void dispose() {
+    _serverStreamSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -47,15 +65,16 @@ class _SettingsContainerState extends State<_SettingsContainer> {
     List<SettingsMenu> settingsMenus = _buildSettingsMenuItems(context);
 
     return ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        itemBuilder: (child, index) {
-          var settingsMenu = settingsMenus[index];
-          return _buildListItem(settingsMenu, context, isDarkMode);
-        },
-        separatorBuilder: (child, index) {
-          return const Divider();
-        },
-        itemCount: settingsMenus.length);
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      itemBuilder: (child, index) {
+        var settingsMenu = settingsMenus[index];
+        return _buildListItem(settingsMenu, context, isDarkMode);
+      },
+      separatorBuilder: (child, index) {
+        return const Divider();
+      },
+      itemCount: settingsMenus.length,
+    );
   }
 
   ListTile _buildListItem(
@@ -68,7 +87,7 @@ class _SettingsContainerState extends State<_SettingsContainer> {
             Get.offNamed(NamedRouter.login);
             break;
           case MenuId.account:
-            _showAccountDialog(context);
+            Get.toNamed(NamedRouter.account);
             break;
           case MenuId.donate:
             Get.toNamed(settingsMenu.route!);
@@ -147,7 +166,8 @@ class _SettingsContainerState extends State<_SettingsContainer> {
             route: NamedRouter.donate),
       );
     }
-    if (_userController.user().guest == true) {
+    if (_userCnt.value == 0 &&
+        SpUtil.getBool(AlistConstant.useDemoServer) == true) {
       settingsMenus.insert(
           0,
           SettingsMenu(
@@ -167,38 +187,8 @@ class _SettingsContainerState extends State<_SettingsContainer> {
     return settingsMenus;
   }
 
-  void _showAccountDialog(BuildContext context) {
-    SmartDialog.show(
-        alignment: Alignment.bottomCenter,
-        builder: (_) {
-          return Container(
-            width: double.infinity,
-            color: Get.theme.colorScheme.surface,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  child: Text(Intl.tips_logout.tr),
-                ),
-                Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.only(left: 20, right: 20, bottom: 20),
-                  child: FilledButton(
-                    onPressed: () {
-                      _userController.logout();
-                      SmartDialog.dismiss();
-                      Get.offNamed(NamedRouter.login);
-                    },
-                    child: Text(Intl.logout.tr),
-                  ),
-                )
-              ],
-            ),
-          );
-        });
-  }
+  @override
+  bool get wantKeepAlive => true;
 }
 
 class SettingsMenu {

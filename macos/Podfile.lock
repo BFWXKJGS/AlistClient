@@ -1,4 +1,6 @@
 PODS:
+  - file_selector_macos (0.0.1):
+    - FlutterMacOS
   - FlutterMacOS (1.0.0)
   - FMDB (2.7.5):
     - FMDB/standard (= 2.7.5)
@@ -16,16 +18,20 @@ PODS:
   - sqflite (0.0.2):
     - FlutterMacOS
     - FMDB (>= 2.7.5)
+  - url_launcher_macos (0.0.1):
+    - FlutterMacOS
   - wakelock_macos (0.0.1):
     - FlutterMacOS
 
 DEPENDENCIES:
+  - file_selector_macos (from `Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - package_info_plus (from `Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos`)
-  - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/macos`)
+  - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin`)
   - screen_brightness_macos (from `Flutter/ephemeral/.symlinks/plugins/screen_brightness_macos/macos`)
-  - shared_preferences_foundation (from `Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/macos`)
+  - shared_preferences_foundation (from `Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqflite (from `Flutter/ephemeral/.symlinks/plugins/sqflite/macos`)
+  - url_launcher_macos (from `Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos`)
   - wakelock_macos (from `Flutter/ephemeral/.symlinks/plugins/wakelock_macos/macos`)
 
 SPEC REPOS:
@@ -33,22 +39,27 @@ SPEC REPOS:
     - FMDB
 
 EXTERNAL SOURCES:
+  file_selector_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos
   FlutterMacOS:
     :path: Flutter/ephemeral
   package_info_plus:
     :path: Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos
   path_provider_foundation:
-    :path: Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/macos
+    :path: Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin
   screen_brightness_macos:
     :path: Flutter/ephemeral/.symlinks/plugins/screen_brightness_macos/macos
   shared_preferences_foundation:
-    :path: Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/macos
+    :path: Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin
   sqflite:
     :path: Flutter/ephemeral/.symlinks/plugins/sqflite/macos
+  url_launcher_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos
   wakelock_macos:
     :path: Flutter/ephemeral/.symlinks/plugins/wakelock_macos/macos
 
 SPEC CHECKSUMS:
+  file_selector_macos: 0f85c1108e2fd597b58246bc0b0c1cb483d7593b
   FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
   FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
   package_info_plus: 02d7a575e80f194102bef286361c6c326e4c29ce
@@ -56,6 +67,7 @@ SPEC CHECKSUMS:
   screen_brightness_macos: 2d6d3af2165592d9a55ffcd95b7550970e41ebda
   shared_preferences_foundation: e2dae3258e06f44cc55f49d42024fd8dd03c590c
   sqflite: a5789cceda41d54d23f31d6de539d65bb14100ea
+  url_launcher_macos: 5335912b679c073563f29d89d33d10d459f95451
   wakelock_macos: bc3f2a9bd8d2e6c89fee1e1822e7ddac3bd004a9
 
 PODFILE CHECKSUM: 353c8bcc5d5b0994e508d035b5431cfe18c1dea7

@@ -1,10 +1,13 @@
 import 'dart:io';
 
+import 'package:alist/database/alist_database_controller.dart';
+import 'package:alist/database/table/server.dart';
 import 'package:alist/entity/login_resp_entity.dart';
 import 'package:alist/entity/my_info_resp.dart';
 import 'package:alist/generated/images.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
+import 'package:alist/router.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/focus_node_utils.dart';
 import 'package:alist/util/global.dart';
@@ -14,6 +17,7 @@ import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:dio/dio.dart';
+import 'package:floor/floor.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -215,6 +219,7 @@ class LoginInputDecoration extends InputDecoration {
 
 class LoginScreenController extends GetxController with WidgetsBindingObserver {
   final UserController userController = Get.find();
+  final AlistDatabaseController _databaseController = Get.find();
   final FocusNode addressFocusNode = FocusNode();
   final addressController = TextEditingController();
   final usernameController = TextEditingController();
@@ -271,6 +276,10 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
     super.onClose();
   }
 
+  static int currentTimeMillis() {
+    return DateTime.now().millisecondsSinceEpoch;
+  }
+
   Future<void> _login(
       {bool ignoreDavCheck = false,
       required LoginSuccessCallback onSuccess,
@@ -321,21 +330,47 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
         'password': password,
         'otp_code': twofaCode,
       },
-      options: Options(followRedirects: false),
+      options:
+          Options(followRedirects: false, headers: {AlistConstant.noAuth: 1}),
       cancelToken: _cancelToken,
       onSuccess: (data) {
-        userController.login(User(
+        var user = User(
           baseUrl: baseUrl,
           serverUrl: address,
           username: username,
           password: password,
           token: data!.token,
           guest: false,
-        ));
+        );
+        userController.login(user);
         SpUtil.putBool(AlistConstant.ignoreSSLError, ignoreSSLError.value);
+        _insertUser2Database(user);
         onSuccess();
       },
       onError: (code, message) => onFailure(code, message),
+    );
+  }
+
+  @transaction
+  void _insertUser2Database(User user) async {
+    var original = await _databaseController.serverDao
+        .findServer(user.serverUrl, user.username);
+    if (original != null) {
+      await _databaseController.serverDao.deleteServer(original);
+    }
+
+    await _databaseController.serverDao.insertServer(
+      Server(
+        name: user.username,
+        serverUrl: user.serverUrl,
+        guest: user.guest,
+        userId: user.username,
+        password: user.password ?? "",
+        token: user.token ?? "",
+        ignoreSSLError: ignoreSSLError.value,
+        createTime: currentTimeMillis(),
+        updateTime: currentTimeMillis(),
+      ),
     );
   }
 
@@ -371,7 +406,9 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
     SmartDialog.showLoading(
         msg: "checking...", backDismiss: false, clickMaskDismiss: false);
     DioUtils.instance.requestNetwork<MyInfoResp>(Method.get, "me",
-        options: Options(followRedirects: false), onSuccess: (data) {
+        options:
+            Options(followRedirects: false, headers: {AlistConstant.noAuth: 1}),
+        onSuccess: (data) {
       if (data?.disabled == true) {
         SmartDialog.showToast(Intl.loginScreen_tips_guestAccountDisabled.tr);
       } else {
@@ -400,7 +437,7 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
       String baseUrl, String address, String? username, String? basePath,
       {bool useDemoServer = false}) {
     SpUtil.putBool(AlistConstant.ignoreSSLError, ignoreSSLError.value);
-    userController.login(User(
+    var user = User(
       baseUrl: baseUrl,
       serverUrl: address,
       username: username ?? "guest",
@@ -409,8 +446,12 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
       guest: true,
       basePath: basePath,
       useDemoServer: useDemoServer,
-    ));
-    Get.offNamed(NamedRouter.home);
+    );
+    userController.login(user);
+    if (!useDemoServer) {
+      _insertUser2Database(user);
+    }
+    _goHomeScreen();
   }
 
   void _tryEntryDefaultServer(BuildContext context) {
@@ -448,7 +489,7 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
       ignoreDavCheck: ignoreDavCheck,
       onSuccess: () {
         SmartDialog.dismiss();
-        Get.offNamed(NamedRouter.home);
+        _goHomeScreen();
       },
       onFailure: (code, message) {
         SmartDialog.dismiss();
@@ -471,6 +512,11 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
         SmartDialog.showToast(message);
       },
     );
+  }
+
+  Future<void> _goHomeScreen() async {
+    await Get.offAllNamed(NamedRouter.home);
+    Get.until((route) => route.isFirst, id: AlistRouter.fileListRouterStackId);
   }
 
   // Used to request network access when entering the app for the first time

@@ -115,6 +115,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   double _seekPos = -1.0;
   StreamSubscription? _currentPosSubs;
   StreamSubscription? _bufferPosSubs;
+  StreamSubscription? _volumeSubscription;
 
   Timer? _hideTimer;
   bool _hideStuff = false;
@@ -219,7 +220,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       _setPlaying(false, exception: errorMsg);
     });
 
-    VolumeController().listener((volume) {
+    _volumeSubscription = VolumeController().listener((volume) {
       setState(() {
         Log.d("VolumeController listener volume $volume");
         _systemVolumeListenValue = volume;
@@ -289,6 +290,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     VolumeController().removeListener();
     _currentPosSubs?.cancel();
     _bufferPosSubs?.cancel();
+    _volumeSubscription?.cancel();
   }
 
   void _startHideTimer() {

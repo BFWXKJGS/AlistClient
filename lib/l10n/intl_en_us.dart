@@ -134,4 +134,7 @@ const translationsEnUS = {
   "audioPlayerScreen_btn_sequence": "Sequential play",
   "audioPlayerScreen_btn_repeatOne": "Single cycle",
   "audioPlayerScreen_btn_shuffle": "Shuffle play",
+  "accountScreen_create": "Create",
+  "delete_success": "Delete success",
+  "delete_disable": "Delete disable",
 };

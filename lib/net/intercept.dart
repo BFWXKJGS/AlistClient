@@ -6,6 +6,12 @@ import 'package:sp_util/sp_util.dart';
 class AuthInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    if (options.headers[AlistConstant.noAuth] == 1) {
+      options.headers.remove(AlistConstant.noAuth);
+      super.onRequest(options, handler);
+      return;
+    }
+
     final String accessToken = SpUtil.getString(AlistConstant.token) ?? "";
     final String serverUrl = SpUtil.getString(AlistConstant.serverUrl) ?? "";
     final String url = options.uri.toString();
