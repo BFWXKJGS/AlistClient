@@ -77,7 +77,7 @@ class _$AlistDatabase extends AlistDatabase {
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 3,
+      version: 4,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -99,7 +99,7 @@ class _$AlistDatabase extends AlistDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `file_password` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `password` TEXT NOT NULL, `create_time` INTEGER NOT NULL)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `server` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `password` TEXT NOT NULL, `guest` INTEGER NOT NULL, `ignore_ssl_error` INTEGER NOT NULL, `create_time` INTEGER NOT NULL, `update_time` INTEGER NOT NULL)');
+            'CREATE TABLE IF NOT EXISTS `server` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `password` TEXT NOT NULL, `token` TEXT NOT NULL, `guest` INTEGER NOT NULL, `ignore_ssl_error` INTEGER NOT NULL, `create_time` INTEGER NOT NULL, `update_time` INTEGER NOT NULL)');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `file_viewing_record` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `name` TEXT NOT NULL, `size` INTEGER NOT NULL, `sign` TEXT, `thumb` TEXT, `modified` INTEGER NOT NULL, `provider` TEXT NOT NULL, `create_time` INTEGER NOT NULL, `path` TEXT NOT NULL)');
 
@@ -420,7 +420,7 @@ class _$ServerDao extends ServerDao {
   _$ServerDao(
     this.database,
     this.changeListener,
-  )   : _queryAdapter = QueryAdapter(database),
+  )   : _queryAdapter = QueryAdapter(database, changeListener),
         _serverInsertionAdapter = InsertionAdapter(
             database,
             'server',
@@ -430,11 +430,13 @@ class _$ServerDao extends ServerDao {
                   'server_url': item.serverUrl,
                   'user_id': item.userId,
                   'password': item.password,
+                  'token': item.token,
                   'guest': item.guest ? 1 : 0,
                   'ignore_ssl_error': item.ignoreSSLError ? 1 : 0,
                   'create_time': item.createTime,
                   'update_time': item.updateTime
-                }),
+                },
+            changeListener),
         _serverUpdateAdapter = UpdateAdapter(
             database,
             'server',
@@ -445,11 +447,13 @@ class _$ServerDao extends ServerDao {
                   'server_url': item.serverUrl,
                   'user_id': item.userId,
                   'password': item.password,
+                  'token': item.token,
                   'guest': item.guest ? 1 : 0,
                   'ignore_ssl_error': item.ignoreSSLError ? 1 : 0,
                   'create_time': item.createTime,
                   'update_time': item.updateTime
-                }),
+                },
+            changeListener),
         _serverDeletionAdapter = DeletionAdapter(
             database,
             'server',
@@ -460,11 +464,13 @@ class _$ServerDao extends ServerDao {
                   'server_url': item.serverUrl,
                   'user_id': item.userId,
                   'password': item.password,
+                  'token': item.token,
                   'guest': item.guest ? 1 : 0,
                   'ignore_ssl_error': item.ignoreSSLError ? 1 : 0,
                   'create_time': item.createTime,
                   'update_time': item.updateTime
-                });
+                },
+            changeListener);
 
   final sqflite.DatabaseExecutor database;
 
@@ -491,6 +497,7 @@ class _$ServerDao extends ServerDao {
             serverUrl: row['server_url'] as String,
             userId: row['user_id'] as String,
             password: row['password'] as String,
+            token: row['token'] as String,
             guest: (row['guest'] as int) != 0,
             ignoreSSLError: (row['ignore_ssl_error'] as int) != 0,
             createTime: row['create_time'] as int,
@@ -499,8 +506,8 @@ class _$ServerDao extends ServerDao {
   }
 
   @override
-  Future<List<Server>?> serverList() async {
-    return _queryAdapter.queryList(
+  Stream<List<Server>?> serverList() {
+    return _queryAdapter.queryListStream(
         'SELECT * FROM server ORDER BY id desc LIMIT 100',
         mapper: (Map<String, Object?> row) => Server(
             id: row['id'] as int?,
@@ -508,10 +515,13 @@ class _$ServerDao extends ServerDao {
             serverUrl: row['server_url'] as String,
             userId: row['user_id'] as String,
             password: row['password'] as String,
+            token: row['token'] as String,
             guest: (row['guest'] as int) != 0,
             ignoreSSLError: (row['ignore_ssl_error'] as int) != 0,
             createTime: row['create_time'] as int,
-            updateTime: row['update_time'] as int));
+            updateTime: row['update_time'] as int),
+        queryableName: 'server',
+        isView: false);
   }
 
   @override

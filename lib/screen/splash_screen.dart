@@ -63,6 +63,7 @@ class _SplashScreenState extends State<SplashScreen> {
     String? token = SpUtil.getString(AlistConstant.token, defValue: null);
     String? basePath = SpUtil.getString(AlistConstant.basePath, defValue: null);
     bool guest = SpUtil.getBool(AlistConstant.guest) ?? false;
+    bool useDemoServer = SpUtil.getBool(AlistConstant.useDemoServer) ?? false;
     userController.login(
       User(
         baseUrl: baseUrl ?? "",
@@ -72,6 +73,7 @@ class _SplashScreenState extends State<SplashScreen> {
         guest: guest,
         token: token,
         basePath: basePath,
+        useDemoServer: useDemoServer,
       ),
       fromCache: true,
     );

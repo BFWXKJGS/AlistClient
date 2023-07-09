@@ -17,5 +17,5 @@ abstract class ServerDao {
   Future<Server?> findServer(String serverUrl, String userId);
 
   @Query("SELECT * FROM server ORDER BY id desc LIMIT 100")
-  Future<List<Server>?> serverList();
+  Stream<List<Server>?> serverList();
 }

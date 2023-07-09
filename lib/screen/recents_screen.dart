@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/table/file_viewing_record.dart';
 import 'package:alist/l10n/intl_keys.dart';
@@ -24,13 +26,32 @@ class _RecentsScreenState extends State<RecentsScreen>
     with AutomaticKeepAliveClientMixin {
   final UserController _userController = Get.find();
   final AlistDatabaseController _databaseController = Get.find();
-  var _loading = true;
-  List<FileViewingRecord> _list = [];
+  final _loading = true.obs;
+  final _list = <FileViewingRecord>[].obs;
+  StreamSubscription? _recordListSubscription;
+  StreamSubscription? _userStreamSubscription;
+  User? _currentUser;
 
   @override
   void initState() {
     super.initState();
+    _currentUser = _userController.user.value;
+    _userStreamSubscription = _userController.user.stream.listen((event) {
+      if (_currentUser?.serverUrl != event.serverUrl ||
+          _currentUser?.username != event.username) {
+        _currentUser = event;
+        _recordListSubscription?.cancel();
+        _queryRecents();
+      }
+    });
     _queryRecents();
+  }
+
+  @override
+  void dispose() {
+    _userStreamSubscription?.cancel();
+    _recordListSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -38,11 +59,13 @@ class _RecentsScreenState extends State<RecentsScreen>
     super.build(context);
     return AlistScaffold(
       appbarTitle: Text(Intl.screenName_recents.tr),
-      body: !_loading && _list.isEmpty
-          ? Center(
-              child: Text(Intl.recentsScreen_noRecord.tr),
-            )
-          : _fileListView(),
+      body: Obx(
+        () => !_loading.value && _list.isEmpty
+            ? Center(
+                child: Text(Intl.recentsScreen_noRecord.tr),
+              )
+            : _fileListView(),
+      ),
     );
   }
 
@@ -97,13 +120,11 @@ class _RecentsScreenState extends State<RecentsScreen>
 
   void _queryRecents() {
     var user = _userController.user.value;
-    _databaseController.fileViewingRecordDao
+    _recordListSubscription = _databaseController.fileViewingRecordDao
         .recordList(user.serverUrl, user.username)
         .listen((list) {
-      setState(() {
-        _list = list ?? [];
-        _loading = false;
-      });
+      _list.value = list ?? [];
+      _loading.value = false;
     });
   }
 

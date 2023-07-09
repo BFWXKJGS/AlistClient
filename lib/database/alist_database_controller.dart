@@ -4,7 +4,6 @@ import 'package:alist/database/dao/file_password_dao.dart';
 import 'package:alist/database/dao/file_viewing_record_dao.dart';
 import 'package:alist/database/dao/server_dao.dart';
 import 'package:alist/database/dao/video_viewing_record_dao.dart';
-import 'package:alist/database/table/file_password.dart';
 import 'package:floor/floor.dart';
 import 'package:get/get.dart';
 
@@ -30,16 +29,22 @@ class AlistDatabaseController extends GetxController {
 
   // create migration
   final migration2to3 = Migration(2, 3, (database) async {
-    await database.execute(
-        'DROP TABLE `file_viewing_record`');
+    await database.execute('DROP TABLE `file_viewing_record`');
     await database.execute(
         'CREATE TABLE IF NOT EXISTS `file_viewing_record` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `name` TEXT NOT NULL, `size` INTEGER NOT NULL, `sign` TEXT, `thumb` TEXT, `modified` INTEGER NOT NULL, `provider` TEXT NOT NULL, `create_time` INTEGER NOT NULL, `path` TEXT NOT NULL)');
+  });
+
+  // create migration
+  final migration3to4 = Migration(3, 4, (database) async {
+    await database.execute('DROP TABLE `server`');
+    await database.execute(
+        'CREATE TABLE IF NOT EXISTS `server` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `password` TEXT NOT NULL, `token` TEXT NOT NULL, `guest` INTEGER NOT NULL, `ignore_ssl_error` INTEGER NOT NULL, `create_time` INTEGER NOT NULL, `update_time` INTEGER NOT NULL)');
   });
 
   Future<void> init() async {
     database = await $FloorAlistDatabase
         .databaseBuilder('alist.db')
-        .addMigrations([migration1to2, migration2to3]).build();
+        .addMigrations([migration1to2, migration2to3, migration3to4]).build();
     videoViewingRecordDao = database.videoViewingRecordDao;
     downloadRecordRecordDao = database.downloadRecordRecordDao;
     filePasswordDao = database.filePasswordDao;

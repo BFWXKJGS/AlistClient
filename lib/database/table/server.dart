@@ -17,6 +17,9 @@ class Server {
   @ColumnInfo(name: 'password')
   final String password;
 
+  @ColumnInfo(name: 'token')
+  final String token;
+
   @ColumnInfo(name: 'guest')
   final bool guest;
 
@@ -35,6 +38,7 @@ class Server {
     required this.serverUrl,
     required this.userId,
     required this.password,
+    required this.token,
     required this.guest,
     required this.ignoreSSLError,
     required this.createTime,

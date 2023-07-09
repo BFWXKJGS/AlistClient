@@ -10,6 +10,7 @@ class AlistConstant {
   static const String data = 'data';
   static const String message = 'message';
   static const String code = 'code';
+  static const String noAuth = 'noAuth';
 
   static const String serverUrl = 'address';
   static const String baseUrl = 'baseUrl';
