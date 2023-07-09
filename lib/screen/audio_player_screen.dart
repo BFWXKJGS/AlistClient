@@ -366,6 +366,7 @@ class AudioPlayerScreenController extends GetxController {
       tag: MediaItem(
         id: audio.path,
         title: audio.name,
+        artUri: Uri.parse("https://alistc.geektang.cn/ic_music_head.png"),
       ),
     );
   }
