@@ -61,7 +61,7 @@ class _DirectorPasswordDialogState extends State<DirectorPasswordDialog> {
                     _isRememberPassword = !_isRememberPassword;
                   });
                 },
-                child: const Text("记住密码？"),
+                child: Text(Intl.directoryPasswordDialog_remember.tr),
               ),
             ],
           )

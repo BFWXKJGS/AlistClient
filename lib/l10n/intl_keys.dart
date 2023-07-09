@@ -37,6 +37,7 @@ class Intl {
   static const String directoryPasswordDialog_btn_ok = "directoryPasswordDialog_btn_ok";
   static const String directoryPasswordDialog_btn_cancel = "directoryPasswordDialog_btn_cancel";
   static const String directoryPasswordDialog_tips_passwordEmpty = "directoryPasswordDialog_tips_passwordEmpty";
+  static const String directoryPasswordDialog_remember  = "directoryPasswordDialog_remember ";
   static const String net_error_net_error = "net_error_net_error";
   static const String net_error_parse_error = "net_error_parse_error";
   static const String net_error_socket_error = "net_error_socket_error";
@@ -123,12 +124,15 @@ class Intl {
   static const String uploadingFileScreen_status_waiting = "uploadingFileScreen_status_waiting";
   static const String uploadingFileScreen_status_completed = "uploadingFileScreen_status_completed";
   static const String splashScreen_loading = "splashScreen_loading";
-  static const String accountScreen_create = "accountScreen_create";
-  static const String delete_success = "delete_success";
-  static const String delete_disable = "delete_disable";
   static const String audioPlayListDialog_title = "audioPlayListDialog_title";
   static const String audioPlayListDialog_tips_deleteTheLast = "audioPlayListDialog_tips_deleteTheLast";
   static const String audioPlayerScreen_btn_sequence = "audioPlayerScreen_btn_sequence";
   static const String audioPlayerScreen_btn_repeatOne = "audioPlayerScreen_btn_repeatOne";
   static const String audioPlayerScreen_btn_shuffle = "audioPlayerScreen_btn_shuffle";
+  static const String accountScreen_create = "accountScreen_create";
+  static const String delete_success = "delete_success";
+  static const String deleteAccountDialog_title = "deleteAccountDialog_title";
+  static const String deleteAccountDialog_content = "deleteAccountDialog_content";
+  static const String deleteAccountDialog_btn_ok = "deleteAccountDialog_btn_ok";
+  static const String deleteAccountDialog_btn_cancel = "deleteAccountDialog_btn_cancel";
 }

@@ -13,6 +13,7 @@ import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:sprintf/sprintf.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({Key? key}) : super(key: key);
@@ -105,21 +106,21 @@ class _PageContainerState extends State<_PageContainer> {
   Future<void> _handleDeleteItem(List<Server> list, Server item) async {
     SmartDialog.show(builder: (context) {
       return AlertDialog(
-        title: Text("删除账户"),
-        content: Text("确定删除账户 ${item.name} 吗？"),
+        title: Text(Intl.deleteAccountDialog_title.tr),
+        content: Text(sprintf(Intl.deleteAccountDialog_content.tr, [item.userId])),
         actions: [
           TextButton(
             onPressed: () {
               SmartDialog.dismiss();
             },
-            child: Text("取消"),
+            child: Text(Intl.deleteAccountDialog_btn_cancel.tr),
           ),
           TextButton(
             onPressed: () {
               SmartDialog.dismiss();
               _deleteAccount(list, item);
             },
-            child: Text("确认"),
+            child: Text(Intl.deleteAccountDialog_btn_ok.tr),
           ),
         ],
       );

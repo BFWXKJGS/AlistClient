@@ -280,8 +280,7 @@ class AudioPlayerScreenController extends GetxController {
   final _prepared = false.obs;
 
   final _seekPos = (-1.0).obs;
-  StreamSubscription? _currentPosSubs;
-  StreamSubscription? _bufferPosSubs;
+  List<StreamSubscription> streamSubscriptions = [];
 
   @override
   void onInit() {
@@ -291,18 +290,23 @@ class AudioPlayerScreenController extends GetxController {
     }
     _createPlayListAndPlay();
 
-    _audioPlayer.durationStream.listen((event) {
+    var durationStreamSubscription =
+        _audioPlayer.durationStream.listen((event) {
       if (event != null) {
         _duration.value = event;
       }
     });
-    _audioPlayer.positionStream.listen((event) {
+    streamSubscriptions.add(durationStreamSubscription);
+    var positionStreamSubscription =
+        _audioPlayer.positionStream.listen((event) {
       _currentPos.value = event;
       if (_duration.value.inMilliseconds < _currentPos.value.inMilliseconds) {
         _currentPos.value = _duration.value;
       }
     });
-    _audioPlayer.sequenceStateStream.listen((event) {
+    streamSubscriptions.add(positionStreamSubscription);
+    var sequenceStreamSubscription =
+        _audioPlayer.sequenceStateStream.listen((event) {
       if (event != null && _audios.isNotEmpty) {
         _index = event.currentIndex;
         var item = event.currentSource?.tag as MediaItem?;
@@ -312,7 +316,9 @@ class AudioPlayerScreenController extends GetxController {
         }
       }
     });
-    _audioPlayer.playerStateStream.listen((state) {
+    streamSubscriptions.add(sequenceStreamSubscription);
+    var stateStreamSubscription =
+        _audioPlayer.playerStateStream.listen((state) {
       if (state.playing) {
         _prepared.value = true;
         _playing.value = true;
@@ -323,6 +329,7 @@ class AudioPlayerScreenController extends GetxController {
         _playNext();
       }
     });
+    streamSubscriptions.add(stateStreamSubscription);
     // _audioPlayer.playbackEventStream.listen((event) {}, onError: (Object e, StackTrace st) {
     //   _playNext();
     // });
@@ -398,8 +405,10 @@ class AudioPlayerScreenController extends GetxController {
     _cancelToken.cancel();
     _releasePlayer();
 
-    _currentPosSubs?.cancel();
-    _bufferPosSubs?.cancel();
+    for (var element in streamSubscriptions) {
+      element.cancel();
+    }
+    streamSubscriptions = [];
   }
 
   void _releasePlayer() async {

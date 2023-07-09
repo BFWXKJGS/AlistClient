@@ -38,6 +38,7 @@ const translationsEnUS = {
   "directoryPasswordDialog_btn_ok": "OK",
   "directoryPasswordDialog_btn_cancel": "Cancel",
   "directoryPasswordDialog_tips_passwordEmpty": "Password is empty!",
+  "directoryPasswordDialog_remember" : "Remember password?",
   "net_error_net_error": "Network error",
   "net_error_parse_error": "Data parsing exceptions",
   "net_error_socket_error": "Network error",
@@ -136,5 +137,8 @@ const translationsEnUS = {
   "audioPlayerScreen_btn_shuffle": "Shuffle play",
   "accountScreen_create": "Create",
   "delete_success": "Delete success",
-  "delete_disable": "Delete disable",
+  "deleteAccountDialog_title":"Delete account",
+  "deleteAccountDialog_content":"Are you sure you want to delete your account '%s' ？",
+  "deleteAccountDialog_btn_ok":"Confirm",
+  "deleteAccountDialog_btn_cancel":"Cancel",
 };

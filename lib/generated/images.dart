@@ -1,4 +1,6 @@
 class Images {
+  static const String accountIcon = 'assets/images/account_icon.png';
+  static const String accountIconChoosed = 'assets/images/account_icon_choosed.png';
   static const String fileTypeApk = 'assets/images/file_type_apk.png';
   static const String fileTypeAudio = 'assets/images/file_type_audio.png';
   static const String fileTypeCode = 'assets/images/file_type_code.png';
@@ -22,6 +24,4 @@ class Images {
   static const String settingsScreenAccount = 'assets/images/settings_screen_account.png';
   static const String settingsScreenDonate = 'assets/images/settings_screen_donate.png';
   static const String settingsScreenPrivacyPolicy = 'assets/images/settings_screen_privacy_policy.png';
-  static const String accountIcon = 'assets/images/account_icon.png';
-  static const String accountIconChoosed = 'assets/images/account_icon_choosed.png';
 }
