@@ -27,6 +27,7 @@ class Intl {
   static const String alipay = "alipay";
   static const String playerSkin_tips_playVideoFailed = "playerSkin_tips_playVideoFailed";
   static const String playerSkin_rate = "playerSkin_rate";
+  static const String videoPlayerScreen_tips_playNext = "videoPlayerScreen_tips_playNext";
   static const String tips_logout = "tips_logout";
   static const String logout = "logout";
   static const String guestModeDialog_title = "guestModeDialog_title";
@@ -60,6 +61,7 @@ class Intl {
   static const String loadingStatusWidget_retry = "loadingStatusWidget_retry";
   static const String fileList_menu_forceRefresh = "fileList_menu_forceRefresh";
   static const String fileList_menu_newFolder = "fileList_menu_newFolder";
+  static const String fileList_menu_uploadPhotos = "fileList_menu_uploadPhotos";
   static const String fileList_menu_uploadFiles = "fileList_menu_uploadFiles";
   static const String fileList_menu_fileName = "fileList_menu_fileName";
   static const String fileList_menu_fileType = "fileList_menu_fileType";

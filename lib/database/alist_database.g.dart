@@ -168,6 +168,19 @@ class _$VideoViewingRecordDao extends VideoViewingRecordDao {
                   'path': item.path,
                   'video_duration': item.videoDuration,
                   'video_current_position': item.videoCurrentPosition
+                }),
+        _videoViewingRecordDeletionAdapter = DeletionAdapter(
+            database,
+            'video_viewing_record',
+            ['id'],
+            (VideoViewingRecord item) => <String, Object?>{
+                  'id': item.id,
+                  'server_url': item.serverUrl,
+                  'user_id': item.userId,
+                  'video_sign': item.videoSign,
+                  'path': item.path,
+                  'video_duration': item.videoDuration,
+                  'video_current_position': item.videoCurrentPosition
                 });
 
   final sqflite.DatabaseExecutor database;
@@ -181,17 +194,7 @@ class _$VideoViewingRecordDao extends VideoViewingRecordDao {
 
   final UpdateAdapter<VideoViewingRecord> _videoViewingRecordUpdateAdapter;
 
-  @override
-  Future<VideoViewingRecord?> findRecordBySign(
-    String serverUrl,
-    String userId,
-    String sign,
-  ) async {
-    return _queryAdapter.query(
-        'SELECT * FROM video_viewing_record WHERE server_url = ?1 AND user_id=?2 AND video_sign=?3 LIMIT 1',
-        mapper: (Map<String, Object?> row) => VideoViewingRecord(id: row['id'] as int?, serverUrl: row['server_url'] as String, userId: row['user_id'] as String, videoSign: row['video_sign'] as String, path: row['path'] as String, videoDuration: row['video_duration'] as int, videoCurrentPosition: row['video_current_position'] as int),
-        arguments: [serverUrl, userId, sign]);
-  }
+  final DeletionAdapter<VideoViewingRecord> _videoViewingRecordDeletionAdapter;
 
   @override
   Future<VideoViewingRecord?> findRecordByPath(
@@ -215,6 +218,11 @@ class _$VideoViewingRecordDao extends VideoViewingRecordDao {
   Future<int> updateRecord(VideoViewingRecord record) {
     return _videoViewingRecordUpdateAdapter.updateAndReturnChangedRows(
         record, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> deleteRecord(VideoViewingRecord record) async {
+    await _videoViewingRecordDeletionAdapter.delete(record);
   }
 }
 

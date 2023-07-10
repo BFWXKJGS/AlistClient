@@ -13,6 +13,8 @@ PODS:
     - AliPlayerSDK_iOS (= 5.5.6.0)
     - Flutter
     - MJExtension
+  - flutter_document_picker (0.0.1):
+    - Flutter
   - flutter_pdfview (1.0.2):
     - Flutter
   - FMDB (2.7.5):
@@ -55,6 +57,7 @@ DEPENDENCIES:
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - Flutter (from `Flutter`)
   - flutter_aliplayer (from `.symlinks/plugins/flutter_aliplayer/ios`)
+  - flutter_document_picker (from `.symlinks/plugins/flutter_document_picker/ios`)
   - flutter_pdfview (from `.symlinks/plugins/flutter_pdfview/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - just_audio (from `.symlinks/plugins/just_audio/ios`)
@@ -87,6 +90,8 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_aliplayer:
     :path: ".symlinks/plugins/flutter_aliplayer/ios"
+  flutter_document_picker:
+    :path: ".symlinks/plugins/flutter_document_picker/ios"
   flutter_pdfview:
     :path: ".symlinks/plugins/flutter_pdfview/ios"
   image_picker_ios:
@@ -123,6 +128,7 @@ SPEC CHECKSUMS:
   device_info_plus: 7545d84d8d1b896cb16a4ff98c19f07ec4b298ea
   Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
   flutter_aliplayer: cf3da3d18dffe2ac1b0cef462f9dfec027a0d53c
+  flutter_document_picker: 109ba1c4622e6e62bfced17c22ff544a9a3541f4
   flutter_pdfview: 25f53dd6097661e6395b17de506e6060585946bd
   FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
   image_picker_ios: 4a8aadfbb6dc30ad5141a2ce3832af9214a705b5

@@ -107,6 +107,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   bool _fullscreen = false;
   bool _playing = false;
   bool _prepared = false;
+  bool _loading = false;
   String? _exception;
   bool _locked = false;
   double _rate = 1.0;
@@ -143,7 +144,6 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       var shortestSide = MediaQuery.of(Get.context!).size.shortestSide;
       _isPad = shortestSide > 600;
     }
-
     _player.setOnInfo((infoCode, extraValue, extraMsg, playerId) {
       Log.d(
           "OnInfo infoCode=$infoCode extraValue=$extraValue extraMsg=$extraMsg",
@@ -170,11 +170,17 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     _player.setOnLoadingStatusListener(
       loadingBegin: (String playerId) {
         Log.d("loadingBegin", tag: tag);
+        setState(() {
+          _loading = true;
+        });
       },
       loadingProgress: (int percent, double? netSpeed, String playerId) {
         Log.d("loadingBegin percent=$percent netSpeed=$netSpeed", tag: tag);
       },
       loadingEnd: (String playerId) {
+        setState(() {
+          _loading = false;
+        });
         Log.d("loadingEnd", tag: tag);
       },
     );
@@ -243,6 +249,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       if (playing) {
         _enableWakelock();
       } else {
+        _loading = false;
         _disableWakelock();
       }
     }
@@ -831,7 +838,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
 
     Color nextIconColor = Colors.white;
     if (widget.playNextCallback == null) {
-      previousIconColor = Colors.white.withAlpha(80);
+      nextIconColor = Colors.white.withAlpha(80);
     }
 
     final Widget centerWidgetWithoutLock = Center(
@@ -858,14 +865,18 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
                               const EdgeInsets.only(left: 10.0, right: 10.0),
                           onPressed: widget.playPreviousCallback,
                         ),
-                        IconButton(
-                          iconSize: 60,
-                          icon: Icon(_playing ? Icons.pause : Icons.play_arrow,
-                              color: Colors.white),
-                          padding:
-                              const EdgeInsets.only(left: 10.0, right: 10.0),
-                          onPressed: _playOrPause,
-                        ),
+                        if (!_loading)
+                          IconButton(
+                            iconSize: 60,
+                            icon: Icon(
+                                _playing ? Icons.pause : Icons.play_arrow,
+                                color: Colors.white),
+                            padding:
+                                const EdgeInsets.only(left: 10.0, right: 10.0),
+                            onPressed: _playOrPause,
+                          )
+                        else
+                          const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.grey)),
                         IconButton(
                           iconSize: 60,
                           icon: Icon(
@@ -880,8 +891,8 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
                     ),
                   )
                 : SizedBox(
-                    width: barHeight * 1.5,
-                    height: barHeight * 1.5,
+                    width: barHeight,
+                    height: barHeight,
                     child: const CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation(Colors.white)),
                   ));

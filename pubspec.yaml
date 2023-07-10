@@ -86,6 +86,7 @@ dependencies:
   intl: ^0.18.1
   # image picker
   image_picker: ^0.8.9
+  flutter_document_picker: ^5.2.3
   # audio palyer
   just_audio: ^0.9.34
   just_audio_background: ^0.0.1-beta.10

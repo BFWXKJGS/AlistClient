@@ -5,6 +5,7 @@ import 'package:alist/l10n/alist_translations.dart';
 import 'package:alist/router.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
+import 'package:alist/util/proxy.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
@@ -51,6 +52,7 @@ class MyApp extends StatelessWidget {
     newTextScaleFactor = max(newTextScaleFactor, 0.9);
     Get.put(AlistDatabaseController());
     Get.put(UserController());
+    Get.put(ProxyServer());
 
     return MediaQuery(
       data:

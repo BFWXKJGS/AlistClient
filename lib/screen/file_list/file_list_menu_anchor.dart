@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +22,13 @@ final menuGroupOperations = MenuGroupEntity(
       name: Intl.fileList_menu_newFolder.tr,
       iconData: Icons.create_new_folder,
     ),
+    if (Platform.isIOS)
+      MenuItemEntity(
+        menuGroupId: MenuGroupId.operations,
+        menuId: MenuId.uploadPhotos,
+        name: Intl.fileList_menu_uploadPhotos.tr,
+        iconData: Icons.upload,
+      ),
     MenuItemEntity(
       menuGroupId: MenuGroupId.operations,
       menuId: MenuId.uploadFiles,
@@ -221,6 +230,7 @@ enum MenuId {
   fileName,
   fileType,
   modifyTime,
+  uploadPhotos,
   uploadFiles,
 }
 

@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/table/video_viewing_record.dart';
+import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/util/download_utils.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/log_utils.dart';
+import 'package:alist/util/proxy.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/file_list_item_view.dart';
@@ -30,6 +34,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   final FlutterAliplayer _fAliplayer =
       FlutterAliPlayerFactory.createAliPlayer();
   String? _videoTitle;
+  final ProxyServer _proxyServer = Get.find();
   final AlistDatabaseController _database = Get.find();
   final UserController _userController = Get.find();
   VideoViewingRecord? _videoViewingRecord;
@@ -42,7 +47,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     _fAliplayer.setAutoPlay(true);
     _fAliplayer.setOnCompletion((playerId) {
       if (index < videos.length - 1) {
-        SmartDialog.showToast("将自动播放下一个");
+        SmartDialog.showToast(Intl.videoPlayerScreen_tips_playNext.tr);
         _playNext();
       }
     });
@@ -63,13 +68,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     var target = await FileUtils.makeFileLink(file.path, file.sign);
     if (target != null) {
       var url = target.toString();
-      var config = AVPConfig();
-      if (file.provider == "BaiduNetdisk") {
-        config.userAgent = "pan.baidu.com";
+      LogUtil.d("provider=${file.provider}");
+      if (Platform.isAndroid) {
+        await _fAliplayer
+            .setScalingMode(FlutterAvpdef.AVP_SCALINGMODE_SCALETOFILL);
       }
-      config.enableProjection = true;
-      _fAliplayer.setPlayConfig(config);
-      _fAliplayer.setUrl(url);
+      if (file.provider == "BaiduNetdisk") {
+        await _proxyServer.start();
+        var uri = _proxyServer.makeProxyUrl(url,
+            headers: {HttpHeaders.userAgentHeader: "pan.baidu.com"});
+        await _fAliplayer.setUrl(uri.toString());
+      } else {
+        await _fAliplayer.setUrl(url);
+      }
 
       _findAndCacheViewingRecord(file);
     }
@@ -108,7 +119,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             playNextCallback:
                 index == videos.length - 1 ? null : () => _playNext(),
             onPlayProgressChange: (currentPos, duration) {
-              if (currentPos < 10 * 1000 || (currentPos / 1000) % 10 != 0) {
+              if (_currentPos >= duration - 1000) {
+                _deleteViewingRecord();
+              } else if (currentPos < 10 * 1000 ||
+                  (currentPos / 1000) % 10 != 0) {
                 _currentPos = currentPos;
                 _duration = duration;
               } else {
@@ -134,6 +148,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       Log.d("no findAndCacheViewingRecord");
     }
     _fAliplayer.prepare();
+  }
+
+  void _deleteViewingRecord() async {
+    final userId = _userController.user().username;
+    final baseUrl = _userController.user().baseUrl;
+    final path = videos[index].path;
+    var record = await _database.videoViewingRecordDao
+        .findRecordByPath(baseUrl, userId, path);
+    if (record != null) {
+      await _database.videoViewingRecordDao.deleteRecord(record);
+    }
   }
 
   Future<void> _saveViewingRecord(int currentPos, int duration) async {
@@ -188,6 +213,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     if (_duration > 0) {
       _saveViewingRecord(_currentPos, _duration);
     }
+    _proxyServer.stop();
     super.dispose();
   }
 
@@ -205,7 +231,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
   }
 
-  _playNext() {
+  _playNext() async {
     LogUtil.d("_playNext");
     if (index < videos.length - 1) {
       index++;

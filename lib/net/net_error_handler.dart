@@ -41,6 +41,9 @@ class NetErrorHandler {
         case DioExceptionType.badCertificate:
           return Intl.net_error_certificate_error.tr;
         case DioExceptionType.badResponse:
+          if (error.response?.statusCode != null) {
+            return "Response ${error.response?.statusCode ?? ""} ${error.response?.statusMessage ?? ""}";
+          }
           return Intl.net_error_net_error.tr;
         case DioExceptionType.cancel:
           return Intl.net_error_cancel_error.tr;

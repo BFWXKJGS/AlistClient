@@ -9,13 +9,8 @@ abstract class VideoViewingRecordDao {
   @update
   Future<int> updateRecord(VideoViewingRecord record);
 
-  @Query(
-      "SELECT * FROM video_viewing_record WHERE server_url = :serverUrl AND user_id=:userId AND video_sign=:sign LIMIT 1")
-  Future<VideoViewingRecord?> findRecordBySign(
-    String serverUrl,
-    String userId,
-    String sign,
-  );
+  @delete
+  Future<void> deleteRecord(VideoViewingRecord record);
 
   @Query(
       "SELECT * FROM video_viewing_record WHERE server_url = :serverUrl AND user_id=:userId AND path=:path LIMIT 1")
