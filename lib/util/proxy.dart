@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:alist/util/constant.dart';
 import 'package:flustars/flustars.dart';
 
 /// 使用代理服务器规避重定向后header设置失效、下载链接有效期过短等问题
@@ -8,7 +9,8 @@ class ProxyServer {
   static const tag = "ProxyServer";
   static const defaultPort = 28080;
   var _port = defaultPort;
-  final _httpClient = HttpClient();
+  final _httpClient = _createHttpClient();
+
   HttpServer? _httpServer;
   final _redirectCache = <String, RedirectCacheValue>{};
   static const _maxRedirectTimes = 10;
@@ -31,7 +33,6 @@ class ProxyServer {
       uri = Uri.parse(targetUrl);
     }
 
-    _httpClient.autoUncompress = false;
     var httpClientRequest = await _httpClient.openUrl(request.method, uri);
     httpClientRequest.followRedirects = false;
 
@@ -199,6 +200,18 @@ class ProxyServer {
     await httpServer?.close();
     LogUtil.d("stop proxy server", tag: tag);
   }
+}
+
+HttpClient _createHttpClient() {
+  var httpClient = HttpClient();
+  httpClient.autoUncompress = false;
+  httpClient.badCertificateCallback = (cert, host, port) {
+    if (SpUtil.getBool(AlistConstant.ignoreSSLError) ?? false) {
+      return true;
+    }
+    return false;
+  };
+  return httpClient;
 }
 
 class RedirectCacheValue {
