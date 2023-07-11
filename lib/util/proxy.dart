@@ -7,20 +7,28 @@ import 'package:flustars/flustars.dart';
 /// 使用代理服务器规避重定向后header设置失效、下载链接有效期过短等问题
 class ProxyServer {
   static const tag = "ProxyServer";
+  static const headerFlag = "alistheader_";
   static const defaultPort = 28080;
   var _port = defaultPort;
-  final _httpClient = _createHttpClient();
+  HttpClient? _httpClient;
 
   HttpServer? _httpServer;
   final _redirectCache = <String, RedirectCacheValue>{};
-  static const _maxRedirectTimes = 10;
+  static const _maxRedirectTimes = 20;
 
   void _handleRequest(HttpRequest request) async {
-    final targetUrl = request.uri.queryParameters['targetUrl']!;
+    var httpClient = _httpClient;
+    final targetUrl = request.uri.queryParameters['targetUrl'];
+    if (httpClient == null || targetUrl == null || targetUrl.isEmpty) {
+      request.response.statusCode = HttpStatus.badRequest;
+      request.response.close();
+      return;
+    }
+
     final extraHeaders = <String, String>{};
     request.uri.queryParameters.forEach((key, value) {
-      if (key.startsWith("alistheader_")) {
-        extraHeaders[key.substring("alistheader_".length)] = value;
+      if (key.startsWith(headerFlag)) {
+        extraHeaders[key.substring(headerFlag.length)] = value;
       }
     });
 
@@ -33,7 +41,7 @@ class ProxyServer {
       uri = Uri.parse(targetUrl);
     }
 
-    var httpClientRequest = await _httpClient.openUrl(request.method, uri);
+    var httpClientRequest = await httpClient.openUrl(request.method, uri);
     httpClientRequest.followRedirects = false;
 
     // Copy all request headers.
@@ -52,15 +60,21 @@ class ProxyServer {
     if (redirectCacheValue == null) {
       // Copy request body to httpClientRequest
       Completer copyingCompleter = Completer();
-      request.listen((List<int> data) {
-        httpClientRequest.add(data);
-      }, onDone: () => copyingCompleter.complete());
+      request.listen(
+        (List<int> data) {
+          httpClientRequest.add(data);
+        },
+        onDone: () => copyingCompleter.complete(),
+        onError: (e) => copyingCompleter.completeError(e),
+      );
       await copyingCompleter.future;
     }
 
     var redirectTimes = 0;
     var httpClientResponse = await httpClientRequest.close();
-    while (httpClientResponse.isRedirect && redirectTimes < _maxRedirectTimes) {
+    while (_httpServer != null &&
+        httpClientResponse.isRedirect &&
+        redirectTimes < _maxRedirectTimes) {
       redirectTimes++;
       httpClientResponse.drain();
       var location =
@@ -70,19 +84,11 @@ class ProxyServer {
       }
 
       // 循环查询重定向缓存
-      do {
-        if (location == null) {
-          break;
-        }
-        redirectCacheValue = _findValidRedirectCacheValue(location);
-        if (redirectCacheValue != null) {
-          location = redirectCacheValue.target;
-        }
-      } while (redirectCacheValue != null);
+      location = _findTheFinalLocationFromCache(location);
 
       if (location != null) {
         uri = uri.resolve(location);
-        httpClientRequest = await _httpClient.getUrl(uri);
+        httpClientRequest = await httpClient.getUrl(uri);
         // Set the body or headers as desired.
         httpClientRequest.followRedirects = false;
         request.headers.forEach((String name, List<String> values) {
@@ -101,15 +107,34 @@ class ProxyServer {
       }
     }
 
-    request.response.statusCode = httpClientResponse.statusCode;
+    if (_httpServer != null) {
+      request.response.statusCode = httpClientResponse.statusCode;
+      httpClientResponse.headers.forEach((name, values) {
+        request.response.headers
+            .set(name, values.map((e) => Uri.encodeComponent(e)));
+      });
 
-    httpClientResponse.headers.forEach((name, values) {
-      request.response.headers
-          .set(name, values.map((e) => Uri.encodeComponent(e)));
-    });
-
-    await httpClientResponse.pipe(request.response);
+      await httpClientResponse.pipe(request.response);
+    } else {
+      httpClientRequest.close();
+      request.response.statusCode = HttpStatus.serviceUnavailable;
+      request.response.close();
+    }
     _clearInvalidRedirectCache();
+  }
+
+  String? _findTheFinalLocationFromCache(String? location) {
+    RedirectCacheValue? redirectCacheValue;
+    do {
+      if (location == null) {
+        break;
+      }
+      redirectCacheValue = _findValidRedirectCacheValue(location);
+      if (redirectCacheValue != null) {
+        location = redirectCacheValue.target;
+      }
+    } while (redirectCacheValue != null);
+    return location;
   }
 
   bool _isValidRequestHeader(String name) =>
@@ -164,10 +189,11 @@ class ProxyServer {
       return;
     }
     if (_httpServer != null) {
-      server.close();
+      server.close(force: true);
       return;
     }
 
+    _httpClient = _createHttpClient();
     _port = port;
     _httpServer = server;
     _handRequests(server);
@@ -175,15 +201,26 @@ class ProxyServer {
 
   Future<void> _handRequests(HttpServer server) async {
     await for (HttpRequest request in server) {
-      _handleRequest(request);
+      try {
+        _handleRequest(request);
+      } catch (e) {
+        await _closeRequest(request, e);
+      }
     }
+  }
+
+  Future<void> _closeRequest(HttpRequest request, Object e) async {
+    request.response
+      ..statusCode = HttpStatus.internalServerError
+      ..write('Unexpected error: $e');
+    await request.response.close();
   }
 
   Uri makeProxyUrl(String targetUrl, {Map<String, String>? headers}) {
     if (_httpServer == null) throw Exception("Proxy server is not started");
     var queryParameters = {"targetUrl": targetUrl};
     headers?.forEach((key, value) {
-      queryParameters["alistheader_$key"] = value;
+      queryParameters["$headerFlag$key"] = value;
     });
 
     return Uri(
@@ -196,8 +233,15 @@ class ProxyServer {
 
   Future<void> stop() async {
     var httpServer = _httpServer;
+    var httpClient = _httpClient;
     _httpServer = null;
-    await httpServer?.close();
+    _httpClient = null;
+    await httpServer?.close(force: true);
+    try {
+      httpClient?.close(force: true);
+    } catch (e) {
+      // ignore error
+    }
     LogUtil.d("stop proxy server", tag: tag);
   }
 }
