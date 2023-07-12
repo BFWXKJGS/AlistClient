@@ -4,6 +4,7 @@ import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/table/server.dart';
 import 'package:alist/generated/images.dart';
 import 'package:alist/l10n/intl_keys.dart';
+import 'package:alist/net/dio_utils.dart';
 import 'package:alist/router.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/named_router.dart';
@@ -11,6 +12,7 @@ import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:sprintf/sprintf.dart';
@@ -20,86 +22,109 @@ class AccountScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AccountScreenController controller = Get.put(AccountScreenController());
     return AlistScaffold(
       appbarTitle: Text(Intl.settingsScreen_item_account.tr),
       appbarActions: [
         Padding(
           padding: const EdgeInsets.only(right: 12),
           child: InkWell(
-            onTap: () => {Get.toNamed(NamedRouter.login)},
+            onTap: () => controller.tryAddAccount(),
             child: Text(Intl.accountScreen_create.tr),
           ),
         ),
       ],
-      body: const _PageContainer(),
+      body: Obx(() => _buildBody(controller)),
+    );
+  }
+
+  _buildBody(AccountScreenController controller) {
+    if (controller.loading.value) {
+      return const LinearProgressIndicator(
+        backgroundColor: Colors.transparent,
+        minHeight: 2,
+      );
+    }
+
+    Widget listView = ListView.builder(
+      itemBuilder: (context, index) {
+        final Server itemData = controller.accountList[index];
+        return Obx(() => _listItem(itemData, controller));
+      },
+      itemCount: controller.accountList.length,
+    );
+    return SlidableAutoCloseBehavior(child: listView);
+  }
+
+  _ListItem _listItem(Server itemData, AccountScreenController controller) {
+    return _ListItem(
+      data: itemData,
+      currentAccount: controller.currentAccount.value,
+      list: controller.accountList,
+      handleDeleteItem: controller._handleDeleteItem,
+      onItemTap: () {
+        if (controller.currentAccount.value == itemData) {
+          return;
+        }
+        controller.currentAccount.value = itemData;
+        controller._login(itemData);
+
+        // 文件列表回到根目录
+        Get.until((route) => route.isFirst,
+            id: AlistRouter.fileListRouterStackId);
+      },
     );
   }
 }
 
-class _PageContainer extends StatefulWidget {
-  const _PageContainer({Key? key}) : super(key: key);
-
-  @override
-  State<_PageContainer> createState() => _PageContainerState();
-}
-
-class _PageContainerState extends State<_PageContainer> {
+class AccountScreenController extends GetxController {
   final UserController _userController = Get.find<UserController>();
   final AlistDatabaseController _databaseController = Get.find();
   StreamSubscription? _serverStreamSubscription;
 
-  List<Server>? _accountList;
-  bool _loading = true;
+  RxList<Server> accountList = RxList<Server>();
+  final loading = true.obs;
 
   // 当前选中的account
-  Server? currentAccount;
-
-  // 当前左滑的account
-  int slideIndex = -1;
-
-  // double left = 0;
-  double right = 0;
+  Rx<Server?> currentAccount = Rx<Server?>(null);
 
   @override
-  void initState() {
-    super.initState();
+  void onInit() {
+    super.onInit();
     _queryAccountList();
   }
 
-
   @override
-  void dispose() {
+  void onClose() {
     _serverStreamSubscription?.cancel();
-    super.dispose();
+    super.onClose();
   }
 
   Future<void> _queryAccountList() async {
-    _serverStreamSubscription = _databaseController.serverDao.serverList().listen((event) {
-      setState(() {
-        var user = _userController.user.value;
-        _accountList = event ?? [];
+    _serverStreamSubscription =
+        _databaseController.serverDao.serverList().listen((event) {
+      var user = _userController.user.value;
+      accountList.value = event ?? [];
 
-        if (_accountList!.isEmpty) {
-          _insertCurrentAccount();
-        } else {
-          for (int i = 0; i < _accountList!.length; i++) {
-            var account = _accountList![i];
-            if (account.userId == user.username &&
-                account.serverUrl == user.serverUrl) {
-              currentAccount = account;
-              break;
-            }
+      if (accountList.isEmpty) {
+        _insertCurrentAccount();
+      } else {
+        for (int i = 0; i < accountList.length; i++) {
+          var account = accountList[i];
+          if (account.userId == user.username &&
+              account.serverUrl == user.serverUrl) {
+            currentAccount.value = account;
+            break;
           }
-          if (currentAccount == null && _accountList!.isNotEmpty) {
-            currentAccount = _accountList?.first;
-            if (currentAccount != null) {
-              _login(currentAccount!);
-            }
-          }
-          _loading = false;
-          slideIndex = -1;
         }
-      });
+        if (currentAccount.value == null && accountList.isNotEmpty) {
+          currentAccount.value = accountList.first;
+          if (currentAccount.value != null) {
+            _login(currentAccount.value!);
+          }
+        }
+        loading.value = false;
+      }
     });
   }
 
@@ -107,7 +132,8 @@ class _PageContainerState extends State<_PageContainer> {
     SmartDialog.show(builder: (context) {
       return AlertDialog(
         title: Text(Intl.deleteAccountDialog_title.tr),
-        content: Text(sprintf(Intl.deleteAccountDialog_content.tr, [item.userId])),
+        content:
+            Text(sprintf(Intl.deleteAccountDialog_content.tr, [item.userId])),
         actions: [
           TextButton(
             onPressed: () {
@@ -128,9 +154,8 @@ class _PageContainerState extends State<_PageContainer> {
   }
 
   void _deleteAccount(List<Server> list, Server item) async {
-    slideIndex = -1;
     var isLastAccount = list.length == 1;
-    var isCurrentItem = item == currentAccount;
+    var isCurrentItem = item == currentAccount.value;
     await _databaseController.serverDao.deleteServer(item);
     SmartDialog.showToast(Intl.delete_success.tr);
     if (isLastAccount) {
@@ -139,94 +164,52 @@ class _PageContainerState extends State<_PageContainer> {
     } else if (isCurrentItem) {
       // 删除当前账户，默认选中第一个账户
       if (list.first == item) {
-        currentAccount = list[1];
+        currentAccount.value = list[1];
       } else {
-        currentAccount = list[0];
+        currentAccount.value = list[0];
       }
-      _login(currentAccount!);
+      _login(currentAccount.value!);
     }
-    setState(() {
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
+    if (loading.value) {
       return const LinearProgressIndicator(
         backgroundColor: Colors.transparent,
         minHeight: 2,
       );
     }
 
-    return ListView.builder(
+    Widget listView = ListView.builder(
       itemBuilder: (context, index) {
-        final Server itemData = _accountList![index];
+        final Server itemData = accountList[index];
+        return _ListItem(
+          data: itemData,
+          currentAccount: currentAccount.value,
+          list: accountList,
+          handleDeleteItem: _handleDeleteItem,
+          onItemTap: () {
+            if (currentAccount.value == itemData) {
+              return;
+            }
+            currentAccount.value = itemData;
+            _login(itemData);
 
-        return Column(
-          children: [
-            const SizedBox(
-              height: 1,
-            ),
-            GestureDetector(
-              child: InkWell(
-                onTap: () {
-                  if (currentAccount == itemData) {
-                    return;
-                  }
-                  setState(() {
-                    currentAccount = itemData;
-                    _login(itemData);
-                  });
-
-                  // 文件列表回到根目录
-                  Get.until((route) => route.isFirst,
-                      id: AlistRouter.fileListRouterStackId);
-                },
-                child: _ListItem(
-                    data: itemData,
-                    index: index,
-                    slideIndex: slideIndex,
-                    currentAccount: currentAccount ?? itemData,
-                    right: right,
-                    list: _accountList,
-                    handleDeleteItem: _handleDeleteItem),
-              ),
-              onHorizontalDragDown: (DragDownDetails downDetails) {
-                //水平方向上按下时触发。
-                print('downDetails');
-                print(downDetails.globalPosition);
-              },
-              onHorizontalDragUpdate: (DragUpdateDetails updateDetails) {
-                //水平方向上滑动时回调，随着手势滑动一直回调。
-
-                setState(() {
-                  right -= updateDetails.delta.dx; //水平滑动取X轴的差值
-                  if (right < 0) {
-                    right = 0;
-                  }
-                  if (right >= 64) {
-                    right = 64;
-                  }
-                  slideIndex = index;
-                  // itemData.right = right;
-                });
-                print('updateDetails');
-                print(right);
-              },
-              onHorizontalDragEnd: (DragEndDetails endDetails) {
-                //水平方向上滑动结束时回调
-                print('endDetails $endDetails');
-              },
-            )
-          ],
+            // 文件列表回到根目录
+            Get.until((route) => route.isFirst,
+                id: AlistRouter.fileListRouterStackId);
+          },
         );
       },
-      itemCount: _accountList?.length ?? 0,
+      itemCount: accountList.length,
     );
+    return SlidableAutoCloseBehavior(child: listView);
   }
 
   void _login(Server itemData) {
     var baseUrl = "${itemData.serverUrl}api/";
+    DioUtils.instance.configAgain(baseUrl, itemData.ignoreSSLError);
     _userController.login(User(
       baseUrl: baseUrl,
       serverUrl: itemData.serverUrl,
@@ -260,6 +243,16 @@ class _PageContainerState extends State<_PageContainer> {
     );
     _databaseController.serverDao.insertServer(server);
   }
+
+  Future<void> tryAddAccount() async {
+    var account = currentAccount.value;
+    await Get.toNamed(NamedRouter.login);
+    // 未能重新登录成功，恢复之前的 baseUrl
+    if (account != null) {
+      var baseUrl = "${account.serverUrl}api/";
+      DioUtils.instance.configAgain(baseUrl, account.ignoreSSLError);
+    }
+  }
 }
 
 class _ListItem extends StatelessWidget {
@@ -267,56 +260,48 @@ class _ListItem extends StatelessWidget {
     Key? key,
     required this.data,
     required this.currentAccount,
-    required this.index,
-    required this.right,
-    required this.slideIndex,
     required this.list,
     required this.handleDeleteItem,
+    required this.onItemTap,
   }) : super(key: key);
-  final Server data;
 
-  final Server currentAccount;
-  final int slideIndex;
-  final int index;
-  final double right;
+  final Server data;
+  final Server? currentAccount;
   final List<Server>? list;
   final Function handleDeleteItem;
+  final GestureTapCallback? onItemTap;
 
   @override
   Widget build(BuildContext context) {
-    return Stack(children: <Widget>[
-      Align(
-        //最下层
-        alignment: Alignment.centerRight,
-        child: InkWell(
-          onTap: () {
-            print("删除成功");
-            print("list,$list");
-            handleDeleteItem(list, data);
-          },
-          child: Container(
-            width: slideIndex == index ? right : 0,
-            height: 64,
-            alignment: Alignment.center,
-            color: Colors.red,
-            child: Text(Intl.fileList_menu_delete.tr),
+    LogUtil.d("id=${data.id?.toString() ?? ""}");
+    return Slidable(
+      key: Key(data.id?.toString() ?? ""),
+      endActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        extentRatio: 0.25,
+        children: [
+          SlidableAction(
+            onPressed: (context) {
+              print("删除");
+              handleDeleteItem(list!, data);
+            },
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            label: Intl.fileList_menu_delete.tr,
           ),
-        ),
+        ],
       ),
-      Positioned(
-        left: slideIndex == index ? -right : 0,
-        right: slideIndex == index ? right : 0,
-        child: ListTile(
-          leading: ExcludeSemantics(
-            child: Image.asset(Images.accountIcon),
-          ),
-          title: Text(data.serverUrl),
-          subtitle: Text(data.name ?? ''),
-          trailing: currentAccount.id == data.id
-              ? Image.asset(Images.accountIconChoosed)
-              : null,
+      child: ListTile(
+        onTap: onItemTap,
+        leading: ExcludeSemantics(
+          child: Image.asset(Images.accountIcon),
         ),
-      )
-    ]);
+        title: Text(data.serverUrl),
+        subtitle: Text(data.name ?? ''),
+        trailing: currentAccount?.id == data.id
+            ? Image.asset(Images.accountIconChoosed)
+            : null,
+      ),
+    );
   }
 }

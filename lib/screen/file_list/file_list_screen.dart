@@ -20,8 +20,10 @@ import 'package:alist/screen/file_list/mkdir_dialog.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/focus_node_utils.dart';
+import 'package:alist/util/global.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
+import 'package:alist/util/proxy.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
@@ -401,10 +403,7 @@ class _FileListScreenState extends State<FileListScreen>
         );
         break;
       case FileType.markdown:
-        Get.toNamed(
-          NamedRouter.markdownReader,
-          arguments: {"markdownPath": file.path, "title": file.name},
-        );
+        _previewMarkdown(file);
         break;
       case FileType.txt:
       case FileType.word:
@@ -807,6 +806,15 @@ class _FileListScreenState extends State<FileListScreen>
       arguments: {"videos": videos, "index": index},
     );
   }
+
+  void _previewMarkdown(FileItemVO file) async {
+    var fileLink = await FileUtils.makeFileLink(file.path, file.sign);
+    if (fileLink != null) {
+      var uri =
+          "https://${Global.configServerHost}/alist_h5/showMarkDown?markdownUrl=${Uri.encodeComponent(fileLink)}";
+      Get.toNamed(NamedRouter.web, arguments: {"url": uri, "title": file.name});
+    }
+  }
 }
 
 class _FileListView extends StatelessWidget {
@@ -849,15 +857,12 @@ class _FileListView extends StatelessWidget {
             sizeDesc: null,
             onTap: () {
               if (GetUtils.isURL(readme!)) {
-                Get.toNamed(
-                  NamedRouter.markdownReader,
-                  arguments: {"markdownUrl": readme!, "title": "README.md"},
-                );
+                var uri =
+                    "https://${Global.configServerHost}/alist_h5/showMarkDown?markdownUrl=${Uri.encodeComponent(readme!)}";
+                Get.toNamed(NamedRouter.web,
+                    arguments: {"url": uri, "title": "README.md"});
               } else {
-                Get.toNamed(
-                  NamedRouter.markdownReader,
-                  arguments: {"markdownContent": readme!, "title": "README.md"},
-                );
+                _readMarkdownContent();
               }
             },
           );
@@ -868,6 +873,7 @@ class _FileListView extends StatelessWidget {
             key: Key(file.path),
             endActionPane: ActionPane(
               motion: const DrawerMotion(),
+              extentRatio: hasWritePermission? 0.5 : 0.25,
               children: [
                 SlidableAction(
                   onPressed: (context) => _showDetailsDialog(context, file),
@@ -905,6 +911,23 @@ class _FileListView extends StatelessWidget {
         }
       },
     );
+  }
+
+  void _readMarkdownContent() async {
+    ProxyServer proxyServer = Get.find();
+    // 开启本地代理服务器
+    await proxyServer.start();
+    // 设置 path 为本地代理服务器的key，这样就可以通过 http:// 访问 readme 的内容
+    // 并且返回对应的本地链接
+    var proxyUri = proxyServer.makeContentUri(path ?? "/", readme!);
+    LogUtil.d("proxyUri ${proxyUri.toString()}");
+
+    var uri =
+        "https://${Global.configServerHost}/alist_h5/showMarkDown?markdownUrl=${Uri.encodeComponent(proxyUri.toString())}";
+
+    await Get.toNamed(NamedRouter.web,
+        arguments: {"url": uri, "title": "README.md"});
+    proxyServer.stop();
   }
 }
 

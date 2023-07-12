@@ -922,7 +922,7 @@ packages:
     source: hosted
     version: "2.2.2"
   rxdart:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: rxdart
       sha256: "0c7c0cedd93788d996e33041ffecda924cc54389199cde4e6a34b440f50044cb"
@@ -1383,12 +1383,13 @@ packages:
     source: hosted
     version: "4.2.2"
   webview_flutter_android:
-    dependency: transitive
+    dependency: "direct main"
     description:
-      name: webview_flutter_android
-      sha256: "1c93e96f3069bacdc734fad6b7e1d3a480fd516a3ae5b8858becf7f07515a2f3"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
+      path: "packages/webview_flutter/webview_flutter_android"
+      ref: master
+      resolved-ref: "8c79765f47ad72c6e0ef10e1d3e5da184d6bd4c5"
+      url: "git@github.com:GeekTR/webview_flutter.git"
+    source: git
     version: "3.8.2"
   webview_flutter_platform_interface:
     dependency: transitive

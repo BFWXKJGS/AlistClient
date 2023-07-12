@@ -52,7 +52,7 @@ dependencies:
       url: https://github.com/GeekTR/flutter_aliplayer.git
       ref: feature/5.5.6.0
   # screen orientation controller
-#  auto_orientation: ^2.2.1
+  #  auto_orientation: ^2.2.1
   # Dialog
   flutter_smart_dialog: ^4.9.0+6
   # package info in android、ios...
@@ -72,6 +72,11 @@ dependencies:
   permission_handler: ^10.2.0
   # native webview
   webview_flutter: ^4.2.2
+  webview_flutter_android:
+    git:
+      url: git@github.com:GeekTR/webview_flutter.git
+      ref: master
+      path: packages/webview_flutter/webview_flutter_android
   # markdown
   markdown_widget: ^2.2.0
   # volume_controller
@@ -93,9 +98,15 @@ dependencies:
   scroll_to_index: ^3.0.1
   # device_info
   device_info_plus: ^9.0.2
+  rxdart: ^0.27.7
 
 dependency_overrides:
   win32: ^5.0.0
+  webview_flutter_android:
+    git:
+      url: git@github.com:GeekTR/webview_flutter.git
+      ref: master
+      path: packages/webview_flutter/webview_flutter_android
 
 dev_dependencies:
   flutter_test:

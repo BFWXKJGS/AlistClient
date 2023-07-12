@@ -14,14 +14,24 @@ class ProxyServer {
 
   HttpServer? _httpServer;
   final _redirectCache = <String, RedirectCacheValue>{};
+  // 通过 key 保存请求返回的内容，目前暂时用于 markdown 内容的保存
+  final _content = <String, String>{};
   static const _maxRedirectTimes = 20;
 
   void _handleRequest(HttpRequest request) async {
     var httpClient = _httpClient;
     final targetUrl = request.uri.queryParameters['targetUrl'];
-    if (httpClient == null || targetUrl == null || targetUrl.isEmpty) {
+    final contentKey = request.uri.queryParameters['contentKey'];
+    final hasTargetUrl = !(targetUrl == null || targetUrl.isEmpty);
+    final hasContentKey = !(contentKey == null || contentKey.isEmpty);
+
+    if (httpClient == null || (!hasTargetUrl && !hasContentKey)) {
       request.response.statusCode = HttpStatus.badRequest;
       request.response.close();
+      return;
+    }
+    if (hasContentKey) {
+      _writeContentResponse(contentKey, request);
       return;
     }
 
@@ -33,7 +43,7 @@ class ProxyServer {
     });
 
     RedirectCacheValue? redirectCacheValue =
-        _findValidRedirectCacheValue(targetUrl);
+        _findValidRedirectCacheValue(targetUrl!);
     Uri uri;
     if (redirectCacheValue != null) {
       uri = Uri.parse(redirectCacheValue.target);
@@ -123,6 +133,19 @@ class ProxyServer {
     _clearInvalidRedirectCache();
   }
 
+  void _writeContentResponse(String contentKey, HttpRequest request) {
+    var contentValue = _content[contentKey];
+    request.response.headers.set(HttpHeaders.accessControlAllowOriginHeader, "*");
+    if (contentValue == null) {
+      request.response.statusCode = HttpStatus.notFound;
+      request.response.close();
+    } else {
+      request.response.statusCode = HttpStatus.ok;
+      request.response.write(contentValue);
+      request.response.close();
+    }
+  }
+
   String? _findTheFinalLocationFromCache(String? location) {
     RedirectCacheValue? redirectCacheValue;
     do {
@@ -204,7 +227,7 @@ class ProxyServer {
       try {
         _handleRequest(request);
       } catch (e) {
-        await _closeRequest(request, e);
+        _closeRequest(request, e);
       }
     }
   }
@@ -231,11 +254,26 @@ class ProxyServer {
     );
   }
 
+  Uri makeContentUri(String key, String value) {
+    if (_httpServer == null) throw Exception("Proxy server is not started");
+    var encodeKey = Uri.encodeComponent(key);
+    _content[encodeKey] = value;
+
+    var queryParameters = {"contentKey": encodeKey};
+    return Uri(
+      scheme: "http",
+      host: "127.0.0.1",
+      port: _port,
+      queryParameters: queryParameters,
+    );
+  }
+
   Future<void> stop() async {
     var httpServer = _httpServer;
     var httpClient = _httpClient;
     _httpServer = null;
     _httpClient = null;
+    _content.clear();
     await httpServer?.close(force: true);
     try {
       httpClient?.close(force: true);

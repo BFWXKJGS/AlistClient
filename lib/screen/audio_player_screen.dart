@@ -2,15 +2,9 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:alist/database/alist_database_controller.dart';
-import 'package:alist/database/table/file_viewing_record.dart';
-import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/l10n/intl_keys.dart';
-import 'package:alist/net/dio_utils.dart';
-import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
-import 'package:alist/util/string_utils.dart';
-import 'package:alist/util/user_controller.dart';
+import 'package:alist/util/lock_caching_audio_source.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/file_list_item_view.dart';
 import 'package:alist/widget/slider.dart';
@@ -355,12 +349,12 @@ class AudioPlayerScreenController extends GetxController {
     _audioPlayer.play();
   }
 
-  UriAudioSource _audioToUri(String uri, FileItemVO audio) {
+  AudioSource _audioToUri(String uri, FileItemVO audio) {
     var headers = <String, String>{};
     if (audio.provider == "BaiduNetdisk") {
       headers["User-Agent"] = "pan.baidu.com";
     }
-    return AudioSource.uri(
+    return AlistLockCachingAudioSource(
       Uri.parse(uri),
       headers: headers,
       tag: MediaItem(
@@ -373,28 +367,44 @@ class AudioPlayerScreenController extends GetxController {
 
   void _playNext() {
     _currentPos.value = const Duration(milliseconds: 0);
-    _audioPlayer.seekToNext();
+    if (_audioPlayer.hasNext) {
+      _audioPlayer.seekToNext();
+    } else {
+      var nextIndex = 0;
+      if (_playMode.value == PlayMode.random) {
+        nextIndex = Random().nextInt(_audios.length);
+      }
+      _audioPlayer.seek(const Duration(milliseconds: 0), index: nextIndex);
+    }
+    if (!_audioPlayer.playing) {
+      _audioPlayer.play();
+    }
   }
 
   void _playPrevious() {
     _currentPos.value = const Duration(milliseconds: 0);
-    _audioPlayer.seekToPrevious();
+    if (_audioPlayer.hasPrevious) {
+      _audioPlayer.seekToPrevious();
+    } else {
+      var previousIndex = 0;
+      if (_playMode.value == PlayMode.random) {
+        previousIndex = Random().nextInt(_audios.length);
+      }
+      _audioPlayer.seek(const Duration(milliseconds: 0), index: previousIndex);
+    }
+    if (!_audioPlayer.playing) {
+      _audioPlayer.play();
+    }
   }
 
   void _playOrPause() async {
     if (_playing.value == true) {
-      LogUtil.d("pause");
       await _audioPlayer.pause();
     } else {
-      LogUtil.d("play");
       if (_duration.value.inMilliseconds <= _currentPos.value.inMilliseconds) {
-        LogUtil.d("play3");
         await _audioPlayer.seek(const Duration(milliseconds: 0));
-        LogUtil.d("play4");
         await _audioPlayer.play();
-        LogUtil.d("play1");
       } else {
-        LogUtil.d("play2");
         await _audioPlayer.play();
       }
     }

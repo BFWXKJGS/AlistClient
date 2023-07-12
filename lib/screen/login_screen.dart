@@ -515,8 +515,8 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
   }
 
   Future<void> _goHomeScreen() async {
-    await Get.offAllNamed(NamedRouter.home);
     Get.until((route) => route.isFirst, id: AlistRouter.fileListRouterStackId);
+    await Get.offAllNamed(NamedRouter.home);
   }
 
   // Used to request network access when entering the app for the first time
@@ -644,9 +644,12 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
   }
 
   appendServerUrlText(String text) {
-    addressController.text = "${addressController.text}$text";
+    var offset = addressController.selection.baseOffset;
+    var originalText = addressController.text;
+    addressController.text =
+        "${originalText.substring(0, offset)}$text${originalText.substring(offset)}";
     addressController.selection = TextSelection.fromPosition(
-        TextPosition(offset: addressController.text.length));
+        TextPosition(offset: offset + text.length));
   }
 
   void _showDavTipsDialog({bool isLogin = false}) {
