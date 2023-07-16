@@ -515,7 +515,12 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
   }
 
   Future<void> _goHomeScreen() async {
-    Get.until((route) => route.isFirst, id: AlistRouter.fileListRouterStackId);
+    try {
+      Get.until((route) => route.isFirst,
+          id: AlistRouter.fileListRouterStackId);
+    } catch (e) {
+      // ignored
+    }
     await Get.offAllNamed(NamedRouter.home);
   }
 
@@ -648,8 +653,8 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
     var originalText = addressController.text;
     addressController.text =
         "${originalText.substring(0, offset)}$text${originalText.substring(offset)}";
-    addressController.selection = TextSelection.fromPosition(
-        TextPosition(offset: offset + text.length));
+    addressController.selection =
+        TextSelection.fromPosition(TextPosition(offset: offset + text.length));
   }
 
   void _showDavTipsDialog({bool isLogin = false}) {

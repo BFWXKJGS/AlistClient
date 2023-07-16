@@ -14,9 +14,13 @@ class ProxyServer {
 
   HttpServer? _httpServer;
   final _redirectCache = <String, RedirectCacheValue>{};
+
   // 通过 key 保存请求返回的内容，目前暂时用于 markdown 内容的保存
   final _content = <String, String>{};
   static const _maxRedirectTimes = 20;
+
+  // 正在代理的链接数量
+  var _runningConnectionsCnt = 0;
 
   void _handleRequest(HttpRequest request) async {
     var httpClient = _httpClient;
@@ -51,6 +55,10 @@ class ProxyServer {
       uri = Uri.parse(targetUrl);
     }
 
+    var isRequestDone = false;
+    var requestDoneFuture =
+        request.response.done.then((value) => isRequestDone = true);
+
     var httpClientRequest = await httpClient.openUrl(request.method, uri);
     httpClientRequest.followRedirects = false;
 
@@ -59,10 +67,10 @@ class ProxyServer {
       if (_isValidRequestHeader(name)) {
         httpClientRequest.headers.set(name, values);
       }
-      LogUtil.d("header $name=$values", tag: tag);
+      // LogUtil.d("header $name=$values", tag: tag);
     });
     extraHeaders.forEach((key, value) {
-      LogUtil.d("extraHeader $key=$value", tag: tag);
+      // LogUtil.d("extraHeader $key=$value", tag: tag);
       httpClientRequest.headers.set(key, value);
     });
 
@@ -102,13 +110,13 @@ class ProxyServer {
         // Set the body or headers as desired.
         httpClientRequest.followRedirects = false;
         request.headers.forEach((String name, List<String> values) {
-          LogUtil.d("header $name=$values", tag: tag);
+          // LogUtil.d("header $name=$values", tag: tag);
           if (_isValidRequestHeader(name)) {
             httpClientRequest.headers.set(name, values);
           }
         });
         extraHeaders.forEach((key, value) {
-          LogUtil.d("extraHeader $key=$value", tag: tag);
+          // LogUtil.d("extraHeader $key=$value", tag: tag);
           httpClientRequest.headers.set(key, value);
         });
         httpClientResponse = await httpClientRequest.close();
@@ -117,14 +125,29 @@ class ProxyServer {
       }
     }
 
+    if (isRequestDone) {
+      httpClientRequest.close();
+      return;
+    }
+
     if (_httpServer != null) {
+      requestDoneFuture.then((value) {
+        LogUtil.d("request is done, so close", tag: tag);
+        httpClientRequest.close();
+        request.response.close();
+      });
+
       request.response.statusCode = httpClientResponse.statusCode;
       httpClientResponse.headers.forEach((name, values) {
         request.response.headers
             .set(name, values.map((e) => Uri.encodeComponent(e)));
       });
 
+      _runningConnectionsCnt++;
+      LogUtil.d("runningConnectionsCnt=$_runningConnectionsCnt", tag: tag);
       await httpClientResponse.pipe(request.response);
+      _runningConnectionsCnt--;
+      LogUtil.d("runningConnectionsCnt=$_runningConnectionsCnt", tag: tag);
     } else {
       httpClientRequest.close();
       request.response.statusCode = HttpStatus.serviceUnavailable;
@@ -135,7 +158,8 @@ class ProxyServer {
 
   void _writeContentResponse(String contentKey, HttpRequest request) {
     var contentValue = _content[contentKey];
-    request.response.headers.set(HttpHeaders.accessControlAllowOriginHeader, "*");
+    request.response.headers
+        .set(HttpHeaders.accessControlAllowOriginHeader, "*");
     if (contentValue == null) {
       request.response.statusCode = HttpStatus.notFound;
       request.response.close();
@@ -193,7 +217,7 @@ class ProxyServer {
         _redirectCache.remove(targetUrl);
         redirectCacheValue = null;
       } else {
-        LogUtil.d("缓存命中 $targetUrl");
+        LogUtil.d("缓存命中 $targetUrl", tag: tag);
       }
     }
     return redirectCacheValue;
@@ -201,6 +225,7 @@ class ProxyServer {
 
   Future<void> start({int port = defaultPort}) async {
     if (_httpServer != null) {
+      LogUtil.d("server is already started", tag: tag);
       return;
     }
 
