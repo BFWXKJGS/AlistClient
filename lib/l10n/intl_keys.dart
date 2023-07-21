@@ -137,4 +137,8 @@ class Intl {
   static const String deleteAccountDialog_content = "deleteAccountDialog_content";
   static const String deleteAccountDialog_btn_ok = "deleteAccountDialog_btn_ok";
   static const String deleteAccountDialog_btn_cancel = "deleteAccountDialog_btn_cancel";
+  static const String updateDialog_title = "updateDialog_title";
+  static const String updateDialog_btn_ok = "updateDialog_btn_ok";
+  static const String updateDialog_btn_cancel = "updateDialog_btn_cancel";
+  static const String updateDialog_tips_ignore = "updateDialog_tips_ignore";
 }

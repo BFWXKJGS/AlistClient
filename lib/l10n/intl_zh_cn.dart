@@ -139,4 +139,8 @@ const translationsZhCN = {
   "deleteAccountDialog_content": "您确认删除账号 %s 吗？",
   "deleteAccountDialog_btn_ok": "确认",
   "deleteAccountDialog_btn_cancel": "取消",
+  "updateDialog_title": "有新版本啦~",
+  "updateDialog_btn_ok": "更新",
+  "updateDialog_btn_cancel": "取消",
+  "updateDialog_tips_ignore": "忽略此版本",
 };

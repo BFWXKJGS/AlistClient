@@ -99,6 +99,7 @@ dependencies:
   # device_info
   device_info_plus: ^9.0.2
   rxdart: ^0.27.7
+  url_launcher: ^6.1.12
 
 dependency_overrides:
   win32: ^5.0.0

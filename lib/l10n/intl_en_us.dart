@@ -143,4 +143,8 @@ const translationsEnUS = {
   "deleteAccountDialog_content":"Are you sure you want to delete your account '%s' ？",
   "deleteAccountDialog_btn_ok":"Confirm",
   "deleteAccountDialog_btn_cancel":"Cancel",
+  "updateDialog_title": "Update Tips",
+  "updateDialog_btn_ok": "Update",
+  "updateDialog_btn_cancel": "Cancel",
+  "updateDialog_tips_ignore": "Ignore this version",
 };

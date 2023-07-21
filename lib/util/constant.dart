@@ -22,6 +22,7 @@ class AlistConstant {
   static const String useDemoServer = 'useDemoServer';
   static const String isAgreePrivacyPolicy = 'isAgreePrivacyPolicy';
   static const String ignoreSSLError = "ignoreSSLError";
+  static const String ignoreAppVersion = "ignoreAppVersion";
 
   static const String locale = 'locale';
 }
