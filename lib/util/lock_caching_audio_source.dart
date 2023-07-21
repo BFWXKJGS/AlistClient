@@ -4,7 +4,6 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
-import 'package:flustars/flustars.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -134,9 +133,6 @@ class AlistLockCachingAudioSource extends StreamAudioSource {
     final sourceLength =
         response.contentLength == -1 ? null : response.contentLength;
     var mimeType = response.headers.contentType.toString();
-    if(!mimeType.startsWith("audio/")){
-      mimeType = "audio/mpeg";
-    }
 
     final acceptRanges = response.headers.value(HttpHeaders.acceptRangesHeader);
     final originSupportsRangeRequests =
@@ -229,7 +225,7 @@ class AlistLockCachingAudioSource extends StreamAudioSource {
           contentLength:
               effectiveEnd != null ? effectiveEnd - effectiveStart : null,
           offset: start,
-          contentType: mimeType,
+          contentType: _resetMimeType(mimeType),
           stream: responseStream.asBroadcastStream(),
         ));
       }
@@ -256,7 +252,7 @@ class AlistLockCachingAudioSource extends StreamAudioSource {
             sourceLength: sourceLength,
             contentLength: end != null ? end - start : null,
             offset: start,
-            contentType: mimeType,
+            contentType: _resetMimeType(mimeType),
             stream: response.asBroadcastStream(),
           ));
         }, onError: (dynamic e, StackTrace? stackTrace) {
@@ -296,23 +292,41 @@ class AlistLockCachingAudioSource extends StreamAudioSource {
     return response;
   }
 
+  /// 在 iOS 上部分音频格式直接传入无法播放，但是实际上却可以播放，所以修改一下 mimeType
+  String _resetMimeType(String mimeType) {
+    if (!Platform.isIOS) return mimeType;
+
+    var supportedMimeTypeForIOS = [
+      'audio/aac',
+      'audio/mpeg',
+      'audio/ogg',
+      'audio/opus',
+      'audio/wav',
+      'audio/webm',
+      'audio/mp4',
+      'audio/x-aiff',
+      'audio/x-mpegurl'
+    ];
+    if (supportedMimeTypeForIOS.contains(mimeType)) {
+      return mimeType;
+    } else {
+      return "audio/mpeg";
+    }
+  }
+
   @override
   Future<StreamAudioResponse> request([int? start, int? end]) async {
     final cacheFile = await this.cacheFile;
     if (cacheFile.existsSync()) {
       final sourceLength = cacheFile.lengthSync();
       var mimeType = await _readCachedMimeType();
-      if(!mimeType.startsWith("audio/")){
-        mimeType = "audio/mpeg";
-      }
-      LogUtil.d("mimeType=${mimeType}");
 
       return StreamAudioResponse(
         rangeRequestsSupported: true,
         sourceLength: start != null ? sourceLength : null,
         contentLength: (end ?? sourceLength) - (start ?? 0),
         offset: start,
-        contentType: mimeType,
+        contentType: _resetMimeType(mimeType),
         stream: cacheFile.openRead(start, end).asBroadcastStream(),
       );
     }
