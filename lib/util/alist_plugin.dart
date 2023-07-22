@@ -19,9 +19,9 @@ class AlistPlugin {
   }
 
   // just for android
-  static Future<bool> isNeedPermissionForSavePhotos() async {
+  static Future<bool> isScopedStorage() async {
     bool isSucceed =
-        await methodChannel.invokeMethod("isNeedPermissionForSavePhotos");
+        await methodChannel.invokeMethod("isScopedStorage");
     return isSucceed;
   }
 }

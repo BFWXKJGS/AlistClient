@@ -34,7 +34,7 @@ class AlistPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 launchApp(call, result)
             }
 
-            "isNeedPermissionForSavePhotos" -> {
+            "isScopedStorage" -> {
                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
                     || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
                     result.success(false)

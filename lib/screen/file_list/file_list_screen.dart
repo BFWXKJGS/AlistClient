@@ -17,6 +17,7 @@ import 'package:alist/screen/file_list/file_copy_move_dialog.dart';
 import 'package:alist/screen/file_list/file_list_menu_anchor.dart';
 import 'package:alist/screen/file_list/file_rename_dialog.dart';
 import 'package:alist/screen/file_list/mkdir_dialog.dart';
+import 'package:alist/util/alist_plugin.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/focus_node_utils.dart';
@@ -39,6 +40,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 typedef FileItemClickCallback = Function(BuildContext context, int index);
 
@@ -280,6 +282,16 @@ class _FileListScreenState extends State<FileListScreen>
   }
 
   Future<void> _uploadPhotos() async {
+    if (Platform.isAndroid && !await AlistPlugin.isScopedStorage()) {
+      if (!await Permission.storage.isGranted) {
+        var storageStatus = await Permission.storage.request();
+        if (storageStatus.isDenied) {
+          SmartDialog.showToast(Intl.fileList_tips_permissionGalleyDenied.tr);
+          return;
+        }
+      }
+    }
+
     ImagePicker picker = ImagePicker();
     SmartDialog.showLoading(msg: Intl.fileList_tip_processing.tr);
     List<XFile> medias = await picker
