@@ -1,122 +1,220 @@
+import 'dart:io';
 import 'dart:math';
 
-import 'package:alist/entity/file_info_resp_entity.dart';
-import 'package:alist/net/dio_utils.dart';
-import 'package:alist/util/file_sign_utils.dart';
-import 'package:alist/util/log_utils.dart';
+import 'package:alist/l10n/intl_keys.dart';
+import 'package:alist/util/alist_plugin.dart';
+import 'package:alist/util/file_utils.dart';
+import 'package:alist/util/string_utils.dart';
+import 'package:alist/widget/file_list_item_view.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+typedef OnMenuClickCallback = Function(MenuId menuId);
+
+const menuWidth = 140.0;
 
 class GalleryScreen extends StatelessWidget {
   GalleryScreen({Key? key}) : super(key: key);
 
   final List<String>? urls = Get.arguments["urls"];
-  final List<String>? paths = Get.arguments["paths"];
+  final List<FileItemVO>? files = Get.arguments["files"];
   final int initializedIndex = Get.arguments["index"];
 
+  // use key to get the more icon's location and size
+  final GlobalKey _moreIconKey = GlobalKey();
+
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    GalleryController controller = Get.put(GalleryController(
+      urls: urls,
+      files: files,
+      index: initializedIndex,
+    ));
+    Widget widget = Stack(
       children: [
-        _ImagesContainer(
-            paths: paths, urls: urls, initialPage: initializedIndex),
+        _buildImageViewPager(controller),
         Positioned(
-            left: 0,
-            top: 0,
-            right: 0,
-            child: AppBar(
-              backgroundColor: Colors.transparent,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              systemOverlayStyle: const SystemUiOverlayStyle(
-                statusBarColor: Colors.transparent,
-                statusBarIconBrightness: Brightness.light,
-              ),
-            ))
+          left: 0,
+          top: 0,
+          right: 0,
+          child: _buildAppBar(controller),
+        )
       ],
     );
-  }
-}
 
-class _ImagesContainer extends StatefulWidget {
-  const _ImagesContainer({
-    super.key,
-    required this.paths,
-    required this.urls,
-    required this.initialPage,
-  });
-
-  final List<String>? paths;
-  final List<String>? urls;
-  final int initialPage;
-
-  @override
-  State<_ImagesContainer> createState() => _ImagesContainerState();
-}
-
-class _ImagesContainerState extends State<_ImagesContainer> {
-  late ExtendedPageController controller;
-  final Map<String, FileInfoRespEntity> imageUrlMap = {};
-
-  @override
-  void initState() {
-    super.initState();
-    controller = ExtendedPageController(initialPage: widget.initialPage);
+    return GalleryMenuAnchor(
+        controller: controller,
+        child: widget,
+        onMenuClickCallback: (menuId) {
+          switch (menuId) {
+            case MenuId.copyLink:
+              Clipboard.setData(
+                  ClipboardData(text: controller.urls[controller.index.value]));
+              SmartDialog.showToast(Intl.galleryScreen_copied.tr);
+              break;
+            case MenuId.saveToAlbum:
+              controller.saveToAlbum(controller.index.value);
+              break;
+          }
+        });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return ExtendedImageGesturePageView.builder(
-      itemBuilder: (context, index) {
-        return _ImageContainer(
-          path: widget.paths?[index],
-          url: widget.urls?[index],
-          imageUrlMap: imageUrlMap,
-        );
-      },
-      controller: controller,
-      itemCount: widget.paths?.length ?? widget.urls?.length ?? 0,
-      scrollDirection: Axis.horizontal,
-      // Using ‘preloadPagesCount’ will cause gesture conflict
-      // preloadPagesCount: 1,
+  AppBar _buildAppBar(GalleryController controller) {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      title: controller.files == null
+          ? null
+          : Obx(() => Text(
+                controller.files?[controller.index.value].name ?? "",
+                style: const TextStyle(color: Colors.white),
+              )),
+      systemOverlayStyle: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+      actions: [_menuMoreIcon(controller)],
     );
   }
 
-  @override
-  void dispose() {
-    // clearGestureDetailsCache();
-    super.dispose();
+  Widget _buildImageViewPager(GalleryController controller) {
+    return Obx(
+      () => ExtendedImageGesturePageView.builder(
+        itemBuilder: (context, index) {
+          return _ImageContainer(
+            url: controller.urls[index],
+          );
+        },
+        controller: controller.pageController,
+        onPageChanged: (index) {
+          controller.updateIndex(index);
+        },
+        itemCount: controller.urls.length,
+        scrollDirection: Axis.horizontal,
+      ),
+    );
+  }
+
+  IconButton _menuMoreIcon(GalleryController controller) {
+    return IconButton(
+      key: _moreIconKey,
+      onPressed: () {
+        var menuController = controller.menuController;
+        RenderObject? renderObject =
+            _moreIconKey.currentContext?.findRenderObject();
+        if (renderObject is RenderBox) {
+          var position = renderObject.localToGlobal(Offset.zero);
+          var size = renderObject.size;
+          menuController.open(
+              position: Offset(position.dx + size.width - menuWidth - 10,
+                  position.dy + size.height));
+        }
+      },
+      icon: const Icon(Icons.more_horiz_rounded),
+    );
   }
 }
 
-class _ImageContainer extends StatefulWidget {
-  const _ImageContainer({
-    super.key,
-    required this.path,
-    required this.url,
-    required this.imageUrlMap,
-  });
+class GalleryController extends GetxController {
+  final urls = <String>[].obs;
+  final List<FileItemVO>? files;
+  final index = 0.obs;
+  final isMenuOpen = false.obs;
+  late ExtendedPageController pageController;
+  final menuController = MenuController();
 
-  final Map<String, FileInfoRespEntity> imageUrlMap;
-  final String? path;
-  final String? url;
+  GalleryController(
+      {required List<String>? urls, required this.files, required int index})
+      : super() {
+    this.urls.value = urls ?? [];
+    this.index.value = index;
+    pageController = ExtendedPageController(initialPage: index);
+  }
 
   @override
-  State<_ImageContainer> createState() => _ImageContainerState();
+  void onInit() {
+    super.onInit();
+    if (files != null && files!.isNotEmpty) {
+      _initUrls(files!);
+    }
+  }
+
+  Future<void> _initUrls(List<FileItemVO> files) async {
+    List<String> urls = [];
+    for (var file in files) {
+      var url = await FileUtils.makeFileLink(file.path, file.sign);
+      if (url == null) {
+        break;
+      }
+      urls.add(url);
+    }
+    this.urls.value = urls;
+  }
+
+  void updateIndex(int index) {
+    this.index.value = index;
+  }
+
+  Future<void> saveToAlbum(int index) async {
+    if (Platform.isAndroid &&
+        await AlistPlugin.isNeedPermissionForSavePhotos()) {
+      if (!await Permission.storage.isGranted) {
+        var storagePermissionStatus = await Permission.storage.request();
+        if (!storagePermissionStatus.isGranted) {
+          SmartDialog.showToast(Intl.galleryScreen_storagePermissionDenied.tr);
+          return;
+        }
+      }
+    }
+
+    var name = files?[index].name;
+    var url = urls[index];
+    name ??= Uri.parse(url).path.substringAfterLast("/")!;
+
+    var cacheFile = await getCachedImageFile(url);
+    if (cacheFile == null) {
+      SmartDialog.showToast(Intl.galleryScreen_loadPhotoFailed.tr);
+      return;
+    }
+
+    if (Platform.isIOS) {
+      var copyFile = "${File(cacheFile.path).parent.path}/$name";
+      await cacheFile.rename(copyFile);
+      await ImageGallerySaver.saveFile(copyFile, name: name);
+      await File(copyFile).delete();
+    } else {
+      var now = DateTime.now().millisecond;
+      String extension = "";
+      if (name.contains(".")) {
+        extension = name.substringAfterLast(".")!;
+      }
+      if (extension.isEmpty) {
+        extension = ".jpg";
+      }
+
+      name = "${now}_$extension";
+      await ImageGallerySaver.saveFile(cacheFile.path, name: name);
+    }
+  }
 }
 
-class _ImageContainerState extends State<_ImageContainer> {
-  late GestureConfig gestureConfig;
-  String? imageUrl;
-  String? sign;
-  String? thumb;
+class _ImageContainer extends StatelessWidget {
+  const _ImageContainer({
+    super.key,
+    required this.url,
+  });
+
+  final String url;
 
   @override
-  void initState() {
-    super.initState();
-    gestureConfig = GestureConfig(
+  Widget build(BuildContext context) {
+    var gestureConfig = GestureConfig(
       minScale: 1,
       animationMinScale: 0.9,
       maxScale: 3.0,
@@ -129,61 +227,15 @@ class _ImageContainerState extends State<_ImageContainer> {
       initialAlignment: InitialAlignment.center,
     );
 
-    if (widget.path != null) {
-      FileInfoRespEntity? fileInfo = widget.imageUrlMap[widget.path];
-      if (fileInfo != null) {
-        updateCurrentImageInfo(fileInfo);
-      } else {
-        _requestImageUrl();
-      }
-    } else {
-      imageUrl = widget.url;
-    }
-  }
-
-  void updateCurrentImageInfo(FileInfoRespEntity fileInfo) {
-    imageUrl = fileInfo.rawUrl;
-    sign = fileInfo.makeCacheUseSign(widget.path ?? "");
-    thumb = fileInfo.thumb;
-  }
-
-  _requestImageUrl() async {
-    var path = widget.path;
-    var body = {
-      "path": path,
-      "password": "",
-    };
-    DioUtils.instance.requestNetwork<FileInfoRespEntity>(Method.post, "fs/get",
-        params: body, onSuccess: (data) {
-      if (data != null) {
-        widget.imageUrlMap[widget.path ?? ""] = data;
-        setState(() {
-          updateCurrentImageInfo(data);
-        });
-      }
-    }, onError: (code, message) {
-      print("code:$code,message:$message");
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (imageUrl == null) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
-    debugPrint("imageUrl:$imageUrl");
     return ExtendedImage.network(
-      imageUrl!,
-      cacheKey: sign,
+      url,
       fit: BoxFit.contain,
       mode: ExtendedImageMode.gesture,
       initGestureConfigHandler: (state) {
         return gestureConfig;
       },
       onDoubleTap: (ExtendedImageGestureState state) {
-        Log.d("currentScale=${state.gestureDetails?.totalScale}");
+        // Log.d("currentScale=${state.gestureDetails?.totalScale}");
         var currentScale = state.gestureDetails?.totalScale ?? 1.0;
         if (currentScale >= 2.0) {
           state.handleDoubleTap(scale: 1);
@@ -194,3 +246,66 @@ class _ImageContainerState extends State<_ImageContainer> {
     );
   }
 }
+
+class GalleryMenuAnchor extends StatelessWidget {
+  final GalleryController controller;
+  final Widget child;
+  final OnMenuClickCallback? onMenuClickCallback;
+
+  const GalleryMenuAnchor({
+    super.key,
+    required this.controller,
+    required this.child,
+    this.onMenuClickCallback,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return MenuAnchor(
+      style: const MenuStyle(
+          fixedSize: MaterialStatePropertyAll(Size.fromWidth(menuWidth))),
+      controller: controller.menuController,
+      anchorTapClosesMenu: true,
+      onOpen: () {
+        controller.isMenuOpen.value = true;
+      },
+      onClose: () {
+        controller.isMenuOpen.value = false;
+      },
+      menuChildren: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: _buildMenus(
+            menuWidth,
+            onMenuClickCallback,
+          ),
+        ),
+      ],
+      child: Obx(
+        () => AbsorbPointer(
+          absorbing: controller.isMenuOpen.value,
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildMenus(
+      double menuWidth, OnMenuClickCallback? onMenuClickCallback) {
+    var copyButton = MenuItemButton(
+        child: Text(Intl.galleryScreen_menu_copyLink.tr),
+        onPressed: () => onMenuClickCallback?.call(MenuId.copyLink));
+    var saveButton = MenuItemButton(
+        child: Text(Intl.galleryScreen_menu_saveToAlbum.tr),
+        onPressed: () => onMenuClickCallback?.call(MenuId.saveToAlbum));
+    return [
+      SizedBox(
+        width: menuWidth,
+      ),
+      copyButton,
+      saveButton,
+    ];
+  }
+}
+
+enum MenuId { copyLink, saveToAlbum }

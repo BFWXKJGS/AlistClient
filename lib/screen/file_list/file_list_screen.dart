@@ -382,19 +382,7 @@ class _FileListScreenState extends State<FileListScreen>
         _goAudioPlayerScreen(file, files);
         break;
       case FileType.image:
-        List<String> paths = [];
-        final currentPath = file.path;
-        for (var element in files) {
-          if (element.type == FileType.image) {
-            paths.add(element.path);
-          }
-        }
-        final index = paths.indexOf(currentPath);
-
-        Get.toNamed(
-          NamedRouter.gallery,
-          arguments: {"paths": paths, "index": index},
-        );
+        _goGalleryScreen(file, files);
         break;
       case FileType.pdf:
         Get.toNamed(
@@ -434,6 +422,17 @@ class _FileListScreenState extends State<FileListScreen>
     Get.toNamed(
       NamedRouter.audioPlayer,
       arguments: {"audios": audios, "index": index},
+    );
+  }
+
+  void _goGalleryScreen(FileItemVO file, List<FileItemVO> files) async {
+    var images =
+        files.where((element) => element.type == FileType.image).toList();
+    final index = images.indexOf(file);
+
+    Get.toNamed(
+      NamedRouter.gallery,
+      arguments: {"files": images, "index": index},
     );
   }
 
@@ -873,7 +872,7 @@ class _FileListView extends StatelessWidget {
             key: Key(file.path),
             endActionPane: ActionPane(
               motion: const DrawerMotion(),
-              extentRatio: hasWritePermission? 0.5 : 0.25,
+              extentRatio: hasWritePermission ? 0.5 : 0.25,
               children: [
                 SlidableAction(
                   onPressed: (context) => _showDetailsDialog(context, file),
