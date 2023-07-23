@@ -134,6 +134,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   void initState() {
     super.initState();
     _enableWakelock();
+    _setSystemUI();
 
     //开启混音模式
     if (Platform.isIOS) {
@@ -488,7 +489,10 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
         overlays: [SystemUiOverlay.bottom, SystemUiOverlay.top]);
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+    await Future.delayed(const Duration(milliseconds: 200));
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light.copyWith(
+      statusBarColor: Colors.transparent,
+    ));
     setState(() {
       _fullscreen = false;
     });
@@ -558,7 +562,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     );
   }
 
-  AppBar _buildAppbar() {
+  Widget _buildAppbar() {
     return AppBar(
       backgroundColor: Colors.transparent,
       foregroundColor: Colors.white,
@@ -568,10 +572,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
           color: Colors.white,
         ),
       ),
-      systemOverlayStyle: const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-      ),
+      // systemOverlayStyle: SystemUiOverlayStyle.dark,
     );
   }
 
@@ -876,7 +877,8 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
                             onPressed: _playOrPause,
                           )
                         else
-                          const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.grey)),
+                          const CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation(Colors.grey)),
                         IconButton(
                           iconSize: 60,
                           icon: Icon(
@@ -912,6 +914,18 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         },
       ),
     );
+  }
+
+  void _setSystemUI() {
+    Future.delayed(const Duration(milliseconds: 500)).then((value) {
+      if (context.mounted) {
+        var size = MediaQuery.of(Get.context!).size;
+        if (size.height > size.width) {
+          SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light
+              .copyWith(statusBarColor: Colors.transparent));
+        }
+      }
+    });
   }
 }
 
