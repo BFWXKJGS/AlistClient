@@ -46,4 +46,7 @@ class NamedRouter {
 
   // account
   static const account = "/account";
+
+  // download manager
+  static const downloadManager = "/downloadManager";
 }

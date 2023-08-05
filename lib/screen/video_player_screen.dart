@@ -9,7 +9,6 @@ import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/proxy.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
-import 'package:alist/widget/file_list_item_view.dart';
 import 'package:alist/widget/player_skin.dart';
 import 'package:dio/dio.dart';
 import 'package:flustars/flustars.dart';
@@ -28,7 +27,7 @@ class VideoPlayerScreen extends StatefulWidget {
 }
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
-  final List<FileItemVO> videos = Get.arguments["videos"];
+  final List<VideoItem> videos = Get.arguments["videos"];
   int index = Get.arguments["index"] ?? 0;
   final CancelToken _cancelToken = CancelToken();
   final FlutterAliplayer _fAliplayer =
@@ -59,20 +58,37 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
   }
 
-  void _playWithProxyUrl(FileItemVO file) async {
+  void _playWithProxyUrl(VideoItem file) async {
     var cacheDir = await DownloadUtils.findDownloadDir("video");
     FlutterAliplayer.enableLocalCache(
         true, "${1024 * 100}", cacheDir.path, DocTypeForIOS.caches);
     LogUtil.d("cacheDir=$cacheDir");
+    if (Platform.isAndroid) {
+      await _fAliplayer
+          .setScalingMode(FlutterAvpdef.AVP_SCALINGMODE_SCALETOFILL);
+    }
 
-    var target = await FileUtils.makeFileLink(file.path, file.sign);
+    if (file.localPath == null || file.localPath!.isEmpty) {
+      // find local path from database
+      final user = _userController.user();
+      var record = await _database.downloadRecordRecordDao
+          .findRecordByRemotePath(
+              user.serverUrl, user.username, file.remotePath);
+      if (record != null && File(record.localPath).existsSync()) {
+        file.localPath = record.localPath;
+      }
+    }
+    LogUtil.d("localPath=${file.localPath}");
+    if (file.localPath?.isNotEmpty == true) {
+      await _fAliplayer.setUrl(file.localPath!);
+      _findAndCacheViewingRecord(file);
+      return;
+    }
+
+    var target = await FileUtils.makeFileLink(file.remotePath, file.sign);
     if (target != null) {
       var url = target.toString();
       LogUtil.d("provider=${file.provider}");
-      if (Platform.isAndroid) {
-        await _fAliplayer
-            .setScalingMode(FlutterAvpdef.AVP_SCALINGMODE_SCALETOFILL);
-      }
       if (file.provider == "BaiduNetdisk") {
         await _proxyServer.start();
         var uri = _proxyServer.makeProxyUrl(url,
@@ -135,11 +151,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     );
   }
 
-  Future<void> _findAndCacheViewingRecord(FileItemVO file) async {
+  Future<void> _findAndCacheViewingRecord(VideoItem file) async {
     final userId = _userController.user().username;
     final baseUrl = _userController.user().baseUrl;
     var record = await _database.videoViewingRecordDao
-        .findRecordByPath(baseUrl, userId, file.path);
+        .findRecordByPath(baseUrl, userId, file.remotePath);
     if (record != null) {
       Log.d("findAndCacheViewingRecord");
       _videoViewingRecord = record;
@@ -153,7 +169,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void _deleteViewingRecord() async {
     final userId = _userController.user().username;
     final baseUrl = _userController.user().baseUrl;
-    final path = videos[index].path;
+    final path = videos[index].remotePath;
     var record = await _database.videoViewingRecordDao
         .findRecordByPath(baseUrl, userId, path);
     if (record != null) {
@@ -165,7 +181,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     final userId = _userController.user().username;
     final baseUrl = _userController.user().baseUrl;
     final sign = videos[index].sign;
-    final path = videos[index].path;
+    final path = videos[index].remotePath;
 
     var record = _videoViewingRecord;
     Log.d(
@@ -174,7 +190,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       var videoViewingRecord = VideoViewingRecord(
           serverUrl: baseUrl,
           userId: userId,
-          videoSign: sign,
+          videoSign: sign ?? "",
           path: path,
           videoCurrentPosition: currentPos,
           videoDuration: duration);
@@ -198,7 +214,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         id: record.id,
         serverUrl: baseUrl,
         userId: userId,
-        videoSign: sign,
+        videoSign: sign ?? "",
         path: path,
         videoCurrentPosition: currentPos,
         videoDuration: duration,
@@ -240,4 +256,20 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       setState(() {});
     }
   }
+}
+
+class VideoItem {
+  final String name;
+  String? localPath;
+  final String remotePath;
+  final String? sign;
+  final String? provider;
+
+  VideoItem({
+    required this.name,
+    this.localPath,
+    required this.remotePath,
+    this.sign,
+    this.provider,
+  });
 }

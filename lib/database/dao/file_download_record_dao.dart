@@ -12,6 +12,9 @@ abstract class FileDownloadRecordRecordDao {
   @delete
   Future<int> deleteRecord(FileDownloadRecord record);
 
+  @Query("DELETE FROM file_download_record WHERE id = :id")
+  Future<int?> deleteById(int id);
+
   @Query(
       "SELECT * FROM file_download_record WHERE server_url = :serverUrl AND user_id=:userId AND sign=:sign LIMIT 1")
   Future<FileDownloadRecord?> findRecordBySign(
@@ -21,10 +24,14 @@ abstract class FileDownloadRecordRecordDao {
   );
 
   @Query(
-      "SELECT * FROM file_download_record WHERE server_url = :serverUrl AND user_id=:userId AND remote_path=:remotePath")
-  Future<List<FileDownloadRecord>?> findRecordByRemotePath(
+      "SELECT * FROM file_download_record WHERE server_url = :serverUrl AND user_id=:userId AND remote_path=:remotePath LIMIT 1")
+  Future<FileDownloadRecord?> findRecordByRemotePath(
     String serverUrl,
     String userId,
     String remotePath,
   );
+
+  @Query(
+      "SELECT * FROM file_download_record WHERE server_url = :serverUrl AND user_id=:userId ORDER BY id DESC")
+  Future<List<FileDownloadRecord>?> findAll(String serverUrl, String userId);
 }

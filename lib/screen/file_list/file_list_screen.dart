@@ -12,11 +12,14 @@ import 'package:alist/generated/mkdir_req.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/router.dart';
+import 'package:alist/screen/audio_player_screen.dart';
 import 'package:alist/screen/file_list/director_password_dialog.dart';
 import 'package:alist/screen/file_list/file_copy_move_dialog.dart';
 import 'package:alist/screen/file_list/file_list_menu_anchor.dart';
 import 'package:alist/screen/file_list/file_rename_dialog.dart';
 import 'package:alist/screen/file_list/mkdir_dialog.dart';
+import 'package:alist/screen/video_player_screen.dart';
+import 'package:alist/util/download_manager.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/focus_node_utils.dart';
@@ -427,9 +430,17 @@ class _FileListScreenState extends State<FileListScreen>
   }
 
   void _goAudioPlayerScreen(FileItemVO file, List<FileItemVO> files) async {
-    var audios =
-        files.where((element) => element.type == FileType.audio).toList();
-    final index = audios.indexOf(file);
+    var audios = files
+        .where((element) => element.type == FileType.audio)
+        .map((e) => AudioItem(
+              name: e.name,
+              remotePath: e.path,
+              sign: e.sign,
+              provider: e.provider,
+            ))
+        .toList();
+    final index =
+        audios.indexWhere((element) => element.remotePath == file.path);
 
     Get.toNamed(
       NamedRouter.audioPlayer,
@@ -576,6 +587,15 @@ class _FileListScreenState extends State<FileListScreen>
                       onTap: () {
                         Navigator.pop(context);
                         _copyFileLink(file);
+                      },
+                    ),
+                  if (!file.isDir)
+                    ListTile(
+                      leading: const Icon(Icons.download_rounded),
+                      title: Text(Intl.fileList_menu_download.tr),
+                      onTap: () {
+                        Navigator.pop(context);
+                        DownloadManager.instance.downloadFileItem(file);
                       },
                     ),
                   if (_hasWritePermission)
@@ -797,9 +817,17 @@ class _FileListScreenState extends State<FileListScreen>
   }
 
   void _goVideoPlayerScreen(FileItemVO file, List<FileItemVO> files) {
-    var videos =
-        files.where((element) => element.type == FileType.video).toList();
-    final index = videos.indexOf(file);
+    var videos = files
+        .where((element) => element.type == FileType.video)
+        .map((e) => VideoItem(
+              name: e.name,
+              remotePath: e.path,
+              sign: e.sign,
+              provider: e.provider,
+            ))
+        .toList();
+    final index =
+        videos.indexWhere((element) => element.remotePath == file.path);
 
     Get.toNamed(
       NamedRouter.videoPlayer,
@@ -873,7 +901,7 @@ class _FileListView extends StatelessWidget {
             key: Key(file.path),
             endActionPane: ActionPane(
               motion: const DrawerMotion(),
-              extentRatio: hasWritePermission? 0.5 : 0.25,
+              extentRatio: hasWritePermission ? 0.5 : 0.25,
               children: [
                 SlidableAction(
                   onPressed: (context) => _showDetailsDialog(context, file),

@@ -229,7 +229,8 @@ class FileUtils {
     }
   }
 
-  static Future<String?> makeFileLink(String path, String? sign) async {
+  static Future<String?> makeFileLink(String path, String? sign,
+      {bool toastShowTips = true}) async {
     UserController userController = Get.find();
     var user = userController.user.value;
     String? basePath = user.basePath;
@@ -242,7 +243,9 @@ class FileUtils {
     }
 
     if (basePath == null || basePath.isEmpty) {
-      SmartDialog.showToast(ikeys.Intl.photo_load_failed.tr);
+      if (toastShowTips) {
+        SmartDialog.showToast(ikeys.Intl.tips_makeFileLink_failed.tr);
+      }
       return null;
     }
 

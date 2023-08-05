@@ -282,7 +282,7 @@ class _ListItem extends StatelessWidget {
         children: [
           SlidableAction(
             onPressed: (context) {
-              print("删除");
+              LogUtil.d("删除");
               handleDeleteItem(list!, data);
             },
             backgroundColor: Colors.red,

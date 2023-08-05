@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/util/log_utils.dart';
+import 'package:alist/widget/overflow_text.dart';
 import 'package:alist/widget/slider.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
@@ -562,8 +563,8 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     return AppBar(
       backgroundColor: Colors.transparent,
       foregroundColor: Colors.white,
-      title: Text(
-        widget.videoTitle,
+      title: OverflowText(
+        text : widget.videoTitle,
         style: const TextStyle(
           color: Colors.white,
         ),

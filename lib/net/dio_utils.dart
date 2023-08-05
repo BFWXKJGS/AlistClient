@@ -93,6 +93,8 @@ class DioUtils {
 
   Dio get dio => _dio;
 
+  Dio get streamDio => _streamDio;
+
   // 数据返回格式统一，统一处理异常
   Future<BaseEntity<T>> _request<T>(
     String method,

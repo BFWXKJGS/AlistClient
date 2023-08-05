@@ -5,6 +5,8 @@ import 'package:alist/database/table/file_viewing_record.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
+import 'package:alist/screen/audio_player_screen.dart';
+import 'package:alist/screen/video_player_screen.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/named_router.dart';
@@ -371,10 +373,18 @@ class _RecentsScreenState extends State<RecentsScreen>
     if (index == -1) {
       index = 0;
     }
+    var videos = files.map(
+      (e) => VideoItem(
+        name: e.name,
+        remotePath: e.path,
+        sign: e.sign,
+        provider: e.provider,
+      ),
+    );
     Get.toNamed(
       NamedRouter.videoPlayer,
       arguments: {
-        "videos": files,
+        "videos": videos,
         "index": index,
       },
     );
@@ -393,10 +403,19 @@ class _RecentsScreenState extends State<RecentsScreen>
     if (index == -1) {
       index = 0;
     }
+
+    var audios = files.map(
+      (e) => AudioItem(
+        name: e.name,
+        remotePath: e.path,
+        sign: e.sign,
+        provider: e.provider,
+      ),
+    );
     Get.toNamed(
       NamedRouter.audioPlayer,
       arguments: {
-        "audios": files,
+        "audios": audios,
         "index": index,
       },
     );

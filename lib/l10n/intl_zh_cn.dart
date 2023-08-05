@@ -22,6 +22,7 @@ const translationsZhCN = {
   "settingsScreen_item_about": "关于我们",
   "settingsScreen_item_login": "去登录",
   "settingsScreen_item_privacyPolicy": "隐私政策",
+  "settingsScreen_item_downloads": "下载管理",
   "photo_load_failed": "图片加载失败",
   "wechat": "微信",
   "alipay": "支付宝",
@@ -71,6 +72,7 @@ const translationsZhCN = {
   "fileList_menu_details": "详情",
   "fileList_menu_open": "打开",
   "fileList_menu_copyLink": "复制链接",
+  "fileList_menu_download": "下载",
   "fileList_menu_copy": "复制",
   "fileList_menu_move": "移动",
   "fileList_menu_rename": "重命名",
@@ -143,4 +145,5 @@ const translationsZhCN = {
   "updateDialog_btn_ok": "更新",
   "updateDialog_btn_cancel": "取消",
   "updateDialog_tips_ignore": "忽略此版本",
+  "tips_makeFileLink_failed": "获取文件链接失败",
 };

@@ -41,10 +41,20 @@ class AlistDatabaseController extends GetxController {
         'CREATE TABLE IF NOT EXISTS `server` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `password` TEXT NOT NULL, `token` TEXT NOT NULL, `guest` INTEGER NOT NULL, `ignore_ssl_error` INTEGER NOT NULL, `create_time` INTEGER NOT NULL, `update_time` INTEGER NOT NULL)');
   });
 
+  // create migration
+  final migration4to5 = Migration(4, 5, (database) async {
+    await database
+        .execute('ALTER TABLE `file_download_record` ADD `thumbnail` TEXT');
+  });
+
   Future<void> init() async {
-    database = await $FloorAlistDatabase
-        .databaseBuilder('alist.db')
-        .addMigrations([migration1to2, migration2to3, migration3to4]).build();
+    database =
+        await $FloorAlistDatabase.databaseBuilder('alist.db').addMigrations([
+      migration1to2,
+      migration2to3,
+      migration3to4,
+      migration4to5,
+    ]).build();
     videoViewingRecordDao = database.videoViewingRecordDao;
     downloadRecordRecordDao = database.downloadRecordRecordDao;
     filePasswordDao = database.filePasswordDao;

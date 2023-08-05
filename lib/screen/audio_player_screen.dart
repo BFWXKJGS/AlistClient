@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/lock_caching_audio_source.dart';
+import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
-import 'package:alist/widget/file_list_item_view.dart';
 import 'package:alist/widget/slider.dart';
 import 'package:dio/dio.dart';
 import 'package:flustars/flustars.dart';
@@ -16,10 +17,11 @@ import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
+import 'dart:io' as io;
 
 class AudioPlayerScreen extends StatelessWidget {
   AudioPlayerScreen({Key? key}) : super(key: key);
-  final List<FileItemVO> _audios = Get.arguments["audios"] ?? [];
+  final List<AudioItem> _audios = Get.arguments["audios"] ?? [];
   final int _index = Get.arguments["index"] ?? 0;
 
   @override
@@ -249,12 +251,12 @@ class AudioPlayerScreen extends StatelessWidget {
 }
 
 class AudioPlayerScreenController extends GetxController {
-  final RxList<FileItemVO> _audios;
+  final RxList<AudioItem> _audios;
   int _index;
   final _playMode = PlayMode.list.obs;
 
   AudioPlayerScreenController(
-      {required List<FileItemVO> audios, required int index})
+      {required List<AudioItem> audios, required int index})
       : _audios = audios.obs,
         _index = index {
     if (_audios.isNotEmpty) {
@@ -305,7 +307,7 @@ class AudioPlayerScreenController extends GetxController {
         _index = event.currentIndex;
         var item = event.currentSource?.tag as MediaItem?;
         LogUtil.d("itemId=${item?.id}");
-        if (item?.id == _audios[_index].path) {
+        if (item?.id == _audios[_index].remotePath) {
           _name.value = _audios[_index].name;
         }
       }
@@ -332,10 +334,10 @@ class AudioPlayerScreenController extends GetxController {
   void _createPlayListAndPlay() async {
     var sources = <AudioSource>[];
     for (var audio in _audios) {
-      var uri = await FileUtils.makeFileLink(audio.path, audio.sign);
+      var uri = await FileUtils.makeFileLink(audio.remotePath, audio.sign);
       if (uri != null) {
         sources.add(
-          _audioToUri(uri, audio),
+          await _audioToUri(uri, audio),
         );
       }
     }
@@ -349,20 +351,41 @@ class AudioPlayerScreenController extends GetxController {
     _audioPlayer.play();
   }
 
-  AudioSource _audioToUri(String uri, FileItemVO audio) {
-    var headers = <String, String>{};
-    if (audio.provider == "BaiduNetdisk") {
-      headers["User-Agent"] = "pan.baidu.com";
-    }
-    return AlistLockCachingAudioSource(
-      Uri.parse(uri),
-      headers: headers,
-      tag: MediaItem(
-        id: audio.path,
-        title: audio.name,
-        artUri: Uri.parse("https://alistc.geektang.cn/ic_music_head.png"),
-      ),
+  Future<AudioSource> _audioToUri(String uri, AudioItem audio) async {
+    final mediaItem = MediaItem(
+      id: audio.remotePath,
+      title: audio.name,
+      artUri: Uri.parse("https://alistc.geektang.cn/ic_music_head.png"),
     );
+
+    if (audio.localPath == null || audio.localPath!.isEmpty) {
+      AlistDatabaseController databaseController = Get.find();
+      UserController userController = Get.find();
+      var user = userController.user.value;
+
+      var record = await databaseController.downloadRecordRecordDao
+          .findRecordByRemotePath(
+              user.serverUrl, user.username, audio.remotePath);
+      if (record != null) {
+        audio.localPath = record.localPath;
+      }
+    }
+    if (audio.localPath != null && audio.localPath!.isNotEmpty) {
+      return ProgressiveAudioSource(
+        Uri.file(audio.localPath!),
+        tag: mediaItem,
+      );
+    } else {
+      var headers = <String, String>{};
+      if (audio.provider == "BaiduNetdisk") {
+        headers["User-Agent"] = "pan.baidu.com";
+      }
+      return AlistLockCachingAudioSource(
+        Uri.parse(uri),
+        headers: headers,
+        tag: mediaItem,
+      );
+    }
   }
 
   void _playNext() {
@@ -487,4 +510,20 @@ enum PlayMode {
   single,
   list,
   random,
+}
+
+class AudioItem {
+  final String name;
+  String? localPath;
+  final String remotePath;
+  final String? sign;
+  final String? provider;
+
+  AudioItem({
+    required this.name,
+    this.localPath,
+    required this.remotePath,
+    this.sign,
+    this.provider,
+  });
 }

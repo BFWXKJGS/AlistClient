@@ -26,6 +26,9 @@ class FileDownloadRecord {
   @ColumnInfo(name: 'create_time')
   final int createTime;
 
+  @ColumnInfo(name: 'thumbnail')
+  String? thumbnail;
+
   FileDownloadRecord({
     this.id,
     required this.serverUrl,
@@ -35,5 +38,6 @@ class FileDownloadRecord {
     required this.name,
     required this.localPath,
     required this.createTime,
+    this.thumbnail,
   });
 }

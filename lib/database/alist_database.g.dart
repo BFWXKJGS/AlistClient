@@ -77,7 +77,7 @@ class _$AlistDatabase extends AlistDatabase {
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 4,
+      version: 5,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -95,7 +95,7 @@ class _$AlistDatabase extends AlistDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `video_viewing_record` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `video_sign` TEXT NOT NULL, `path` TEXT NOT NULL, `video_duration` INTEGER NOT NULL, `video_current_position` INTEGER NOT NULL)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `file_download_record` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `sign` TEXT NOT NULL, `name` TEXT NOT NULL, `local_path` TEXT NOT NULL, `create_time` INTEGER NOT NULL)');
+            'CREATE TABLE IF NOT EXISTS `file_download_record` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `sign` TEXT NOT NULL, `name` TEXT NOT NULL, `local_path` TEXT NOT NULL, `create_time` INTEGER NOT NULL, `thumbnail` TEXT)');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `file_password` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `password` TEXT NOT NULL, `create_time` INTEGER NOT NULL)');
         await database.execute(
@@ -242,7 +242,8 @@ class _$FileDownloadRecordRecordDao extends FileDownloadRecordRecordDao {
                   'sign': item.sign,
                   'name': item.name,
                   'local_path': item.localPath,
-                  'create_time': item.createTime
+                  'create_time': item.createTime,
+                  'thumbnail': item.thumbnail
                 }),
         _fileDownloadRecordUpdateAdapter = UpdateAdapter(
             database,
@@ -256,7 +257,8 @@ class _$FileDownloadRecordRecordDao extends FileDownloadRecordRecordDao {
                   'sign': item.sign,
                   'name': item.name,
                   'local_path': item.localPath,
-                  'create_time': item.createTime
+                  'create_time': item.createTime,
+                  'thumbnail': item.thumbnail
                 }),
         _fileDownloadRecordDeletionAdapter = DeletionAdapter(
             database,
@@ -270,7 +272,8 @@ class _$FileDownloadRecordRecordDao extends FileDownloadRecordRecordDao {
                   'sign': item.sign,
                   'name': item.name,
                   'local_path': item.localPath,
-                  'create_time': item.createTime
+                  'create_time': item.createTime,
+                  'thumbnail': item.thumbnail
                 });
 
   final sqflite.DatabaseExecutor database;
@@ -287,6 +290,13 @@ class _$FileDownloadRecordRecordDao extends FileDownloadRecordRecordDao {
   final DeletionAdapter<FileDownloadRecord> _fileDownloadRecordDeletionAdapter;
 
   @override
+  Future<int?> deleteById(int id) async {
+    return _queryAdapter.query('DELETE FROM file_download_record WHERE id = ?1',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
+        arguments: [id]);
+  }
+
+  @override
   Future<FileDownloadRecord?> findRecordBySign(
     String serverUrl,
     String userId,
@@ -294,20 +304,31 @@ class _$FileDownloadRecordRecordDao extends FileDownloadRecordRecordDao {
   ) async {
     return _queryAdapter.query(
         'SELECT * FROM file_download_record WHERE server_url = ?1 AND user_id=?2 AND sign=?3 LIMIT 1',
-        mapper: (Map<String, Object?> row) => FileDownloadRecord(id: row['id'] as int?, serverUrl: row['server_url'] as String, userId: row['user_id'] as String, remotePath: row['remote_path'] as String, sign: row['sign'] as String, name: row['name'] as String, localPath: row['local_path'] as String, createTime: row['create_time'] as int),
+        mapper: (Map<String, Object?> row) => FileDownloadRecord(id: row['id'] as int?, serverUrl: row['server_url'] as String, userId: row['user_id'] as String, remotePath: row['remote_path'] as String, sign: row['sign'] as String, name: row['name'] as String, localPath: row['local_path'] as String, createTime: row['create_time'] as int, thumbnail: row['thumbnail'] as String?),
         arguments: [serverUrl, userId, sign]);
   }
 
   @override
-  Future<List<FileDownloadRecord>?> findRecordByRemotePath(
+  Future<FileDownloadRecord?> findRecordByRemotePath(
     String serverUrl,
     String userId,
     String remotePath,
   ) async {
-    return _queryAdapter.queryList(
-        'SELECT * FROM file_download_record WHERE server_url = ?1 AND user_id=?2 AND remote_path=?3',
-        mapper: (Map<String, Object?> row) => FileDownloadRecord(id: row['id'] as int?, serverUrl: row['server_url'] as String, userId: row['user_id'] as String, remotePath: row['remote_path'] as String, sign: row['sign'] as String, name: row['name'] as String, localPath: row['local_path'] as String, createTime: row['create_time'] as int),
+    return _queryAdapter.query(
+        'SELECT * FROM file_download_record WHERE server_url = ?1 AND user_id=?2 AND remote_path=?3 LIMIT 1',
+        mapper: (Map<String, Object?> row) => FileDownloadRecord(id: row['id'] as int?, serverUrl: row['server_url'] as String, userId: row['user_id'] as String, remotePath: row['remote_path'] as String, sign: row['sign'] as String, name: row['name'] as String, localPath: row['local_path'] as String, createTime: row['create_time'] as int, thumbnail: row['thumbnail'] as String?),
         arguments: [serverUrl, userId, remotePath]);
+  }
+
+  @override
+  Future<List<FileDownloadRecord>?> findAll(
+    String serverUrl,
+    String userId,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM file_download_record WHERE server_url = ?1 AND user_id=?2 ORDER BY id DESC',
+        mapper: (Map<String, Object?> row) => FileDownloadRecord(id: row['id'] as int?, serverUrl: row['server_url'] as String, userId: row['user_id'] as String, remotePath: row['remote_path'] as String, sign: row['sign'] as String, name: row['name'] as String, localPath: row['local_path'] as String, createTime: row['create_time'] as int, thumbnail: row['thumbnail'] as String?),
+        arguments: [serverUrl, userId]);
   }
 
   @override

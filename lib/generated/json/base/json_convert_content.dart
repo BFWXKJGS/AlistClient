@@ -7,6 +7,7 @@ import 'package:flutter/material.dart' show debugPrint;
 import 'package:alist/entity/app_version_resp.dart';
 import 'package:alist/entity/copy_move_req.dart';
 import 'package:alist/entity/donate_config_entity.dart';
+import 'package:alist/entity/downloads_info.dart';
 import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/entity/file_remove_req.dart';
@@ -16,25 +17,27 @@ import 'package:alist/entity/my_info_resp.dart';
 import 'package:alist/generated/mkdir_req.dart';
 
 JsonConvert jsonConvert = JsonConvert();
+
 typedef JsonConvertFunction<T> = T Function(Map<String, dynamic> json);
 typedef EnumConvertFunction<T> = T Function(String value);
 
 class JsonConvert {
-	static final Map<String, JsonConvertFunction> convertFuncMap = {
-		(AppVersionResp).toString(): AppVersionResp.fromJson,
-		(AppVersionRespAndroid).toString(): AppVersionRespAndroid.fromJson,
-		(AppVersionRespIos).toString(): AppVersionRespIos.fromJson,
-		(CopyMoveReq).toString(): CopyMoveReq.fromJson,
-		(DonateConfigEntity).toString(): DonateConfigEntity.fromJson,
-		(FileInfoRespEntity).toString(): FileInfoRespEntity.fromJson,
-		(FileListRespEntity).toString(): FileListRespEntity.fromJson,
-		(FileListRespContent).toString(): FileListRespContent.fromJson,
-		(FileRemoveReq).toString(): FileRemoveReq.fromJson,
-		(FileRenameReq).toString(): FileRenameReq.fromJson,
-		(LoginRespEntity).toString(): LoginRespEntity.fromJson,
-		(MyInfoResp).toString(): MyInfoResp.fromJson,
-		(MkdirReq).toString(): MkdirReq.fromJson,
-	};
+  static final Map<String, JsonConvertFunction> convertFuncMap = {
+    (AppVersionResp).toString(): AppVersionResp.fromJson,
+    (AppVersionRespAndroid).toString(): AppVersionRespAndroid.fromJson,
+    (AppVersionRespIos).toString(): AppVersionRespIos.fromJson,
+    (CopyMoveReq).toString(): CopyMoveReq.fromJson,
+    (DonateConfigEntity).toString(): DonateConfigEntity.fromJson,
+    (DownloadsInfo).toString(): DownloadsInfo.fromJson,
+    (FileInfoRespEntity).toString(): FileInfoRespEntity.fromJson,
+    (FileListRespEntity).toString(): FileListRespEntity.fromJson,
+    (FileListRespContent).toString(): FileListRespContent.fromJson,
+    (FileRemoveReq).toString(): FileRemoveReq.fromJson,
+    (FileRenameReq).toString(): FileRenameReq.fromJson,
+    (LoginRespEntity).toString(): LoginRespEntity.fromJson,
+    (MyInfoResp).toString(): MyInfoResp.fromJson,
+    (MkdirReq).toString(): MkdirReq.fromJson,
+  };
 
   T? convert<T>(dynamic value, {EnumConvertFunction? enumConvert}) {
     if (value == null) {
@@ -51,24 +54,28 @@ class JsonConvert {
     }
   }
 
-  List<T?>? convertList<T>(List<dynamic>? value, {EnumConvertFunction? enumConvert}) {
+  List<T?>? convertList<T>(List<dynamic>? value,
+      {EnumConvertFunction? enumConvert}) {
     if (value == null) {
       return null;
     }
     try {
-      return value.map((dynamic e) => _asT<T>(e,enumConvert: enumConvert)).toList();
+      return value.map((dynamic e) => _asT<T>(e, enumConvert: enumConvert))
+          .toList();
     } catch (e, stackTrace) {
       debugPrint('asT<$T> $e $stackTrace');
       return <T>[];
     }
   }
 
-List<T>? convertListNotNull<T>(dynamic value, {EnumConvertFunction? enumConvert}) {
+  List<T>? convertListNotNull<T>(dynamic value,
+      {EnumConvertFunction? enumConvert}) {
     if (value == null) {
       return null;
     }
     try {
-      return (value as List<dynamic>).map((dynamic e) => _asT<T>(e,enumConvert: enumConvert)!).toList();
+      return (value as List<dynamic>).map((dynamic e) =>
+      _asT<T>(e, enumConvert: enumConvert)!).toList();
     } catch (e, stackTrace) {
       debugPrint('asT<$T> $e $stackTrace');
       return <T>[];
@@ -113,61 +120,79 @@ List<T>? convertListNotNull<T>(dynamic value, {EnumConvertFunction? enumConvert}
     }
   }
 
-	//list is returned by type
-	static M? _getListChildType<M>(List<Map<String, dynamic>> data) {
-		if(<AppVersionResp>[] is M){
-			return data.map<AppVersionResp>((Map<String, dynamic> e) => AppVersionResp.fromJson(e)).toList() as M;
-		}
-		if(<AppVersionRespAndroid>[] is M){
-			return data.map<AppVersionRespAndroid>((Map<String, dynamic> e) => AppVersionRespAndroid.fromJson(e)).toList() as M;
-		}
-		if(<AppVersionRespIos>[] is M){
-			return data.map<AppVersionRespIos>((Map<String, dynamic> e) => AppVersionRespIos.fromJson(e)).toList() as M;
-		}
-		if(<CopyMoveReq>[] is M){
-			return data.map<CopyMoveReq>((Map<String, dynamic> e) => CopyMoveReq.fromJson(e)).toList() as M;
-		}
-		if(<DonateConfigEntity>[] is M){
-			return data.map<DonateConfigEntity>((Map<String, dynamic> e) => DonateConfigEntity.fromJson(e)).toList() as M;
-		}
-		if(<FileInfoRespEntity>[] is M){
-			return data.map<FileInfoRespEntity>((Map<String, dynamic> e) => FileInfoRespEntity.fromJson(e)).toList() as M;
-		}
-		if(<FileListRespEntity>[] is M){
-			return data.map<FileListRespEntity>((Map<String, dynamic> e) => FileListRespEntity.fromJson(e)).toList() as M;
-		}
-		if(<FileListRespContent>[] is M){
-			return data.map<FileListRespContent>((Map<String, dynamic> e) => FileListRespContent.fromJson(e)).toList() as M;
-		}
-		if(<FileRemoveReq>[] is M){
-			return data.map<FileRemoveReq>((Map<String, dynamic> e) => FileRemoveReq.fromJson(e)).toList() as M;
-		}
-		if(<FileRenameReq>[] is M){
-			return data.map<FileRenameReq>((Map<String, dynamic> e) => FileRenameReq.fromJson(e)).toList() as M;
-		}
-		if(<LoginRespEntity>[] is M){
-			return data.map<LoginRespEntity>((Map<String, dynamic> e) => LoginRespEntity.fromJson(e)).toList() as M;
-		}
-		if(<MyInfoResp>[] is M){
-			return data.map<MyInfoResp>((Map<String, dynamic> e) => MyInfoResp.fromJson(e)).toList() as M;
-		}
-		if(<MkdirReq>[] is M){
-			return data.map<MkdirReq>((Map<String, dynamic> e) => MkdirReq.fromJson(e)).toList() as M;
-		}
+  //list is returned by type
+  static M? _getListChildType<M>(List<Map<String, dynamic>> data) {
+    if (<AppVersionResp>[] is M) {
+      return data.map<AppVersionResp>((Map<String, dynamic> e) =>
+          AppVersionResp.fromJson(e)).toList() as M;
+    }
+    if (<AppVersionRespAndroid>[] is M) {
+      return data.map<AppVersionRespAndroid>((Map<String, dynamic> e) =>
+          AppVersionRespAndroid.fromJson(e)).toList() as M;
+    }
+    if (<AppVersionRespIos>[] is M) {
+      return data.map<AppVersionRespIos>((Map<String, dynamic> e) =>
+          AppVersionRespIos.fromJson(e)).toList() as M;
+    }
+    if (<CopyMoveReq>[] is M) {
+      return data.map<CopyMoveReq>((Map<String, dynamic> e) =>
+          CopyMoveReq.fromJson(e)).toList() as M;
+    }
+    if (<DonateConfigEntity>[] is M) {
+      return data.map<DonateConfigEntity>((Map<String, dynamic> e) =>
+          DonateConfigEntity.fromJson(e)).toList() as M;
+    }
+    if (<DownloadsInfo>[] is M) {
+      return data.map<DownloadsInfo>((Map<String, dynamic> e) =>
+          DownloadsInfo.fromJson(e)).toList() as M;
+    }
+    if (<FileInfoRespEntity>[] is M) {
+      return data.map<FileInfoRespEntity>((Map<String, dynamic> e) =>
+          FileInfoRespEntity.fromJson(e)).toList() as M;
+    }
+    if (<FileListRespEntity>[] is M) {
+      return data.map<FileListRespEntity>((Map<String, dynamic> e) =>
+          FileListRespEntity.fromJson(e)).toList() as M;
+    }
+    if (<FileListRespContent>[] is M) {
+      return data.map<FileListRespContent>((Map<String, dynamic> e) =>
+          FileListRespContent.fromJson(e)).toList() as M;
+    }
+    if (<FileRemoveReq>[] is M) {
+      return data.map<FileRemoveReq>((Map<String, dynamic> e) =>
+          FileRemoveReq.fromJson(e)).toList() as M;
+    }
+    if (<FileRenameReq>[] is M) {
+      return data.map<FileRenameReq>((Map<String, dynamic> e) =>
+          FileRenameReq.fromJson(e)).toList() as M;
+    }
+    if (<LoginRespEntity>[] is M) {
+      return data.map<LoginRespEntity>((Map<String, dynamic> e) =>
+          LoginRespEntity.fromJson(e)).toList() as M;
+    }
+    if (<MyInfoResp>[] is M) {
+      return data.map<MyInfoResp>((Map<String, dynamic> e) =>
+          MyInfoResp.fromJson(e)).toList() as M;
+    }
+    if (<MkdirReq>[] is M) {
+      return data.map<MkdirReq>((Map<String, dynamic> e) =>
+          MkdirReq.fromJson(e)).toList() as M;
+    }
 
-		debugPrint("${M.toString()} not found");
-	
-		return null;
-	}
+    debugPrint("${M.toString()} not found");
 
-	static M? fromJsonAsT<M>(dynamic json) {
-		if (json is M) {
-			return json;
-		}
-		if (json is List) {
-			return _getListChildType<M>(json.map((e) => e as Map<String, dynamic>).toList());
-		} else {
-			return jsonConvert.convert<M>(json);
-		}
-	}
+    return null;
+  }
+
+  static M? fromJsonAsT<M>(dynamic json) {
+    if (json is M) {
+      return json;
+    }
+    if (json is List) {
+      return _getListChildType<M>(
+          json.map((e) => e as Map<String, dynamic>).toList());
+    } else {
+      return jsonConvert.convert<M>(json);
+    }
+  }
 }

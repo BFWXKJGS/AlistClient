@@ -86,10 +86,9 @@ class _SettingsContainerState extends State<_SettingsContainer>
             _userController.logout();
             Get.offNamed(NamedRouter.login);
             break;
-          case MenuId.account:
-            Get.toNamed(NamedRouter.account);
-            break;
+          case MenuId.downloads:
           case MenuId.donate:
+          case MenuId.account:
             Get.toNamed(settingsMenu.route!);
             break;
           case MenuId.privacyPolicy:
@@ -144,6 +143,11 @@ class _SettingsContainerState extends State<_SettingsContainer>
   List<SettingsMenu> _buildSettingsMenuItems(BuildContext context) {
     final settingsMenus = [
       SettingsMenu(
+          menuId: MenuId.downloads,
+          name: Intl.settingsScreen_item_downloads.tr,
+          icon: Images.settingsScreenDownload,
+          route: NamedRouter.downloadManager),
+      SettingsMenu(
           menuId: MenuId.privacyPolicy,
           name: Intl.settingsScreen_item_privacyPolicy.tr,
           icon: Images.settingsScreenPrivacyPolicy,
@@ -182,6 +186,7 @@ class _SettingsContainerState extends State<_SettingsContainer>
             menuId: MenuId.account,
             name: Intl.settingsScreen_item_account.tr,
             icon: Images.settingsScreenAccount,
+            route: NamedRouter.account,
           ));
     }
     return settingsMenus;
@@ -208,6 +213,7 @@ class SettingsMenu {
 enum MenuId {
   signIn,
   account,
+  downloads,
   donate,
   privacyPolicy,
   about,

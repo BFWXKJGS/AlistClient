@@ -22,6 +22,7 @@ class Intl {
   static const String settingsScreen_item_donate = "settingsScreen_item_donate";
   static const String settingsScreen_item_about = "settingsScreen_item_about";
   static const String settingsScreen_item_privacyPolicy = "settingsScreen_item_privacyPolicy";
+  static const String settingsScreen_item_downloads = "settingsScreen_item_downloads";
   static const String photo_load_failed = "photo_load_failed";
   static const String wechat = "wechat";
   static const String alipay = "alipay";
@@ -38,7 +39,7 @@ class Intl {
   static const String directoryPasswordDialog_btn_ok = "directoryPasswordDialog_btn_ok";
   static const String directoryPasswordDialog_btn_cancel = "directoryPasswordDialog_btn_cancel";
   static const String directoryPasswordDialog_tips_passwordEmpty = "directoryPasswordDialog_tips_passwordEmpty";
-  static const String directoryPasswordDialog_remember  = "directoryPasswordDialog_remember ";
+  static const String directoryPasswordDialog_remember = "directoryPasswordDialog_remember";
   static const String net_error_net_error = "net_error_net_error";
   static const String net_error_parse_error = "net_error_parse_error";
   static const String net_error_socket_error = "net_error_socket_error";
@@ -70,6 +71,7 @@ class Intl {
   static const String fileList_menu_details = "fileList_menu_details";
   static const String fileList_menu_open = "fileList_menu_open";
   static const String fileList_menu_copyLink = "fileList_menu_copyLink";
+  static const String fileList_menu_download = "fileList_menu_download";
   static const String fileList_menu_copy = "fileList_menu_copy";
   static const String fileList_menu_move = "fileList_menu_move";
   static const String fileList_menu_rename = "fileList_menu_rename";
@@ -141,4 +143,5 @@ class Intl {
   static const String updateDialog_btn_ok = "updateDialog_btn_ok";
   static const String updateDialog_btn_cancel = "updateDialog_btn_cancel";
   static const String updateDialog_tips_ignore = "updateDialog_tips_ignore";
+  static const String tips_makeFileLink_failed = "tips_makeFileLink_failed";
 }
