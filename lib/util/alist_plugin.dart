@@ -17,4 +17,11 @@ class AlistPlugin {
     bool isSucceed = await methodChannel.invokeMethod("launchApp", params);
     return isSucceed;
   }
+
+  // just for android
+  static Future<bool> isScopedStorage() async {
+    bool isSucceed =
+        await methodChannel.invokeMethod("isScopedStorage");
+    return isSucceed;
+  }
 }

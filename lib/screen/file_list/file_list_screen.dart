@@ -20,6 +20,7 @@ import 'package:alist/screen/file_list/file_rename_dialog.dart';
 import 'package:alist/screen/file_list/mkdir_dialog.dart';
 import 'package:alist/screen/video_player_screen.dart';
 import 'package:alist/util/download_manager.dart';
+import 'package:alist/util/alist_plugin.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/focus_node_utils.dart';
@@ -42,6 +43,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 typedef FileItemClickCallback = Function(BuildContext context, int index);
 
@@ -283,6 +285,16 @@ class _FileListScreenState extends State<FileListScreen>
   }
 
   Future<void> _uploadPhotos() async {
+    if (Platform.isAndroid && !await AlistPlugin.isScopedStorage()) {
+      if (!await Permission.storage.isGranted) {
+        var storageStatus = await Permission.storage.request();
+        if (storageStatus.isDenied) {
+          SmartDialog.showToast(Intl.fileList_tips_permissionGalleyDenied.tr);
+          return;
+        }
+      }
+    }
+
     ImagePicker picker = ImagePicker();
     SmartDialog.showLoading(msg: Intl.fileList_tip_processing.tr);
     List<XFile> medias = await picker
@@ -385,19 +397,7 @@ class _FileListScreenState extends State<FileListScreen>
         _goAudioPlayerScreen(file, files);
         break;
       case FileType.image:
-        List<String> paths = [];
-        final currentPath = file.path;
-        for (var element in files) {
-          if (element.type == FileType.image) {
-            paths.add(element.path);
-          }
-        }
-        final index = paths.indexOf(currentPath);
-
-        Get.toNamed(
-          NamedRouter.gallery,
-          arguments: {"paths": paths, "index": index},
-        );
+        _goGalleryScreen(file, files);
         break;
       case FileType.pdf:
         Get.toNamed(
@@ -445,6 +445,17 @@ class _FileListScreenState extends State<FileListScreen>
     Get.toNamed(
       NamedRouter.audioPlayer,
       arguments: {"audios": audios, "index": index},
+    );
+  }
+
+  void _goGalleryScreen(FileItemVO file, List<FileItemVO> files) async {
+    var images =
+        files.where((element) => element.type == FileType.image).toList();
+    final index = images.indexOf(file);
+
+    Get.toNamed(
+      NamedRouter.gallery,
+      arguments: {"files": images, "index": index},
     );
   }
 

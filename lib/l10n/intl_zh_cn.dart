@@ -146,4 +146,9 @@ const translationsZhCN = {
   "updateDialog_btn_cancel": "取消",
   "updateDialog_tips_ignore": "忽略此版本",
   "tips_makeFileLink_failed": "获取文件链接失败",
+  "galleryScreen_menu_saveToAlbum": "保存到相册",
+  "galleryScreen_menu_copyLink": "复制链接",
+  "galleryScreen_copied": "图片链接已复制",
+  "galleryScreen_storagePermissionDenied": "需要授予存储权限",
+  "galleryScreen_loadPhotoFailed": "图片加载失败",
 };

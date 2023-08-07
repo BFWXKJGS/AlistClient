@@ -79,6 +79,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    packagingOptions {
+        pickFirst 'lib/*/libc++_shared.so'
+    }
 }
 
 flutter {
@@ -86,6 +90,7 @@ flutter {
 }
 
 dependencies {
+    implementation(fileTree("libs"))
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.multidex:multidex:2.0.1'
 }

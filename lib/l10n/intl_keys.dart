@@ -144,4 +144,9 @@ class Intl {
   static const String updateDialog_btn_cancel = "updateDialog_btn_cancel";
   static const String updateDialog_tips_ignore = "updateDialog_tips_ignore";
   static const String tips_makeFileLink_failed = "tips_makeFileLink_failed";
+  static const String galleryScreen_menu_saveToAlbum = "galleryScreen_menu_saveToAlbum";
+  static const String galleryScreen_menu_copyLink = "galleryScreen_menu_copyLink";
+  static const String galleryScreen_copied = "galleryScreen_copied";
+  static const String galleryScreen_storagePermissionDenied = "galleryScreen_storagePermissionDenied";
+  static const String galleryScreen_loadPhotoFailed = "galleryScreen_loadPhotoFailed";
 }

@@ -150,4 +150,9 @@ const translationsEnUS = {
   "updateDialog_btn_cancel": "Cancel",
   "updateDialog_tips_ignore": "Ignore this version",
   "tips_makeFileLink_failed": "Failed to request file link",
+  "galleryScreen_menu_saveToAlbum": "Save",
+  "galleryScreen_menu_copyLink": "Copy link",
+  "galleryScreen_copied": "Copied",
+  "galleryScreen_storagePermissionDenied": "Requires granting storage privileges",
+  "galleryScreen_loadPhotoFailed": "Image failed to load",
 };

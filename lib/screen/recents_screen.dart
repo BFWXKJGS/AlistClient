@@ -148,11 +148,7 @@ class _RecentsScreenState extends State<RecentsScreen>
         _gotoAudioPlayer(file);
         break;
       case FileType.image:
-        List<String> paths = [file.path];
-        Get.toNamed(
-          NamedRouter.gallery,
-          arguments: {"paths": paths, "index": 0},
-        );
+        _gotoGalleryScreen(file);
         break;
       case FileType.pdf:
         Get.toNamed(
@@ -416,6 +412,28 @@ class _RecentsScreenState extends State<RecentsScreen>
       NamedRouter.audioPlayer,
       arguments: {
         "audios": audios,
+        "index": index,
+      },
+    );
+  }
+
+  void _gotoGalleryScreen(FileViewingRecord file) async {
+    SmartDialog.showLoading();
+    var files = await _loadFilesPrepare(
+        file.path.substringBeforeLast("/")!, file.path, FileType.image);
+    SmartDialog.dismiss();
+    if (files == null) {
+      return;
+    }
+
+    var index = files.lastIndexWhere((element) => element.path == file.path);
+    if (index == -1) {
+      index = 0;
+    }
+    Get.toNamed(
+      NamedRouter.gallery,
+      arguments: {
+        "files": files,
         "index": index,
       },
     );
