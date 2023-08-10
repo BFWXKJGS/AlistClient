@@ -107,11 +107,22 @@ class PdfReaderScreenController extends GetxController {
 
   void _download() async {
     loading.value = true;
+
+    final requestHeaders = <String, dynamic>{};
+    var limitFrequency = 0;
+    if (pdfItem.provider == "BaiduNetdisk") {
+      requestHeaders["User-Agent"] = "pan.baidu.com";
+    } else if (pdfItem.provider == "AliyundriveOpen") {
+      // 阿里云盘下载请求频率限制为 1s/次
+      limitFrequency = 1;
+    }
     _downloadTask = await DownloadManager.instance.download(
       name: pdfItem.name,
       remotePath: pdfItem.remotePath,
       sign: pdfItem.sign ?? "",
       thumb: pdfItem.thumb,
+      requestHeaders: requestHeaders,
+      limitFrequency: limitFrequency,
     );
     if (_downloadTask == null) {
       errMsg.value = "Download failed.";

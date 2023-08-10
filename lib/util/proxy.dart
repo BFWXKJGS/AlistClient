@@ -195,7 +195,7 @@ class ProxyServer {
 
   // 清除已过期的重定向缓存
   void _clearInvalidRedirectCache() {
-    var currentMillisecond = DateTime.now().millisecond;
+    var currentMillisecond = DateTime.now().millisecondsSinceEpoch;
     var invalidKeys = <String>[];
     _redirectCache.forEach((key, value) {
       if (value.validTime < currentMillisecond) {
@@ -209,7 +209,7 @@ class ProxyServer {
 
   // 添加一个缓存
   void _addRedirectCache(Uri uri, String location) {
-    var validTime = DateTime.now().millisecond + 10 * 60 * 1000;
+    var validTime = DateTime.now().millisecondsSinceEpoch + 10 * 60 * 1000;
     _redirectCache[uri.toString()] = RedirectCacheValue(location, validTime);
   }
 
@@ -217,7 +217,7 @@ class ProxyServer {
   RedirectCacheValue? _findValidRedirectCacheValue(String targetUrl) {
     var redirectCacheValue = _redirectCache[targetUrl];
     if (redirectCacheValue != null) {
-      var currentMillisecond = DateTime.now().millisecond;
+      var currentMillisecond = DateTime.now().millisecondsSinceEpoch;
       if (redirectCacheValue.validTime < currentMillisecond) {
         // 无效缓存
         _redirectCache.remove(targetUrl);

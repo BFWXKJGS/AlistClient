@@ -140,11 +140,22 @@ class _FileReaderContainerState extends State<_FileReaderContainer> {
 
   void _download(FileReaderItem item) async {
     final fileType = widget.fileReaderItem.fileType;
+    final requestHeaders = <String, dynamic>{};
+    var limitFrequency = 0;
+    if (item.provider == "BaiduNetdisk") {
+      requestHeaders["User-Agent"] = "pan.baidu.com";
+    } else if (item.provider == "AliyundriveOpen") {
+      // 阿里云盘下载请求频率限制为 1s/次
+      limitFrequency = 1;
+    }
+
     _downloadTask = await DownloadManager.instance.download(
       name: item.name,
       remotePath: item.remotePath,
       sign: item.sign ?? "",
       thumb: item.thumb,
+      requestHeaders: requestHeaders,
+      limitFrequency: limitFrequency,
     );
     if (_downloadTask == null) {
       SmartDialog.showToast("Download failed.");

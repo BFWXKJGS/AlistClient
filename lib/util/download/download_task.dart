@@ -10,11 +10,13 @@ import 'package:dio/dio.dart';
 import 'package:flustars/flustars.dart';
 
 class DownloadTask {
-  final HttpClient _httpClient;
+  final DownloadManager _downloadManager;
   final String url;
   final String savedPath;
   final CancelToken _cancelToken;
   final DownloadTaskStatusCallback _statusCallbacks;
+  final Map<String, dynamic> requestHeaders;
+  final int limitFrequency;
   var _taskMoving = false;
   DownloadTaskStatus _status;
   int? contentLength;
@@ -22,18 +24,21 @@ class DownloadTask {
   String? failedReason;
 
   DownloadTask({
-    required HttpClient httpClient,
+    required DownloadManager downloadManager,
     required DownloadTaskStatusCallback statusCallback,
     required this.url,
+    required this.requestHeaders,
     required this.savedPath,
+    required this.limitFrequency,
     required CancelToken cancelToken,
     DownloadTaskStatus status = DownloadTaskStatus.waiting,
   })  : _cancelToken = cancelToken,
-        _httpClient = httpClient,
+        _downloadManager = downloadManager,
         _statusCallbacks = statusCallback,
         _status = status;
 
   DownloadTaskStatus get status => _status;
+
   bool get taskMoving => _taskMoving;
 
   void start() async {
@@ -79,23 +84,19 @@ class DownloadTask {
       }
     }
 
-    Map<String, dynamic> requestHeader;
+    Map<String, dynamic> requestHeader = requestHeaders;
     if (downloadsInfo != null && tmpFileExists) {
-      requestHeader = {
-        HttpHeaders.rangeHeader: "bytes=${tmpFile.lengthSync()}-",
-        HttpHeaders.ifRangeHeader:
-            downloadsInfo.etag ?? downloadsInfo.lastModified ?? "",
-      };
+      requestHeader[HttpHeaders.rangeHeader] = "bytes=${tmpFile.lengthSync()}-";
+      requestHeader[HttpHeaders.ifRangeHeader] =
+          downloadsInfo.etag ?? downloadsInfo.lastModified ?? "";
       LogUtil.d("headers=$requestHeader");
       downloaded = tmpFile.lengthSync();
-    } else {
-      requestHeader = {};
     }
     contentLength = downloadsInfo?.contentLength;
 
     late HttpClientResponse httpResponse;
     try {
-      httpResponse = await _request(url, requestHeader);
+      httpResponse = await _downloadManager.request(this, requestHeader);
     } catch (e) {
       _setCurrentStatus(DownloadTaskStatus.failed, reason: e.toString());
       return;
@@ -210,6 +211,7 @@ class DownloadTask {
   }
 
   void _setCurrentStatus(DownloadTaskStatus status, {String? reason}) {
+    LogUtil.d("download failed,reason=$reason");
     if (status == DownloadTaskStatus.failed) {
       failedReason = reason;
     } else if (failedReason != null) {
@@ -253,16 +255,6 @@ class DownloadTask {
     } else {
       _setCurrentStatus(DownloadTaskStatus.canceled);
     }
-  }
-
-  Future<HttpClientResponse> _request(
-      String fileUri, Map<String, dynamic> requestHeader) async {
-    HttpClientRequest request =
-        await _httpClient.openUrl("GET", Uri.parse(fileUri));
-    requestHeader.forEach((key, value) {
-      request.headers.set(key, value);
-    });
-    return request.close();
   }
 
   void _notifyStatusChanged(DownloadTaskStatus status, {String? reason}) {

@@ -27,7 +27,14 @@ class FileDownloadRecord {
   final int createTime;
 
   @ColumnInfo(name: 'thumbnail')
-  String? thumbnail;
+  final String? thumbnail;
+
+  @ColumnInfo(name: 'request_headers')
+  final String? requestHeaders;
+
+  // 下载频率限制，单位 秒
+  @ColumnInfo(name: 'limit_frequency')
+  final int? limitFrequency;
 
   FileDownloadRecord({
     this.id,
@@ -38,6 +45,8 @@ class FileDownloadRecord {
     required this.name,
     required this.localPath,
     required this.createTime,
-    this.thumbnail,
+    required this.thumbnail,
+    required this.requestHeaders,
+    required this.limitFrequency,
   });
 }

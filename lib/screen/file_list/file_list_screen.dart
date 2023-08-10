@@ -547,7 +547,7 @@ class _FileListScreenState extends State<FileListScreen>
       userId: user.username,
       remotePath: path,
       password: password,
-      createTime: DateTime.now().millisecond,
+      createTime: DateTime.now().millisecondsSinceEpoch,
     );
     await _databaseController.filePasswordDao.insertFilePassword(filePassword);
   }

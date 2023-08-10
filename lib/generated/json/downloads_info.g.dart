@@ -1,10 +1,10 @@
-import 'package:alist/generated/json/base/json_convert_content.dart';
 import 'package:alist/entity/downloads_info.dart';
+import 'package:alist/generated/json/base/json_convert_content.dart';
 
 DownloadsInfo $DownloadsInfoFromJson(Map<String, dynamic> json) {
   final DownloadsInfo downloadsInfo = DownloadsInfo();
-  final bool? isSupportRange = jsonConvert.convert<bool>(
-      json['isSupportRange']);
+  final bool? isSupportRange =
+      jsonConvert.convert<bool>(json['isSupportRange']);
   if (isSupportRange != null) {
     downloadsInfo.isSupportRange = isSupportRange;
   }
@@ -12,8 +12,8 @@ DownloadsInfo $DownloadsInfoFromJson(Map<String, dynamic> json) {
   if (decompress != null) {
     downloadsInfo.decompress = decompress;
   }
-  final String? lastModified = jsonConvert.convert<String>(
-      json['lastModified']);
+  final String? lastModified =
+      jsonConvert.convert<String>(json['lastModified']);
   if (lastModified != null) {
     downloadsInfo.lastModified = lastModified;
   }

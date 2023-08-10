@@ -412,6 +412,10 @@ class DownloadManagerController extends GetxController {
               "$status - ${FileUtils.formatBytes(File(file.localPath).lengthSync())}";
         }
       }
+      var requestHeaders = <String, dynamic>{};
+      if (file.requestHeaders != null && file.requestHeaders!.isNotEmpty) {
+        requestHeaders = jsonDecode(file.requestHeaders!);
+      }
 
       LogUtil.d("localPath=${file.localPath}");
       var item = DownloadItem(
@@ -423,8 +427,10 @@ class DownloadManagerController extends GetxController {
         thumbnail: file.thumbnail,
         contentLength: contentLengthInt,
         downloaded: downloadedInt,
+        requestHeaders: requestHeaders,
+        limitFrequency: file.limitFrequency ?? 0,
         status: status,
-        downloadStatus: downloadStatus!,
+        downloadStatus: downloadStatus,
       );
       downloadList.add(item);
     }
@@ -449,6 +455,8 @@ class DownloadManagerController extends GetxController {
       remotePath: downloadItem.remotePath ?? "",
       sign: downloadItem.sign ?? "",
       thumb: downloadItem.thumbnail,
+      requestHeaders: downloadItem.requestHeaders,
+      limitFrequency: downloadItem.limitFrequency,
     );
   }
 
@@ -584,8 +592,10 @@ class DownloadManagerController extends GetxController {
     var proxyUri =
         proxyServer.makeContentUri(item.remotePath ?? "/", fileContent);
 
-    await Get.toNamed(NamedRouter.web,
-        arguments: {"url": MarkdownUtil.makePreviewUrl(proxyUri.toString()), "title": item.name});
+    await Get.toNamed(NamedRouter.web, arguments: {
+      "url": MarkdownUtil.makePreviewUrl(proxyUri.toString()),
+      "title": item.name
+    });
     proxyServer.stop();
   }
 
@@ -639,6 +649,8 @@ class DownloadManagerController extends GetxController {
         remotePath: item.remotePath ?? "",
         sign: item.sign ?? "",
         thumb: item.thumbnail,
+        requestHeaders: item.requestHeaders,
+        limitFrequency: item.limitFrequency,
       );
     }
   }
@@ -769,6 +781,8 @@ class DownloadItem {
   final String? sign;
   final RxString status;
   final Rx<DownloadTaskStatus> downloadStatus;
+  final Map<String, dynamic> requestHeaders;
+  final int limitFrequency;
   final String savedPath;
   String? thumbnail;
   int downloaded;
@@ -782,6 +796,8 @@ class DownloadItem {
     required this.sign,
     required String status,
     required DownloadTaskStatus downloadStatus,
+    required this.requestHeaders,
+    required this.limitFrequency,
     this.thumbnail,
     this.downloaded = 0,
     this.contentLength,

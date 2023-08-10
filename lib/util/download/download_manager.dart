@@ -1,17 +1,18 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/table/file_download_record.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/util/alist_plugin.dart';
+import 'package:alist/util/download/download_http_client.dart';
 import 'package:alist/util/download/download_task.dart';
 import 'package:alist/util/download/download_task_status.dart';
+import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/iterator.dart';
-import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/file_list_item_view.dart';
@@ -29,7 +30,7 @@ typedef DownloadTaskStatusCallback = void Function(
 
 class DownloadManager {
   static final DownloadManager instance = DownloadManager();
-  final HttpClient _httpClient = HttpClient()..autoUncompress = false;
+  final DownloadHttpClient _httpClient = DownloadHttpClient();
   final Queue<DownloadTask> _waitingTasks = Queue();
   final Queue<DownloadTask> _runningTasks = Queue();
   late DownloadTaskStatusCallback _taskStatusCallback;
@@ -48,12 +49,15 @@ class DownloadManager {
     _taskStatusCallback = _onDownloadTaskStatusChange;
   }
 
-  Future<DownloadTask?> download(
-      {required String name,
-      required String remotePath,
-      required String sign,
-      String? thumb,
-      CancelToken? cancelToken}) async {
+  Future<DownloadTask?> download({
+    required String name,
+    required String remotePath,
+    required String sign,
+    String? thumb,
+    Map<String, dynamic>? requestHeaders,
+    int? limitFrequency,
+    CancelToken? cancelToken,
+  }) async {
     var fileUrl = await FileUtils.makeFileLink(remotePath, sign);
     if (fileUrl == null) {
       return null;
@@ -86,11 +90,13 @@ class DownloadManager {
       var localFile = File(record.localPath);
       if (record.sign == sign && localFile.existsSync()) {
         return DownloadTask(
-          httpClient: _httpClient,
+          downloadManager: this,
           statusCallback: _taskStatusCallback,
           url: fileUrl,
           savedPath: record.localPath,
           cancelToken: cancelToken,
+          requestHeaders: requestHeaders ?? {},
+          limitFrequency: limitFrequency ?? 0,
           status: DownloadTaskStatus.finished,
         );
       }
@@ -111,7 +117,9 @@ class DownloadManager {
         sign: sign,
         thumbnail: thumb,
         localPath: filePath,
-        createTime: DateTime.now().millisecond,
+        requestHeaders: jsonEncode(requestHeaders ?? {}),
+        limitFrequency: limitFrequency,
+        createTime: DateTime.now().millisecondsSinceEpoch,
       );
       await downloadRecordRecordDao.insertRecord(newRecord);
     } else {
@@ -124,10 +132,12 @@ class DownloadManager {
     }
 
     DownloadTask task = DownloadTask(
-      httpClient: _httpClient,
+      downloadManager: this,
       statusCallback: _taskStatusCallback,
       url: fileUrl,
       savedPath: filePath,
+      requestHeaders: requestHeaders ?? {},
+      limitFrequency: limitFrequency ?? 0,
       cancelToken: cancelToken,
     );
     //  Ignore the queue and download directly
@@ -138,11 +148,22 @@ class DownloadManager {
 
   Future<DownloadTask?> enqueueFile(FileItemVO file,
       {CancelToken? cancelToken}) async {
+    final requestHeaders = <String, dynamic>{};
+    var limitFrequency = 0;
+    if (file.provider == "BaiduNetdisk") {
+      requestHeaders[HttpHeaders.userAgentHeader] = "pan.baidu.com";
+    } else if (file.provider == "AliyundriveOpen") {
+      // 阿里云盘下载请求频率限制为 1s/次
+      limitFrequency = 1;
+    }
+
     return enqueue(
       name: file.name,
       remotePath: file.path,
       sign: file.sign,
       thumb: file.thumb,
+      requestHeaders: requestHeaders,
+      limitFrequency: limitFrequency,
       cancelToken: cancelToken,
     );
   }
@@ -152,6 +173,8 @@ class DownloadManager {
     required String remotePath,
     required String sign,
     String? thumb,
+    Map<String, dynamic>? requestHeaders,
+    int? limitFrequency,
     CancelToken? cancelToken,
   }) async {
     var fileUrl = await FileUtils.makeFileLink(remotePath, sign);
@@ -208,7 +231,9 @@ class DownloadManager {
         sign: sign,
         thumbnail: thumb,
         localPath: filePath,
-        createTime: DateTime.now().millisecond,
+        requestHeaders: jsonEncode(requestHeaders ?? {}),
+        limitFrequency: limitFrequency,
+        createTime: DateTime.now().millisecondsSinceEpoch,
       );
       await downloadRecordRecordDao.insertRecord(newRecord);
     } else {
@@ -221,10 +246,12 @@ class DownloadManager {
     }
 
     DownloadTask task = DownloadTask(
-      httpClient: _httpClient,
+      downloadManager: this,
       statusCallback: _taskStatusCallback,
       url: fileUrl,
       savedPath: filePath,
+      requestHeaders: requestHeaders ?? {},
+      limitFrequency: limitFrequency ?? 0,
       cancelToken: cancelToken,
     );
     LogUtil.d(
@@ -397,6 +424,12 @@ class DownloadManager {
     if (_downloadStatusChangeStreamController.hasListener) {
       _downloadStatusChangeStreamController.sink.add(task);
     }
+  }
+
+  Future<HttpClientResponse> request(
+      DownloadTask task, Map<String, dynamic> requestHeader) async {
+    return _httpClient.get(task.url,
+        headers: requestHeader, limitFrequency: task.limitFrequency);
   }
 
   void _startListenProgress() {

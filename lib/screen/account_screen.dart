@@ -238,8 +238,8 @@ class AccountScreenController extends GetxController {
       token: user.token ?? "",
       ignoreSSLError: SpUtil.getBool(AlistConstant.ignoreSSLError) == true,
       guest: user.guest,
-      createTime: DateTime.now().millisecond,
-      updateTime: DateTime.now().millisecond,
+      createTime: DateTime.now().millisecondsSinceEpoch,
+      updateTime: DateTime.now().millisecondsSinceEpoch,
     );
     _databaseController.serverDao.insertServer(server);
   }
