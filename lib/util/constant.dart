@@ -23,6 +23,8 @@ class AlistConstant {
   static const String isAgreePrivacyPolicy = 'isAgreePrivacyPolicy';
   static const String ignoreSSLError = "ignoreSSLError";
   static const String ignoreAppVersion = "ignoreAppVersion";
+  static const String isFirstTimeDownload = "isFirstTimeDownload";
+  static const String maxRunningTaskCount = "maxRunningTaskCount";
 
   static const String locale = 'locale';
 }

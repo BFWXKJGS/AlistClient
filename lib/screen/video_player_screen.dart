@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/table/video_viewing_record.dart';
 import 'package:alist/l10n/intl_keys.dart';
-import 'package:alist/util/download_utils.dart';
+import 'package:alist/util/download/download_manager.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/proxy.dart';
@@ -59,7 +59,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   void _playWithProxyUrl(VideoItem file) async {
-    var cacheDir = await DownloadUtils.findDownloadDir("video");
+    var cacheDir = await DownloadManager.findDownloadDir("video");
     FlutterAliplayer.enableLocalCache(
         true, "${1024 * 100}", cacheDir.path, DocTypeForIOS.caches);
     LogUtil.d("cacheDir=$cacheDir");

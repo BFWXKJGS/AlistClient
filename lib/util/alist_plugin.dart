@@ -20,8 +20,17 @@ class AlistPlugin {
 
   // just for android
   static Future<bool> isScopedStorage() async {
-    bool isSucceed =
-        await methodChannel.invokeMethod("isScopedStorage");
+    bool isSucceed = await methodChannel.invokeMethod("isScopedStorage");
     return isSucceed;
+  }
+
+  // just for android
+  static Future onDownloadingStart() async {
+    await methodChannel.invokeMethod("onDownloadingStart");
+  }
+
+  // just for android
+  static Future onDownloadingEnd() async {
+    await methodChannel.invokeMethod("onDownloadingEnd");
   }
 }

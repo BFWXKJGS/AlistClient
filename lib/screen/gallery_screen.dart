@@ -1,28 +1,31 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/util/alist_plugin.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/string_utils.dart';
-import 'package:alist/widget/file_list_item_view.dart';
+import 'package:alist/util/user_controller.dart';
+import 'package:alist/widget/overflow_text.dart';
 import 'package:extended_image/extended_image.dart';
+import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:uuid/uuid.dart';
 
-typedef OnMenuClickCallback = Function(MenuId menuId);
-
-const menuWidth = 140.0;
+typedef OnGalleryMenuClickCallback = Function(GalleryMenuId menuId);
 
 class GalleryScreen extends StatelessWidget {
   GalleryScreen({Key? key}) : super(key: key);
 
   final List<String>? urls = Get.arguments["urls"];
-  final List<FileItemVO>? files = Get.arguments["files"];
+  final List<PhotoItem>? files = Get.arguments["files"];
   final int initializedIndex = Get.arguments["index"];
 
   // use key to get the more icon's location and size
@@ -52,12 +55,12 @@ class GalleryScreen extends StatelessWidget {
         child: widget,
         onMenuClickCallback: (menuId) {
           switch (menuId) {
-            case MenuId.copyLink:
+            case GalleryMenuId.copyLink:
               Clipboard.setData(
                   ClipboardData(text: controller.urls[controller.index.value]));
               SmartDialog.showToast(Intl.galleryScreen_copied.tr);
               break;
-            case MenuId.saveToAlbum:
+            case GalleryMenuId.saveToAlbum:
               controller.saveToAlbum(controller.index.value);
               break;
           }
@@ -71,8 +74,8 @@ class GalleryScreen extends StatelessWidget {
       elevation: 0,
       title: controller.files == null
           ? null
-          : Obx(() => Text(
-                controller.files?[controller.index.value].name ?? "",
+          : Obx(() => OverflowText(
+                text: controller.files?[controller.index.value].name ?? "",
                 style: const TextStyle(color: Colors.white),
               )),
       systemOverlayStyle: const SystemUiOverlayStyle(
@@ -85,19 +88,27 @@ class GalleryScreen extends StatelessWidget {
 
   Widget _buildImageViewPager(GalleryController controller) {
     return Obx(
-      () => ExtendedImageGesturePageView.builder(
-        itemBuilder: (context, index) {
-          return _ImageContainer(
-            url: controller.urls[index],
-          );
-        },
-        controller: controller.pageController,
-        onPageChanged: (index) {
-          controller.updateIndex(index);
-        },
-        itemCount: controller.urls.length,
-        scrollDirection: Axis.horizontal,
-      ),
+      () => controller.urls.isEmpty
+          ? const SizedBox()
+          : ExtendedImageGesturePageView.builder(
+              itemBuilder: (context, index) {
+                String? localPath;
+                if (controller.files != null &&
+                    controller.files!.length > index) {
+                  localPath = controller.files?[index].localPath;
+                }
+                return _ImageContainer(
+                  url: controller.urls[index],
+                  localPath: localPath,
+                );
+              },
+              controller: controller.pageController,
+              onPageChanged: (index) {
+                controller.updateIndex(index);
+              },
+              itemCount: controller.urls.length,
+              scrollDirection: Axis.horizontal,
+            ),
     );
   }
 
@@ -111,6 +122,7 @@ class GalleryScreen extends StatelessWidget {
         if (renderObject is RenderBox) {
           var position = renderObject.localToGlobal(Offset.zero);
           var size = renderObject.size;
+          var menuWidth = controller.menuWidth;
           menuController.open(
               position: Offset(position.dx + size.width - menuWidth - 10,
                   position.dy + size.height));
@@ -123,32 +135,52 @@ class GalleryScreen extends StatelessWidget {
 
 class GalleryController extends GetxController {
   final urls = <String>[].obs;
-  final List<FileItemVO>? files;
-  final index = 0.obs;
-  final isMenuOpen = false.obs;
+  final List<PhotoItem>? files;
+  late RxInt index;
   late ExtendedPageController pageController;
+  final isMenuOpen = false.obs;
   final menuController = MenuController();
+  var menuWidth = 120.0;
 
   GalleryController(
       {required List<String>? urls, required this.files, required int index})
       : super() {
     this.urls.value = urls ?? [];
-    this.index.value = index;
+    this.index = index.obs;
     pageController = ExtendedPageController(initialPage: index);
   }
 
   @override
   void onInit() {
     super.onInit();
+    LogUtil.d("index=$index");
     if (files != null && files!.isNotEmpty) {
       _initUrls(files!);
     }
+    if (Get.locale.toString().contains("zh")) {
+      menuWidth = 140;
+    } else {
+      menuWidth = 120;
+    }
   }
 
-  Future<void> _initUrls(List<FileItemVO> files) async {
+  Future<void> _initUrls(List<PhotoItem> files) async {
+    AlistDatabaseController databaseController = Get.find();
+    UserController userController = Get.find();
+    var user = userController.user.value;
+
     List<String> urls = [];
     for (var file in files) {
-      var url = await FileUtils.makeFileLink(file.path, file.sign);
+      if (file.localPath == null || file.localPath!.isEmpty) {
+        var record = await databaseController.downloadRecordRecordDao
+            .findRecordByRemotePath(
+                user.serverUrl, user.username, file.remotePath);
+        if (record != null && File(record.localPath).existsSync()) {
+          file.localPath = record.localPath;
+        }
+      }
+
+      var url = await FileUtils.makeFileLink(file.remotePath, file.sign);
       if (url == null) {
         break;
       }
@@ -159,11 +191,11 @@ class GalleryController extends GetxController {
 
   void updateIndex(int index) {
     this.index.value = index;
+    LogUtil.d("update index=$index");
   }
 
   Future<void> saveToAlbum(int index) async {
-    if (Platform.isAndroid &&
-        await AlistPlugin.isScopedStorage()) {
+    if (Platform.isAndroid && await AlistPlugin.isScopedStorage()) {
       if (!await Permission.storage.isGranted) {
         var storagePermissionStatus = await Permission.storage.request();
         if (!storagePermissionStatus.isGranted) {
@@ -177,29 +209,40 @@ class GalleryController extends GetxController {
     var url = urls[index];
     name ??= Uri.parse(url).path.substringAfterLast("/")!;
 
-    var cacheFile = await getCachedImageFile(url);
+    name = _makeSavedFileName(name);
+    if (files?[index].localPath != null &&
+        files![index].localPath!.isNotEmpty) {
+      await ImageGallerySaver.saveFile(files![index].localPath!, name: name)
+          .then((value) =>
+              SmartDialog.showToast(Intl.galleryScreen_savePhotoSucceed.tr));
+      return;
+    }
+    File? cacheFile = await getCachedImageFile(url);
     if (cacheFile == null) {
       SmartDialog.showToast(Intl.galleryScreen_loadPhotoFailed.tr);
       return;
     }
 
+    var tmpFilePath = p.join(File(cacheFile.path).parent.path, name);
+    await cacheFile.copy(tmpFilePath);
+    await ImageGallerySaver.saveFile(tmpFilePath, name: name).then((value) =>
+        SmartDialog.showToast(Intl.galleryScreen_savePhotoSucceed.tr));
+    await File(tmpFilePath).delete();
+  }
+
+  String? _makeSavedFileName(String originalName) {
     if (Platform.isIOS) {
-      var copyFile = "${File(cacheFile.path).parent.path}/$name";
-      await cacheFile.rename(copyFile);
-      await ImageGallerySaver.saveFile(copyFile, name: name);
-      await File(copyFile).delete();
+      return originalName;
     } else {
-      var now = DateTime.now().millisecond;
       String extension = "";
-      if (name.contains(".")) {
-        extension = name.substringAfterLast(".")!;
+      if (originalName.contains(".")) {
+        extension = originalName.substringAfterLast(".")!;
       }
       if (extension.isEmpty) {
         extension = ".jpg";
       }
 
-      name = "${now}_$extension";
-      await ImageGallerySaver.saveFile(cacheFile.path, name: name);
+      return "${const Uuid().v4()}.$extension";
     }
   }
 }
@@ -208,9 +251,11 @@ class _ImageContainer extends StatelessWidget {
   const _ImageContainer({
     super.key,
     required this.url,
+    this.localPath,
   });
 
   final String url;
+  final String? localPath;
 
   @override
   Widget build(BuildContext context) {
@@ -227,30 +272,50 @@ class _ImageContainer extends StatelessWidget {
       initialAlignment: InitialAlignment.center,
     );
 
-    return ExtendedImage.network(
-      url,
-      fit: BoxFit.contain,
-      mode: ExtendedImageMode.gesture,
-      initGestureConfigHandler: (state) {
-        return gestureConfig;
-      },
-      onDoubleTap: (ExtendedImageGestureState state) {
-        // Log.d("currentScale=${state.gestureDetails?.totalScale}");
-        var currentScale = state.gestureDetails?.totalScale ?? 1.0;
-        if (currentScale >= 2.0) {
-          state.handleDoubleTap(scale: 1);
-        } else {
-          state.handleDoubleTap(scale: min(currentScale + 1, 3));
-        }
-      },
-    );
+    if (localPath != null && localPath!.isNotEmpty) {
+      return ExtendedImage.file(
+        File(localPath!),
+        fit: BoxFit.contain,
+        mode: ExtendedImageMode.gesture,
+        initGestureConfigHandler: (state) {
+          return gestureConfig;
+        },
+        onDoubleTap: (ExtendedImageGestureState state) {
+          // Log.d("currentScale=${state.gestureDetails?.totalScale}");
+          var currentScale = state.gestureDetails?.totalScale ?? 1.0;
+          if (currentScale >= 2.0) {
+            state.handleDoubleTap(scale: 1);
+          } else {
+            state.handleDoubleTap(scale: min(currentScale + 1, 3));
+          }
+        },
+      );
+    } else {
+      return ExtendedImage.network(
+        url,
+        fit: BoxFit.contain,
+        mode: ExtendedImageMode.gesture,
+        initGestureConfigHandler: (state) {
+          return gestureConfig;
+        },
+        onDoubleTap: (ExtendedImageGestureState state) {
+          // Log.d("currentScale=${state.gestureDetails?.totalScale}");
+          var currentScale = state.gestureDetails?.totalScale ?? 1.0;
+          if (currentScale >= 2.0) {
+            state.handleDoubleTap(scale: 1);
+          } else {
+            state.handleDoubleTap(scale: min(currentScale + 1, 3));
+          }
+        },
+      );
+    }
   }
 }
 
 class GalleryMenuAnchor extends StatelessWidget {
   final GalleryController controller;
   final Widget child;
-  final OnMenuClickCallback? onMenuClickCallback;
+  final OnGalleryMenuClickCallback? onMenuClickCallback;
 
   const GalleryMenuAnchor({
     super.key,
@@ -261,8 +326,9 @@ class GalleryMenuAnchor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final menuWidth = controller.menuWidth;
     return MenuAnchor(
-      style: const MenuStyle(
+      style: MenuStyle(
           fixedSize: MaterialStatePropertyAll(Size.fromWidth(menuWidth))),
       controller: controller.menuController,
       anchorTapClosesMenu: true,
@@ -291,13 +357,13 @@ class GalleryMenuAnchor extends StatelessWidget {
   }
 
   List<Widget> _buildMenus(
-      double menuWidth, OnMenuClickCallback? onMenuClickCallback) {
+      double menuWidth, OnGalleryMenuClickCallback? onMenuClickCallback) {
     var copyButton = MenuItemButton(
-        child: Text(Intl.galleryScreen_menu_copyLink.tr),
-        onPressed: () => onMenuClickCallback?.call(MenuId.copyLink));
+        onPressed: () => onMenuClickCallback?.call(GalleryMenuId.copyLink),
+        child: Text(Intl.galleryScreen_menu_copyLink.tr));
     var saveButton = MenuItemButton(
-        child: Text(Intl.galleryScreen_menu_saveToAlbum.tr),
-        onPressed: () => onMenuClickCallback?.call(MenuId.saveToAlbum));
+        onPressed: () => onMenuClickCallback?.call(GalleryMenuId.saveToAlbum),
+        child: Text(Intl.galleryScreen_menu_saveToAlbum.tr));
     return [
       SizedBox(
         width: menuWidth,
@@ -308,4 +374,20 @@ class GalleryMenuAnchor extends StatelessWidget {
   }
 }
 
-enum MenuId { copyLink, saveToAlbum }
+enum GalleryMenuId { copyLink, saveToAlbum }
+
+class PhotoItem {
+  final String name;
+  String? localPath;
+  final String remotePath;
+  final String? sign;
+  final String? provider;
+
+  PhotoItem({
+    required this.name,
+    this.localPath,
+    required this.remotePath,
+    this.sign,
+    this.provider,
+  });
+}

@@ -26,6 +26,8 @@ class ProxyServer {
     var httpClient = _httpClient;
     final targetUrl = request.uri.queryParameters['targetUrl'];
     final contentKey = request.uri.queryParameters['contentKey'];
+    LogUtil.d("targetUrl=$targetUrl");
+    LogUtil.d("contentKey=$contentKey");
     final hasTargetUrl = !(targetUrl == null || targetUrl.isEmpty);
     final hasContentKey = !(contentKey == null || contentKey.isEmpty);
 
@@ -160,6 +162,10 @@ class ProxyServer {
     var contentValue = _content[contentKey];
     request.response.headers
         .set(HttpHeaders.accessControlAllowOriginHeader, "*");
+    request.response.headers
+        .set(HttpHeaders.accessControlAllowMethodsHeader, "GET");
+    request.response.headers
+        .set(HttpHeaders.accessControlAllowCredentialsHeader, true);
     if (contentValue == null) {
       request.response.statusCode = HttpStatus.notFound;
       request.response.close();
@@ -231,7 +237,7 @@ class ProxyServer {
 
     HttpServer? server;
     try {
-      server = await HttpServer.bind('127.0.0.1', port);
+      server = await HttpServer.bind(InternetAddress.anyIPv4, port);
     } catch (e) {
       await start(port: port + 1);
       return;

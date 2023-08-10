@@ -22,18 +22,24 @@ final menuGroupOperations = MenuGroupEntity(
       name: Intl.fileList_menu_newFolder.tr,
       iconData: Icons.create_new_folder,
     ),
+    MenuItemEntity(
+      menuGroupId: MenuGroupId.operations,
+      menuId: MenuId.downloadAll,
+      name: Intl.fileList_menu_downloadAll.tr,
+      iconData: Icons.download_rounded,
+    ),
     if (Platform.isIOS)
       MenuItemEntity(
         menuGroupId: MenuGroupId.operations,
         menuId: MenuId.uploadPhotos,
         name: Intl.fileList_menu_uploadPhotos.tr,
-        iconData: Icons.upload,
+        iconData: Icons.upload_rounded,
       ),
     MenuItemEntity(
       menuGroupId: MenuGroupId.operations,
       menuId: MenuId.uploadFiles,
       name: Intl.fileList_menu_uploadFiles.tr,
-      iconData: Icons.upload,
+      iconData: Icons.upload_rounded,
     ),
   ],
 );
@@ -118,13 +124,26 @@ class FileListMenuAnchor extends StatelessWidget {
     ];
     if (canWrite) {
       _addMenus(menus, menuGroupOperations, onMenuClickCallback);
-      menus.add(
-        Container(
-          color: Get.theme.colorScheme.surfaceVariant,
-          height: 3,
-        ),
+    } else {
+      final menuGroupOperations = MenuGroupEntity(
+        menuGroupId: MenuGroupId.operations,
+        children: [
+          MenuItemEntity(
+            menuGroupId: MenuGroupId.operations,
+            menuId: MenuId.downloadAll,
+            name: Intl.fileList_menu_downloadAll.tr,
+            iconData: Icons.download_rounded,
+          )
+        ],
       );
+      _addMenus(menus, menuGroupOperations, onMenuClickCallback);
     }
+    menus.add(
+      Container(
+        color: Get.theme.colorScheme.surfaceVariant,
+        height: 3,
+      ),
+    );
 
     _addMenus(
         menus, _buildMenuGroupSort(sortBy, sortByUp), onMenuClickCallback);
@@ -230,6 +249,7 @@ enum MenuId {
   fileName,
   fileType,
   modifyTime,
+  downloadAll,
   uploadPhotos,
   uploadFiles,
 }

@@ -6,9 +6,14 @@ import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/screen/audio_player_screen.dart';
+import 'package:alist/screen/file_reader_screen.dart';
+import 'package:alist/screen/gallery_screen.dart';
+import 'package:alist/screen/pdf_reader_screen.dart';
 import 'package:alist/screen/video_player_screen.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
+import 'package:alist/util/global.dart';
+import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
@@ -151,16 +156,20 @@ class _RecentsScreenState extends State<RecentsScreen>
         _gotoGalleryScreen(file);
         break;
       case FileType.pdf:
+        var pdfItem = PdfItem(
+          name: file.name,
+          remotePath: file.path,
+          sign: file.sign,
+          provider: file.provider,
+          thumb: file.thumb,
+        );
         Get.toNamed(
           NamedRouter.pdfReader,
-          arguments: {"path": file.path, "title": file.name},
+          arguments: {"pdfItem": pdfItem},
         );
         break;
       case FileType.markdown:
-        Get.toNamed(
-          NamedRouter.markdownReader,
-          arguments: {"markdownPath": file.path, "title": file.name},
-        );
+        _previewMarkdown(file);
         break;
       case FileType.txt:
       case FileType.word:
@@ -169,17 +178,30 @@ class _RecentsScreenState extends State<RecentsScreen>
       case FileType.code:
       case FileType.apk:
       case FileType.compress:
-        Get.toNamed(
-          NamedRouter.fileReader,
-          arguments: {"path": file.path, "fileType": fileType},
-        );
-        break;
       default:
+        var fileReaderItem = FileReaderItem(
+          name: file.name,
+          remotePath: file.path,
+          sign: file.sign,
+          provider: file.provider,
+          thumb: file.thumb,
+          fileType: FileUtils.getFileType(false, file.name),
+        );
         Get.toNamed(
           NamedRouter.fileReader,
-          arguments: {"path": file.path, "fileType": fileType},
+          arguments: {"fileReaderItem": fileReaderItem},
         );
         break;
+    }
+  }
+
+  void _previewMarkdown(FileViewingRecord file) async {
+    var fileLink = await FileUtils.makeFileLink(file.remotePath, file.sign);
+    if (fileLink != null) {
+      Get.toNamed(NamedRouter.web, arguments: {
+        "url": MarkdownUtil.makePreviewUrl(fileLink),
+        "title": file.name
+      });
     }
   }
 
@@ -369,14 +391,16 @@ class _RecentsScreenState extends State<RecentsScreen>
     if (index == -1) {
       index = 0;
     }
-    var videos = files.map(
-      (e) => VideoItem(
-        name: e.name,
-        remotePath: e.path,
-        sign: e.sign,
-        provider: e.provider,
-      ),
-    );
+    var videos = files
+        .map(
+          (e) => VideoItem(
+            name: e.name,
+            remotePath: e.path,
+            sign: e.sign,
+            provider: e.provider,
+          ),
+        )
+        .toList();
     Get.toNamed(
       NamedRouter.videoPlayer,
       arguments: {
@@ -400,14 +424,16 @@ class _RecentsScreenState extends State<RecentsScreen>
       index = 0;
     }
 
-    var audios = files.map(
-      (e) => AudioItem(
-        name: e.name,
-        remotePath: e.path,
-        sign: e.sign,
-        provider: e.provider,
-      ),
-    );
+    var audios = files
+        .map(
+          (e) => AudioItem(
+            name: e.name,
+            remotePath: e.path,
+            sign: e.sign,
+            provider: e.provider,
+          ),
+        )
+        .toList();
     Get.toNamed(
       NamedRouter.audioPlayer,
       arguments: {
@@ -430,10 +456,20 @@ class _RecentsScreenState extends State<RecentsScreen>
     if (index == -1) {
       index = 0;
     }
+    var photos = files
+        .map(
+          (e) => PhotoItem(
+            name: e.name,
+            remotePath: e.path,
+            sign: e.sign,
+            provider: e.provider,
+          ),
+        )
+        .toList();
     Get.toNamed(
       NamedRouter.gallery,
       arguments: {
-        "files": files,
+        "files": photos,
         "index": index,
       },
     );

@@ -23,6 +23,14 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+    <string>ALClient needs permission to access photos on your device</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>ALClient needs permission to add photos to your device</string>
+    <key>NSCameraUsageDescription></key>
+    <string>Photo/video upload function requires you to grant camera access</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>The video/recording upload feature requires you to grant microphone access</string>
 	<key>UIBackgroundModes</key>
     <array>
         <string>audio</string>

@@ -1,10 +1,15 @@
+import 'dart:async';
 import 'dart:io';
 
-import 'package:alist/util/download_utils.dart';
+import 'package:alist/database/alist_database_controller.dart';
+import 'package:alist/util/download/download_manager.dart';
+import 'package:alist/util/download/download_task.dart';
+import 'package:alist/util/download/download_task_status.dart';
 import 'package:alist/util/named_router.dart';
+import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/loading_status_widget.dart';
-import 'package:dio/dio.dart';
+import 'package:alist/widget/overflow_text.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
@@ -19,19 +24,19 @@ class PdfReaderScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlistScaffold(
-      appbarTitle: Text(_controller.title),
+      appbarTitle: OverflowText(text: _controller.pdfItem.name),
       body: Obx(
         () => LoadingStatusWidget(
           loading: _controller.loading.value,
           retryCallback: () => _controller.retry(),
           errorMsg: _controller.errMsg.value,
-          child: buildPDFView(),
+          child: _buildPDFView(),
         ),
       ),
     );
   }
 
-  Widget buildPDFView() {
+  Widget _buildPDFView() {
     return Obx(
       () => _controller.localPath.value.isNotEmpty
           ? PDFView(
@@ -57,9 +62,9 @@ class PdfReaderScreen extends StatelessWidget {
 }
 
 class PdfReaderScreenController extends GetxController {
-  String title = Get.arguments['title'] ?? "";
-  String fileRemotePath = Get.arguments['path'] ?? "";
-  final _cancelToken = CancelToken();
+  PdfItem pdfItem = Get.arguments['pdfItem'];
+  StreamSubscription? _streamSubscription;
+  DownloadTask? _downloadTask;
   var loading = false.obs;
   var localPath = "".obs;
   var errMsg = "".obs;
@@ -67,40 +72,91 @@ class PdfReaderScreenController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _download(fileRemotePath);
+    if (pdfItem.localPath == null || pdfItem.localPath!.isEmpty) {
+      AlistDatabaseController databaseController = Get.find();
+      UserController userController = Get.find();
+      final user = userController.user.value;
+      databaseController.downloadRecordRecordDao
+          .findRecordByRemotePath(
+              user.serverUrl, user.username, pdfItem.remotePath)
+          .then((value) {
+        if (value != null && File(value.localPath).existsSync()) {
+          localPath.value = "file://${value.localPath}";
+        } else {
+          _download();
+          _listenStatus();
+        }
+      });
+    } else if (pdfItem.localPath?.isNotEmpty == true) {
+      localPath.value = "file://${pdfItem.localPath}";
+    }
   }
 
   @override
   void onClose() {
-    _cancelToken.cancel();
+    _downloadTask?.cancel();
+    _streamSubscription?.cancel();
     super.onClose();
   }
 
   void retry() {
     LogUtil.d("retry");
     errMsg.value = "";
-    _download(fileRemotePath);
+    _download();
   }
 
-  void _download(String remotePath) {
+  void _download() async {
     loading.value = true;
-    DownloadUtils.downloadByPath(
-      remotePath,
-      fileType: "PDF",
-      cancelToken: _cancelToken,
-      onSuccess: (_, localPath) {
-        loading.value = false;
-        LogUtil.d("localPath=$localPath");
-        if (Platform.isAndroid) {
-          this.localPath.value = "file://$localPath";
-        } else {
-          this.localPath.value = localPath;
-        }
-      },
-      onFailed: (code, message) {
-        loading.value = false;
-        errMsg.value = message;
-      },
+    _downloadTask = await DownloadManager.instance.download(
+      name: pdfItem.name,
+      remotePath: pdfItem.remotePath,
+      sign: pdfItem.sign ?? "",
+      thumb: pdfItem.thumb,
     );
+    if (_downloadTask == null) {
+      errMsg.value = "Download failed.";
+      loading.value = false;
+      return;
+    }
+    if (_downloadTask?.status == DownloadTaskStatus.finished) {
+      errMsg.value = "";
+      loading.value = false;
+      localPath.value = "file://${_downloadTask!.savedPath}";
+    }
   }
+
+  void _listenStatus() {
+    _streamSubscription =
+        DownloadManager.instance.listenDownloadStatusChange((task) {
+      if (task != _downloadTask) {
+        return;
+      }
+      if (task.status == DownloadTaskStatus.finished) {
+        errMsg.value = "";
+        loading.value = false;
+        localPath.value = "file://${task.savedPath}";
+      } else if (task.status == DownloadTaskStatus.failed) {
+        errMsg.value = task.failedReason ?? "";
+        loading.value = false;
+      }
+    });
+  }
+}
+
+class PdfItem {
+  final String name;
+  String? localPath;
+  final String remotePath;
+  final String? sign;
+  final String? provider;
+  final String? thumb;
+
+  PdfItem({
+    required this.name,
+    this.localPath,
+    required this.remotePath,
+    this.sign,
+    this.provider,
+    this.thumb,
+  });
 }

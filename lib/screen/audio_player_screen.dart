@@ -366,7 +366,7 @@ class AudioPlayerScreenController extends GetxController {
       var record = await databaseController.downloadRecordRecordDao
           .findRecordByRemotePath(
               user.serverUrl, user.username, audio.remotePath);
-      if (record != null) {
+      if (record != null && io.File(record.localPath).existsSync()) {
         audio.localPath = record.localPath;
       }
     }
@@ -376,15 +376,19 @@ class AudioPlayerScreenController extends GetxController {
         tag: mediaItem,
       );
     } else {
-      var headers = <String, String>{};
-      if (audio.provider == "BaiduNetdisk") {
-        headers["User-Agent"] = "pan.baidu.com";
+      if (GetPlatform.isDesktop) {
+        return ProgressiveAudioSource(Uri.parse(uri), tag: mediaItem);
+      } else {
+        var headers = <String, String>{};
+        if (audio.provider == "BaiduNetdisk") {
+          headers["User-Agent"] = "pan.baidu.com";
+        }
+        return AlistLockCachingAudioSource(
+          Uri.parse(uri),
+          headers: headers,
+          tag: mediaItem,
+        );
       }
-      return AlistLockCachingAudioSource(
-        Uri.parse(uri),
-        headers: headers,
-        tag: mediaItem,
-      );
     }
   }
 

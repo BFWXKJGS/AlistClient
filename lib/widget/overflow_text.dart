@@ -72,13 +72,9 @@ class OverflowText extends StatelessWidget {
           }
         }
 
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(leftText?.text ?? "", style: textStyle),
-            Text(ellipsis, style: textStyle),
-            Text(rightText?.text ?? "", style: textStyle),
-          ],
+        return Text(
+          "${leftText?.text ?? ""}$ellipsis${rightText?.text ?? ""}",
+          style: textStyle,
         );
       } else {
         return Text(text, style: textStyle);

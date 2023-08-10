@@ -1,10 +1,15 @@
 package com.github.alist.plugin
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import androidx.core.app.NotificationCompat
+import com.github.alist.DownloadingNotificationService
+import com.github.alist.client.R
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -35,12 +40,23 @@ class AlistPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             }
 
             "isScopedStorage" -> {
-                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-                    || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    || Build.VERSION.SDK_INT < Build.VERSION_CODES.M
+                ) {
                     result.success(false)
                 } else {
                     result.success(true)
                 }
+            }
+
+            "onDownloadingStart" -> {
+                context.startService(Intent(context, DownloadingNotificationService::class.java))
+                result.success(null)
+            }
+
+            "onDownloadingEnd" -> {
+                context.stopService(Intent(context, DownloadingNotificationService::class.java))
+                result.success(null)
             }
 
             else -> {

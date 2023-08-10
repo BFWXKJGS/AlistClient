@@ -4,7 +4,6 @@ import 'dart:math';
 
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/util/log_utils.dart';
-import 'package:alist/widget/overflow_text.dart';
 import 'package:alist/widget/slider.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
@@ -135,7 +134,6 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   void initState() {
     super.initState();
     _enableWakelock();
-    _setSystemUI();
 
     //开启混音模式
     if (Platform.isIOS) {
@@ -490,10 +488,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
         overlays: [SystemUiOverlay.bottom, SystemUiOverlay.top]);
-    await Future.delayed(const Duration(milliseconds: 200));
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light.copyWith(
-      statusBarColor: Colors.transparent,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
     setState(() {
       _fullscreen = false;
     });
@@ -525,7 +520,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   Widget _buildErrorContainer(BuildContext context) {
     return Column(
       children: [
-        _buildAppbar(),
+        _buildAppbar(context),
         Expanded(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -563,17 +558,22 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     );
   }
 
-  Widget _buildAppbar() {
+  AppBar _buildAppbar(BuildContext context) {
     return AppBar(
       backgroundColor: Colors.transparent,
       foregroundColor: Colors.white,
-      title: OverflowText(
-        text : widget.videoTitle,
+      title: Text(
+        widget.videoTitle,
         style: const TextStyle(
           color: Colors.white,
         ),
       ),
-      // systemOverlayStyle: SystemUiOverlayStyle.dark,
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        systemNavigationBarColor: Theme.of(context).colorScheme.background,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
     );
   }
 
@@ -598,7 +598,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
             AnimatedOpacity(
               opacity: (_hideStuff || _locked) ? 0.0 : 0.7,
               duration: const Duration(milliseconds: 400),
-              child: _buildAppbar(),
+              child: _buildAppbar(context),
             ),
             Expanded(child: _buildContainerWithoutAppbar(context)),
           ],
@@ -915,18 +915,6 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         },
       ),
     );
-  }
-
-  void _setSystemUI() {
-    Future.delayed(const Duration(milliseconds: 500)).then((value) {
-      if (context.mounted) {
-        var size = MediaQuery.of(Get.context!).size;
-        if (size.height > size.width) {
-          SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light
-              .copyWith(statusBarColor: Colors.transparent));
-        }
-      }
-    });
   }
 }
 

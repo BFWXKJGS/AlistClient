@@ -18,14 +18,19 @@ import 'package:alist/screen/file_list/file_copy_move_dialog.dart';
 import 'package:alist/screen/file_list/file_list_menu_anchor.dart';
 import 'package:alist/screen/file_list/file_rename_dialog.dart';
 import 'package:alist/screen/file_list/mkdir_dialog.dart';
+import 'package:alist/screen/file_reader_screen.dart';
+import 'package:alist/screen/gallery_screen.dart';
+import 'package:alist/screen/pdf_reader_screen.dart';
 import 'package:alist/screen/video_player_screen.dart';
-import 'package:alist/util/download_manager.dart';
 import 'package:alist/util/alist_plugin.dart';
+import 'package:alist/util/constant.dart';
+import 'package:alist/util/download/download_manager.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/focus_node_utils.dart';
 import 'package:alist/util/global.dart';
 import 'package:alist/util/log_utils.dart';
+import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/proxy.dart';
 import 'package:alist/util/string_utils.dart';
@@ -252,6 +257,8 @@ class _FileListScreenState extends State<FileListScreen>
               }
             } else if (menu.menuId == MenuId.uploadPhotos) {
               _uploadPhotos();
+            } else if (menu.menuId == MenuId.downloadAll) {
+              _downloadAll();
             }
             break;
           case MenuGroupId.sort:
@@ -321,6 +328,36 @@ class _FileListScreenState extends State<FileListScreen>
         },
       );
       _refreshIndicatorKey.currentState?.show();
+    }
+  }
+
+  void _downloadAll() async {
+    var files = _files.toList();
+    files.removeWhere((element) => element.isDir);
+    if (files.isEmpty) {
+      SmartDialog.showToast(Intl.fileList_tips_noDownloadableFiles.tr);
+      return;
+    }
+
+    var hasAdded = false;
+    for (var file in files) {
+      var task = await DownloadManager.instance.enqueueFile(file);
+      if (!hasAdded && task != null) {
+        hasAdded = true;
+      }
+    }
+
+    if (hasAdded) {
+      var isFirstTimeDownload = SpUtil.getBool(
+        AlistConstant.isFirstTimeDownload,
+        defValue: true,
+      );
+      if (isFirstTimeDownload == true) {
+        SpUtil.putBool(AlistConstant.isFirstTimeDownload, false);
+        _showDownloadTipDialog();
+      } else {
+        SmartDialog.showToast(Intl.downloadManager_tips_addToQueue.tr);
+      }
     }
   }
 
@@ -400,9 +437,16 @@ class _FileListScreenState extends State<FileListScreen>
         _goGalleryScreen(file, files);
         break;
       case FileType.pdf:
+        var pdfItem = PdfItem(
+          name: file.name,
+          remotePath: file.path,
+          sign: file.sign,
+          provider: file.provider,
+          thumb: file.thumb,
+        );
         Get.toNamed(
           NamedRouter.pdfReader,
-          arguments: {"path": file.path, "title": file.name},
+          arguments: {"pdfItem": pdfItem},
         );
         break;
       case FileType.markdown:
@@ -415,15 +459,18 @@ class _FileListScreenState extends State<FileListScreen>
       case FileType.code:
       case FileType.apk:
       case FileType.compress:
-        Get.toNamed(
-          NamedRouter.fileReader,
-          arguments: {"path": file.path, "fileType": fileType},
-        );
-        break;
       default:
+        var fileReaderItem = FileReaderItem(
+          name: file.name,
+          remotePath: file.path,
+          sign: file.sign,
+          provider: file.provider,
+          thumb: file.thumb,
+          fileType: file.type,
+        );
         Get.toNamed(
           NamedRouter.fileReader,
-          arguments: {"path": file.path, "fileType": fileType},
+          arguments: {"fileReaderItem": fileReaderItem},
         );
         break;
     }
@@ -449,9 +496,17 @@ class _FileListScreenState extends State<FileListScreen>
   }
 
   void _goGalleryScreen(FileItemVO file, List<FileItemVO> files) async {
-    var images =
-        files.where((element) => element.type == FileType.image).toList();
-    final index = images.indexOf(file);
+    var images = files
+        .where((element) => element.type == FileType.image)
+        .map((e) => PhotoItem(
+              name: e.name,
+              remotePath: e.path,
+              sign: e.sign,
+              provider: e.provider,
+            ))
+        .toList();
+    final index =
+        images.indexWhere((element) => element.remotePath == file.path);
 
     Get.toNamed(
       NamedRouter.gallery,
@@ -604,9 +659,24 @@ class _FileListScreenState extends State<FileListScreen>
                     ListTile(
                       leading: const Icon(Icons.download_rounded),
                       title: Text(Intl.fileList_menu_download.tr),
-                      onTap: () {
+                      onTap: () async {
                         Navigator.pop(context);
-                        DownloadManager.instance.downloadFileItem(file);
+                        final task =
+                            await DownloadManager.instance.enqueueFile(file);
+                        if (task != null) {
+                          var isFirstTimeDownload = SpUtil.getBool(
+                            AlistConstant.isFirstTimeDownload,
+                            defValue: true,
+                          );
+                          if (isFirstTimeDownload == true) {
+                            SpUtil.putBool(
+                                AlistConstant.isFirstTimeDownload, false);
+                            _showDownloadTipDialog();
+                          } else {
+                            SmartDialog.showToast(
+                                Intl.downloadManager_tips_addToQueue.tr);
+                          }
+                        }
                       },
                     ),
                   if (_hasWritePermission)
@@ -849,10 +919,30 @@ class _FileListScreenState extends State<FileListScreen>
   void _previewMarkdown(FileItemVO file) async {
     var fileLink = await FileUtils.makeFileLink(file.path, file.sign);
     if (fileLink != null) {
-      var uri =
-          "https://${Global.configServerHost}/alist_h5/showMarkDown?markdownUrl=${Uri.encodeComponent(fileLink)}";
-      Get.toNamed(NamedRouter.web, arguments: {"url": uri, "title": file.name});
+      Get.toNamed(NamedRouter.web, arguments: {
+        "url": MarkdownUtil.makePreviewUrl(fileLink),
+        "title": file.name
+      });
     }
+  }
+
+  void _showDownloadTipDialog() {
+    SmartDialog.show(
+        clickMaskDismiss: false,
+        builder: (context) {
+          return AlertDialog(
+            title: Text(Intl.downloadManager_downloadTipDialog_title.tr),
+            content: Text(Intl.downloadManager_downloadTipDialog_content.tr),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  SmartDialog.dismiss();
+                },
+                child: Text(Intl.downloadManager_downloadTipDialog_iKnow.tr),
+              ),
+            ],
+          );
+        });
   }
 }
 
@@ -896,10 +986,10 @@ class _FileListView extends StatelessWidget {
             sizeDesc: null,
             onTap: () {
               if (GetUtils.isURL(readme!)) {
-                var uri =
-                    "https://${Global.configServerHost}/alist_h5/showMarkDown?markdownUrl=${Uri.encodeComponent(readme!)}";
-                Get.toNamed(NamedRouter.web,
-                    arguments: {"url": uri, "title": "README.md"});
+                Get.toNamed(NamedRouter.web, arguments: {
+                  "url": MarkdownUtil.makePreviewUrl(readme!),
+                  "title": "README.md"
+                });
               } else {
                 _readMarkdownContent();
               }
@@ -961,11 +1051,10 @@ class _FileListView extends StatelessWidget {
     var proxyUri = proxyServer.makeContentUri(path ?? "/", readme!);
     LogUtil.d("proxyUri ${proxyUri.toString()}");
 
-    var uri =
-        "https://${Global.configServerHost}/alist_h5/showMarkDown?markdownUrl=${Uri.encodeComponent(proxyUri.toString())}";
-
-    await Get.toNamed(NamedRouter.web,
-        arguments: {"url": uri, "title": "README.md"});
+    await Get.toNamed(NamedRouter.web, arguments: {
+      "url": MarkdownUtil.makePreviewUrl(proxyUri.toString()),
+      "title": "README.md"
+    });
     proxyServer.stop();
   }
 }

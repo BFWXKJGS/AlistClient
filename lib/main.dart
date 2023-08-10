@@ -78,6 +78,8 @@ class MyApp extends StatelessWidget {
           systemOverlayStyle: const SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
             statusBarIconBrightness: Brightness.light,
+            systemNavigationBarColor: Color(0xFF1A1C1E),
+            systemNavigationBarIconBrightness: Brightness.light,
           ),
         ));
   }
@@ -97,7 +99,7 @@ class MyApp extends StatelessWidget {
           fontSize: 18,
           fontWeight: FontWeight.w500,
         ),
-        systemOverlayStyle: SystemUiOverlayStyle.dark.copyWith(
+        systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.dark,
           systemNavigationBarColor: Colors.white,

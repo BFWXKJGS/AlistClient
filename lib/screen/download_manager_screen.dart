@@ -5,38 +5,65 @@ import 'dart:io';
 import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/dao/file_download_record_dao.dart';
 import 'package:alist/entity/downloads_info.dart';
+import 'package:alist/l10n/intl_keys.dart';
+import 'package:alist/screen/audio_player_screen.dart';
+import 'package:alist/screen/file_reader_screen.dart';
+import 'package:alist/screen/gallery_screen.dart';
+import 'package:alist/screen/pdf_reader_screen.dart';
 import 'package:alist/screen/video_player_screen.dart';
-import 'package:alist/util/download_manager.dart';
+import 'package:alist/util/alist_plugin.dart';
+import 'package:alist/util/constant.dart';
+import 'package:alist/util/download/download_manager.dart';
+import 'package:alist/util/download/download_task_status.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
+import 'package:alist/util/global.dart';
+import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/util/named_router.dart';
+import 'package:alist/util/proxy.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/overflow_text.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flustars/flustars.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+typedef OnDownloadManagerMenuClickCallback = Function(
+    DownloadManagerMenuId menuId);
 
 class DownloadManagerScreen extends StatelessWidget {
-  const DownloadManagerScreen({super.key});
+  DownloadManagerScreen({super.key});
+
+  // use key to get the more icon's location and size
+  final GlobalKey _moreIconKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(DownloadManagerController());
-    return AlistScaffold(
-      appbarTitle: Text("下载管理"),
+    DownloadManagerController controller = Get.put(DownloadManagerController());
+    Widget scaffold = AlistScaffold(
+      appbarTitle: Text(Intl.downloadManagerScreen_title.tr),
       body:
           SlidableAutoCloseBehavior(child: _buildDownloadListView(controller)),
+      appbarActions: [_menuMoreIcon(controller)],
+    );
+    return DownloadManagerAnchor(
+      controller: controller,
+      child: scaffold,
+      onMenuClickCallback: (menuId) => controller.onMenuClick(menuId),
     );
   }
 
   Widget _buildDownloadListView(DownloadManagerController controller) {
     return Obx(
       () => controller._downloadList.isEmpty
-          ? const Center(
-              child: Text("暂无下载记录"),
+          ? Center(
+              child: Text(Intl.recentsScreen_noRecord.tr),
             )
           : ListView.separated(
               itemBuilder: (context, index) =>
@@ -44,6 +71,26 @@ class DownloadManagerScreen extends StatelessWidget {
               separatorBuilder: (context, index) => const Divider(),
               itemCount: controller._downloadList.length,
             ),
+    );
+  }
+
+  IconButton _menuMoreIcon(DownloadManagerController controller) {
+    return IconButton(
+      key: _moreIconKey,
+      onPressed: () {
+        var menuController = controller.menuController;
+        RenderObject? renderObject =
+            _moreIconKey.currentContext?.findRenderObject();
+        if (renderObject is RenderBox) {
+          var position = renderObject.localToGlobal(Offset.zero);
+          var size = renderObject.size;
+          var menuWidth = controller.menuWidth;
+          menuController.open(
+              position: Offset(position.dx + size.width - menuWidth - 10,
+                  position.dy + size.height));
+        }
+      },
+      icon: const Icon(Icons.more_horiz_rounded),
     );
   }
 
@@ -63,7 +110,7 @@ class DownloadManagerScreen extends StatelessWidget {
       ),
       title: OverflowText(text: downloadItem.name),
       subtitle: Obx(() {
-        return Text(downloadItem.status.value);
+        return OverflowText(text: downloadItem.status.value);
       }),
       trailing: Obx(() => _buildTrailing(controller, downloadItem)),
       onTap: () => controller.onTap(downloadItem),
@@ -78,7 +125,7 @@ class DownloadManagerScreen extends StatelessWidget {
             onPressed: (context) => controller.delete(downloadItem),
             backgroundColor: Colors.red,
             foregroundColor: Colors.white,
-            label: "删除",
+            label: Intl.downloadManagerScreen_menu_delete.tr,
           ),
         ],
       ),
@@ -124,10 +171,88 @@ class DownloadManagerScreen extends StatelessWidget {
   }
 }
 
+class DownloadManagerAnchor extends StatelessWidget {
+  final DownloadManagerController controller;
+  final Widget child;
+  final OnDownloadManagerMenuClickCallback? onMenuClickCallback;
+
+  const DownloadManagerAnchor({
+    super.key,
+    required this.controller,
+    required this.child,
+    this.onMenuClickCallback,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final menuWidth = controller.menuWidth;
+    return MenuAnchor(
+      style: MenuStyle(
+          fixedSize: MaterialStatePropertyAll(Size.fromWidth(menuWidth))),
+      controller: controller.menuController,
+      anchorTapClosesMenu: true,
+      onOpen: () {
+        controller.isMenuOpen.value = true;
+      },
+      onClose: () {
+        controller.isMenuOpen.value = false;
+      },
+      menuChildren: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: _buildMenus(
+            menuWidth,
+            onMenuClickCallback,
+          ),
+        ),
+      ],
+      child: Obx(
+        () => AbsorbPointer(
+          absorbing: controller.isMenuOpen.value,
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildMenus(double menuWidth,
+      OnDownloadManagerMenuClickCallback? onMenuClickCallback) {
+    var buttonStartAll = MenuItemButton(
+        onPressed: () =>
+            onMenuClickCallback?.call(DownloadManagerMenuId.startAll),
+        child: Text(Intl.downloadManagerScreen_menu_startAll.tr));
+    var buttonPauseAll = MenuItemButton(
+        onPressed: () =>
+            onMenuClickCallback?.call(DownloadManagerMenuId.pauseAll),
+        child: Text(Intl.downloadManagerScreen_menu_pauseAll.tr));
+    var buttonBackgroundDownload = MenuItemButton(
+        onPressed: () =>
+            onMenuClickCallback?.call(DownloadManagerMenuId.backgroundDownload),
+        child:
+            Text(Intl.downloadManagerScreen_menu_allowBackgroundDownloads.tr));
+    var buttonSetRunningQueueSize = MenuItemButton(
+        onPressed: () => onMenuClickCallback
+            ?.call(DownloadManagerMenuId.setRunningQueueSize),
+        child: Text(Intl.downloadManagerScreen_menu_setRunningQueueSize.tr));
+    return [
+      SizedBox(
+        width: menuWidth,
+      ),
+      buttonStartAll,
+      buttonPauseAll,
+      if (Platform.isAndroid) buttonBackgroundDownload,
+      buttonSetRunningQueueSize,
+    ];
+  }
+}
+
 class DownloadManagerController extends GetxController {
   final _downloadList = <DownloadItem>[].obs;
   late StreamSubscription _downloadProgressSubscription;
   late StreamSubscription _downloadStatusSubscription;
+  final isMenuOpen = false.obs;
+  final menuController = MenuController();
+  var menuWidth = 160.0;
 
   @override
   void onInit() {
@@ -142,14 +267,15 @@ class DownloadManagerController extends GetxController {
           .firstWhereOrNull((element) => element.savedPath == task.savedPath);
       if (item != null) {
         item.downloadStatus.value = task.status;
-        if (task.contentLength != null) {
-          item.status.value =
-              "下载中(${(task.downloaded / task.contentLength! * 100).toStringAsFixed(2)}%)";
-        } else {
-          item.status.value = "下载中";
-        }
+        item.downloaded = task.downloaded;
+        item.contentLength = task.contentLength;
+
+        var status = Intl.downloadManagerScreen_status_downloading.tr;
+        status = _resetStatus(status, task.downloaded, task.contentLength);
+        item.status.value = status;
       }
     });
+
     _downloadStatusSubscription =
         DownloadManager.instance.listenDownloadStatusChange((task) {
       var item = _downloadList
@@ -158,39 +284,72 @@ class DownloadManagerController extends GetxController {
         item.downloadStatus.value = task.status;
         switch (item.downloadStatus.value) {
           case DownloadTaskStatus.finished:
-            item.status.value = "已下载完毕";
+            var status = Intl.downloadManagerScreen_status_finish.tr;
+            var contentLength = task.contentLength;
+            if (File(task.savedPath).existsSync()) {
+              contentLength = File(task.savedPath).lengthSync();
+            }
+            if (contentLength != null && contentLength > 0) {
+              status = "$status - ${FileUtils.formatBytes(contentLength ?? 0)}";
+            }
+            item.status.value = status;
             break;
           case DownloadTaskStatus.failed:
-            item.status.value = "下载失败(${task.failedReason ?? ""})";
+            item.status.value =
+                "${Intl.downloadManagerScreen_status_downloadFailed.tr}(${task.failedReason ?? ""})";
             break;
           case DownloadTaskStatus.paused:
-            if (task.contentLength != null) {
-              item.status.value =
-                  "已暂停(已下载${(task.downloaded / task.contentLength! * 100).toStringAsFixed(2)}%)";
-            } else {
-              item.status.value = "已暂停";
-            }
+            var status = Intl.downloadManagerScreen_status_pause.tr;
+            status = _resetStatus(status, task.downloaded, task.contentLength);
+            item.status.value = status;
             break;
           case DownloadTaskStatus.waiting:
-            item.status.value = "等待中";
+            var status = Intl.downloadManagerScreen_status_waiting.tr;
+            status = _resetStatus(status, task.downloaded, task.contentLength);
+            item.status.value = status;
             break;
           case DownloadTaskStatus.downloading:
-            if (task.contentLength != null) {
-              item.status.value =
-                  "下载中(${(task.downloaded / task.contentLength! * 100).toStringAsFixed(2)}%)";
-            } else {
-              item.status.value = "下载中";
+            var status = Intl.downloadManagerScreen_status_downloading.tr;
+            var downloaded = task.downloaded;
+            var contentLength = task.contentLength;
+            if (contentLength == null && downloaded == 0) {
+              downloaded = item.downloaded;
+              contentLength = item.contentLength;
             }
+            status = _resetStatus(status, downloaded, contentLength);
+            item.status.value = status;
             break;
           case DownloadTaskStatus.decompressing:
-            item.status.value = "解压中";
+            item.status.value =
+                Intl.downloadManagerScreen_status_decompressing.tr;
             break;
           case DownloadTaskStatus.canceled:
-            item.status.value = "已取消";
+            var status = Intl.downloadManagerScreen_status_canceled.tr;
+            status = _resetStatus(status, task.downloaded, task.contentLength);
+            item.status.value = status;
             break;
         }
       }
     });
+
+    if (Get.locale.toString().contains("zh")) {
+      menuWidth = 160;
+    } else {
+      menuWidth = 220;
+    }
+  }
+
+  String _resetStatus(String status, int downloaded, int? contentLength) {
+    if (downloaded == 0) {
+      return status;
+    }
+    if (contentLength != null && contentLength > 0) {
+      status =
+          "$status - ${FileUtils.formatBytes(downloaded)}/${FileUtils.formatBytes(contentLength)}";
+    } else {
+      status = "$status - ${FileUtils.formatBytes(downloaded)}";
+    }
+    return status;
   }
 
   @override
@@ -214,85 +373,70 @@ class DownloadManagerController extends GetxController {
     }
     var downloadManager = DownloadManager.instance;
 
-    var downloadItems = files.map((e) {
-      var task = downloadManager.findTaskBySavedPath(e.localPath);
-      if (task != null) {
-        var status = task.status == DownloadTaskStatus.waiting ? "等待中" : "下载中";
-        return DownloadItem(
-          id: e.id ?? 0,
-          name: e.name,
-          remotePath: e.remotePath,
-          savedPath: e.localPath,
-          sign: e.sign,
-          status: status,
-          downloadStatus: task.status,
-          thumbnail: e.thumbnail,
-        );
-      } else {
-        var localFile = File(e.localPath);
-        if (localFile.existsSync()) {
-          return DownloadItem(
-            id: e.id ?? 0,
-            name: e.name,
-            remotePath: e.remotePath,
-            savedPath: e.localPath,
-            sign: e.sign,
-            status: "已下载完毕",
-            downloadStatus: DownloadTaskStatus.finished,
-            thumbnail: e.thumbnail,
-          );
-        }
+    List<DownloadItem> downloadList = [];
+    for (var file in files) {
+      var task = downloadManager.findTaskBySavedPath(file.localPath);
+      var tmpFile = File("${file.localPath}.tmp");
+      var downloadInfoFile = File("${file.localPath}.downloads");
 
-        var tmpFile = File("${e.localPath}.tmp");
-        var downloadInfoFile = File("${e.localPath}.downloads");
-        if (tmpFile.existsSync() || downloadInfoFile.existsSync()) {
-          var contentLength = _readContentLength(downloadInfoFile);
-          if (contentLength != null) {
-            return DownloadItem(
-              id: e.id ?? 0,
-              name: e.name,
-              remotePath: e.remotePath,
-              savedPath: e.localPath,
-              sign: e.sign,
-              status:
-                  "已暂停(已下载${(tmpFile.lengthSync() / contentLength * 100).toStringAsFixed(2)}%)",
-              downloadStatus: DownloadTaskStatus.paused,
-              thumbnail: e.thumbnail,
-            );
-          }
-
-          return DownloadItem(
-            id: e.id ?? 0,
-            name: e.name,
-            remotePath: e.remotePath,
-            savedPath: e.localPath,
-            sign: e.sign,
-            status: "已暂停",
-            downloadStatus: DownloadTaskStatus.paused,
-            thumbnail: e.thumbnail,
-          );
-        }
-
-        return DownloadItem(
-          id: e.id ?? 0,
-          name: e.name,
-          remotePath: e.remotePath,
-          savedPath: e.localPath,
-          sign: e.sign,
-          status: "已暂停(已下载0%)",
-          downloadStatus: DownloadTaskStatus.paused,
-          thumbnail: e.thumbnail,
-        );
+      int? contentLengthInt;
+      int downloadedInt = 0;
+      if (tmpFile.existsSync() || downloadInfoFile.existsSync()) {
+        contentLengthInt = await _readContentLength(downloadInfoFile);
       }
-    });
-    _downloadList.value = downloadItems.toList();
-    LogUtil.d("downloadItems=${downloadItems.length}");
+      if (tmpFile.existsSync()) {
+        downloadedInt = tmpFile.lengthSync();
+      }
+
+      String? status;
+      DownloadTaskStatus? downloadStatus;
+      if (task != null) {
+        downloadStatus = task.status;
+        status = task.status == DownloadTaskStatus.waiting
+            ? Intl.downloadManagerScreen_status_waiting.tr
+            : Intl.downloadManagerScreen_status_downloading.tr;
+      } else {
+        if (File(file.localPath).existsSync()) {
+          downloadStatus = DownloadTaskStatus.finished;
+          status = Intl.downloadManagerScreen_status_finish.tr;
+        } else {
+          downloadStatus = DownloadTaskStatus.paused;
+          status = Intl.downloadManagerScreen_status_pause.tr;
+        }
+      }
+      if (downloadStatus != DownloadTaskStatus.finished && downloadedInt > 0) {
+        status = _resetStatus(status, downloadedInt, contentLengthInt);
+      } else if (downloadStatus == DownloadTaskStatus.finished) {
+        if (File(file.localPath).existsSync()) {
+          status =
+              "$status - ${FileUtils.formatBytes(File(file.localPath).lengthSync())}";
+        }
+      }
+
+      LogUtil.d("localPath=${file.localPath}");
+      var item = DownloadItem(
+        id: file.id ?? 0,
+        name: file.name,
+        remotePath: file.remotePath,
+        savedPath: file.localPath,
+        sign: file.sign,
+        thumbnail: file.thumbnail,
+        contentLength: contentLengthInt,
+        downloaded: downloadedInt,
+        status: status,
+        downloadStatus: downloadStatus!,
+      );
+      downloadList.add(item);
+    }
+    _downloadList.value = downloadList.toList();
+    LogUtil.d("downloadItems=${downloadList.length}");
   }
 
-  int? _readContentLength(File downloadInfoFile) {
+  Future<int?> _readContentLength(File downloadInfoFile) async {
     try {
-      var savedJson = downloadInfoFile.readAsStringSync();
-      var downloadsInfo = DownloadsInfo.fromJson(jsonDecode(savedJson));
+      var savedJson = await downloadInfoFile.readAsString();
+      var json = await compute(jsonDecode, savedJson);
+      var downloadsInfo = DownloadsInfo.fromJson(json);
       return downloadsInfo.contentLength;
     } catch (e) {
       return null;
@@ -300,7 +444,7 @@ class DownloadManagerController extends GetxController {
   }
 
   void download(DownloadItem downloadItem) {
-    DownloadManager.instance.download(
+    DownloadManager.instance.enqueue(
       name: downloadItem.name,
       remotePath: downloadItem.remotePath ?? "",
       sign: downloadItem.sign ?? "",
@@ -334,23 +478,287 @@ class DownloadManagerController extends GetxController {
   }
 
   void onTap(DownloadItem downloadItem) {
+    if (downloadItem.downloadStatus.value != DownloadTaskStatus.finished) {
+      if (downloadItem.downloadStatus.value == DownloadTaskStatus.paused) {
+        download(downloadItem);
+      } else {
+        pause(downloadItem);
+      }
+      return;
+    }
+    if (!File(downloadItem.savedPath).existsSync()) {
+      SmartDialog.showToast(Intl.downloadManagerScreen_tips_fileNotFound.tr);
+      return;
+    }
+
     var fileType = FileUtils.getFileType(false, downloadItem.name);
+    var files = <DownloadItem>[];
+    for (var file in _downloadList) {
+      if (file.downloadStatus.value != DownloadTaskStatus.finished) {
+        continue;
+      }
+      var type = FileUtils.getFileType(false, file.name);
+      if (type == fileType) {
+        files.add(file);
+      }
+    }
+    var index = files.indexOf(downloadItem);
+
     switch (fileType) {
       case FileType.video:
-        var video = VideoItem(
+        var videos = files.map((e) {
+          return VideoItem(
+            name: e.name,
+            localPath: e.savedPath,
+            remotePath: e.remotePath ?? "",
+            sign: e.sign ?? "",
+          );
+        }).toList();
+        Get.toNamed(NamedRouter.videoPlayer,
+            arguments: {"videos": videos, "index": index});
+        break;
+      case FileType.audio:
+        var audios = files.map((e) {
+          return AudioItem(
+            name: e.name,
+            localPath: e.savedPath,
+            remotePath: e.remotePath ?? "",
+            sign: e.sign ?? "",
+          );
+        }).toList();
+        Get.toNamed(NamedRouter.audioPlayer,
+            arguments: {"audios": audios, "index": index});
+        break;
+      case FileType.image:
+        var photos = files.map((e) {
+          return PhotoItem(
+            name: e.name,
+            localPath: e.savedPath,
+            remotePath: e.remotePath ?? "",
+            sign: e.sign ?? "",
+          );
+        }).toList();
+        Get.toNamed(NamedRouter.gallery,
+            arguments: {"files": photos, "index": index});
+        break;
+      case FileType.pdf:
+        var pdfItem = PdfItem(
           name: downloadItem.name,
           localPath: downloadItem.savedPath,
           remotePath: downloadItem.remotePath ?? "",
-          sign: downloadItem.sign ?? "",
+          sign: downloadItem.sign,
+          thumb: downloadItem.thumbnail,
         );
-        Get.toNamed(NamedRouter.videoPlayer, arguments: {
-          "videos": [video],
-          "index": 0
-        });
+        Get.toNamed(
+          NamedRouter.pdfReader,
+          arguments: {"pdfItem": pdfItem},
+        );
+        break;
+      case FileType.markdown:
+        _previewMarkdown(downloadItem);
         break;
       default:
+        var fileReaderItem = FileReaderItem(
+          name: downloadItem.name,
+          localPath: downloadItem.savedPath,
+          remotePath: downloadItem.remotePath ?? "",
+          sign: downloadItem.sign,
+          thumb: downloadItem.thumbnail,
+          fileType: fileType,
+        );
+        Get.toNamed(
+          NamedRouter.fileReader,
+          arguments: {"fileReaderItem": fileReaderItem},
+        );
         break;
     }
+  }
+
+  void _previewMarkdown(DownloadItem item) async {
+    ProxyServer proxyServer = Get.find();
+    // 开启本地代理服务器
+    await proxyServer.start();
+    var file = File(item.savedPath);
+    var fileContent = await file.readAsString();
+
+    var proxyUri =
+        proxyServer.makeContentUri(item.remotePath ?? "/", fileContent);
+
+    await Get.toNamed(NamedRouter.web,
+        arguments: {"url": MarkdownUtil.makePreviewUrl(proxyUri.toString()), "title": item.name});
+    proxyServer.stop();
+  }
+
+  void onMenuClick(DownloadManagerMenuId menuId) {
+    switch (menuId) {
+      case DownloadManagerMenuId.startAll:
+        _tryStartAll();
+        break;
+      case DownloadManagerMenuId.pauseAll:
+        _tryPauseAll();
+        break;
+      case DownloadManagerMenuId.backgroundDownload:
+        _requestPermission();
+        break;
+      case DownloadManagerMenuId.setRunningQueueSize:
+        FixedExtentScrollController scrollController =
+            FixedExtentScrollController(
+                initialItem: DownloadManager.instance.maxRunningTaskCount - 1);
+        showModalBottomSheet(
+            context: Get.context!,
+            builder: (context) {
+              return SetMaxRunningTasksSizeDialog(
+                scrollController: scrollController,
+                onConfirm: () {
+                  var maxRunningTaskCount = scrollController.selectedItem + 1;
+                  DownloadManager.instance
+                      .setMaxRunningTaskCount(maxRunningTaskCount);
+                  SpUtil.putInt(
+                      AlistConstant.maxRunningTaskCount, maxRunningTaskCount);
+                },
+              );
+            });
+        break;
+    }
+  }
+
+  void _tryStartAll() {
+    var list = _downloadList.toList()
+      ..sort((a, b) {
+        return a.id.compareTo(b.id);
+      });
+    for (var item in list) {
+      if (item.downloadStatus.value == DownloadTaskStatus.waiting ||
+          item.downloadStatus.value == DownloadTaskStatus.downloading ||
+          item.downloadStatus.value == DownloadTaskStatus.decompressing ||
+          item.downloadStatus.value == DownloadTaskStatus.finished) {
+        continue;
+      }
+      DownloadManager.instance.enqueue(
+        name: item.name,
+        remotePath: item.remotePath ?? "",
+        sign: item.sign ?? "",
+        thumb: item.thumbnail,
+      );
+    }
+  }
+
+  void _tryPauseAll() {
+    var list = _downloadList.toList();
+    for (var item in list) {
+      if (item.downloadStatus.value == DownloadTaskStatus.waiting ||
+          item.downloadStatus.value == DownloadTaskStatus.downloading ||
+          item.downloadStatus.value == DownloadTaskStatus.decompressing) {
+        DownloadManager.instance.pause(item.savedPath);
+      }
+    }
+  }
+
+  void _requestPermission() async {
+    var isNotificationGranted = await Permission.notification.isGranted;
+    if (!isNotificationGranted) {
+      var status = await Permission.notification.request();
+      if (status.isGranted) {
+        isNotificationGranted = true;
+      } else {
+        SmartDialog.showToast(
+            Intl.downloadManagerScreen_tips_allowNotification.tr);
+      }
+    }
+
+    if (isNotificationGranted &&
+        Platform.isAndroid &&
+        DownloadManager.instance.runningTaskSize > 0) {
+      AlistPlugin.onDownloadingStart();
+    }
+
+    var isIgnoreBatteryOptimizations =
+        await Permission.ignoreBatteryOptimizations.isGranted;
+    AlistPlugin.onDownloadingStart();
+    if (!isIgnoreBatteryOptimizations) {
+      var status = await Permission.ignoreBatteryOptimizations.request();
+      if (status.isGranted) {
+        isIgnoreBatteryOptimizations = true;
+      } else {
+        SmartDialog.showToast(
+            Intl.downloadManagerScreen_tips_ignoreBatteryOptimizations.tr);
+      }
+    }
+
+    if (isNotificationGranted && isIgnoreBatteryOptimizations) {
+      SmartDialog.showToast(
+          Intl.downloadManagerScreen_tips_backgroundDownloadSupported.tr);
+    }
+  }
+}
+
+class SetMaxRunningTasksSizeDialog extends StatelessWidget {
+  const SetMaxRunningTasksSizeDialog({
+    super.key,
+    required this.scrollController,
+    required this.onConfirm,
+  });
+
+  final FixedExtentScrollController scrollController;
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: Get.size.height / 3,
+      child: Column(
+        children: [
+          const SizedBox(
+            height: 5,
+          ),
+          Row(
+            children: [
+              TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child:
+                        Text(Intl.setMaxRunningTasksSizeDialog_btn_cancel.tr),
+                  )),
+              Expanded(
+                  child: Center(
+                child: Text(
+                  Intl.setMaxRunningTasksSizeDialog_title.tr,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              )),
+              TextButton(
+                  onPressed: () {
+                    onConfirm();
+                    Navigator.of(context).pop();
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child:
+                        Text(Intl.setMaxRunningTasksSizeDialog_btn_confirm.tr),
+                  )),
+            ],
+          ),
+          Expanded(
+            child: CupertinoPicker.builder(
+              itemExtent: 50,
+              useMagnifier: true,
+              childCount: 20,
+              scrollController: scrollController,
+              onSelectedItemChanged: (index) {},
+              itemBuilder: (context, index) {
+                return SizedBox(
+                  height: 50,
+                  child: Center(
+                    child: Text("${index + 1}"),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -363,6 +771,8 @@ class DownloadItem {
   final Rx<DownloadTaskStatus> downloadStatus;
   final String savedPath;
   String? thumbnail;
+  int downloaded;
+  int? contentLength;
 
   DownloadItem({
     required this.id,
@@ -373,6 +783,15 @@ class DownloadItem {
     required String status,
     required DownloadTaskStatus downloadStatus,
     this.thumbnail,
+    this.downloaded = 0,
+    this.contentLength,
   })  : status = status.obs,
         downloadStatus = downloadStatus.obs;
+}
+
+enum DownloadManagerMenuId {
+  startAll,
+  pauseAll,
+  backgroundDownload,
+  setRunningQueueSize
 }

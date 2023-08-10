@@ -3,6 +3,7 @@ import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/net/intercept.dart';
 import 'package:alist/util/constant.dart';
+import 'package:alist/util/download/download_manager.dart';
 import 'package:alist/util/global.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
@@ -40,6 +41,11 @@ class _SplashScreenState extends State<SplashScreen> {
       androidNotificationOngoing: true,
     );
     initDio();
+    var maxRunningTaskCount =
+        SpUtil.getInt(AlistConstant.maxRunningTaskCount) ?? 0;
+    if (maxRunningTaskCount > 0) {
+      DownloadManager.instance.setMaxRunningTaskCount(maxRunningTaskCount);
+    }
     var token = SpUtil.getString(AlistConstant.token, defValue: null);
     while (_context == null) {
       await Future.delayed(const Duration(milliseconds: 17));

@@ -1,15 +1,16 @@
-import 'package:flutter/foundation.dart';
-import 'package:markdown/markdown.dart';
+import 'dart:io';
+
+import 'package:alist/util/global.dart';
 
 class MarkdownUtil {
-  static Future<String> toHtml(String markdown) async {
-    return compute(_toHtmlInner, markdown);
-  }
+  static makePreviewUrl(String url) {
+    String scheme;
+    if (Platform.isIOS && url.startsWith("http://")) {
+      scheme = "http";
+    } else {
+      scheme = "https";
+    }
 
-  static String _toHtmlInner(String markdown) {
-    return markdownToHtml(
-      markdown,
-      inlineSyntaxes: [InlineHtmlSyntax()],
-    );
+    return "$scheme://${Global.configServerHost}/alist_h5/showMarkDown?markdownUrl=${Uri.encodeComponent(url)}";
   }
 }
