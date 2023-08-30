@@ -132,7 +132,7 @@ class PdfReaderScreenController extends GetxController {
     if (_downloadTask?.status == DownloadTaskStatus.finished) {
       errMsg.value = "";
       loading.value = false;
-      localPath.value = "file://${_downloadTask!.savedPath}";
+      localPath.value = "file://${_downloadTask!.record.localPath}";
     }
   }
 
@@ -145,7 +145,7 @@ class PdfReaderScreenController extends GetxController {
       if (task.status == DownloadTaskStatus.finished) {
         errMsg.value = "";
         loading.value = false;
-        localPath.value = "file://${task.savedPath}";
+        localPath.value = "file://${task.record.localPath}";
       } else if (task.status == DownloadTaskStatus.failed) {
         errMsg.value = task.failedReason ?? "";
         loading.value = false;

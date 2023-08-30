@@ -341,7 +341,8 @@ class _FileListScreenState extends State<FileListScreen>
 
     var hasAdded = false;
     for (var file in files) {
-      var task = await DownloadManager.instance.enqueueFile(file);
+      var task = await DownloadManager.instance
+          .enqueueFile(file, ignoreDuplicates: true);
       if (!hasAdded && task != null) {
         hasAdded = true;
       }
@@ -358,6 +359,8 @@ class _FileListScreenState extends State<FileListScreen>
       } else {
         SmartDialog.showToast(Intl.downloadManager_tips_addToQueue.tr);
       }
+    } else {
+      SmartDialog.showToast(Intl.downloadManager_tips_noDownloadableFiles.tr);
     }
   }
 
@@ -905,6 +908,9 @@ class _FileListScreenState extends State<FileListScreen>
               remotePath: e.path,
               sign: e.sign,
               provider: e.provider,
+              thumb: e.thumb,
+              size: e.size ?? 0,
+              modifiedMilliseconds: e.modifiedMilliseconds,
             ))
         .toList();
     final index =

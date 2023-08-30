@@ -264,7 +264,7 @@ class DownloadManagerController extends GetxController {
         return;
       }
       var item = _downloadList
-          .firstWhereOrNull((element) => element.savedPath == task.savedPath);
+          .firstWhereOrNull((element) => element.savedPath == task.record.localPath);
       if (item != null) {
         item.downloadStatus.value = task.status;
         item.downloaded = task.downloaded;
@@ -279,15 +279,15 @@ class DownloadManagerController extends GetxController {
     _downloadStatusSubscription =
         DownloadManager.instance.listenDownloadStatusChange((task) {
       var item = _downloadList
-          .firstWhereOrNull((element) => element.savedPath == task.savedPath);
+          .firstWhereOrNull((element) => element.savedPath == task.record.localPath);
       if (item != null) {
         item.downloadStatus.value = task.status;
         switch (item.downloadStatus.value) {
           case DownloadTaskStatus.finished:
             var status = Intl.downloadManagerScreen_status_finish.tr;
             var contentLength = task.contentLength;
-            if (File(task.savedPath).existsSync()) {
-              contentLength = File(task.savedPath).lengthSync();
+            if (File(task.record.localPath).existsSync()) {
+              contentLength = File(task.record.localPath).lengthSync();
             }
             if (contentLength != null && contentLength > 0) {
               status = "$status - ${FileUtils.formatBytes(contentLength ?? 0)}";
@@ -396,7 +396,7 @@ class DownloadManagerController extends GetxController {
             ? Intl.downloadManagerScreen_status_waiting.tr
             : Intl.downloadManagerScreen_status_downloading.tr;
       } else {
-        if (File(file.localPath).existsSync()) {
+        if (file.finished == true) {
           downloadStatus = DownloadTaskStatus.finished;
           status = Intl.downloadManagerScreen_status_finish.tr;
         } else {
@@ -407,7 +407,7 @@ class DownloadManagerController extends GetxController {
       if (downloadStatus != DownloadTaskStatus.finished && downloadedInt > 0) {
         status = _resetStatus(status, downloadedInt, contentLengthInt);
       } else if (downloadStatus == DownloadTaskStatus.finished) {
-        if (File(file.localPath).existsSync()) {
+        if (File(file.localPath).existsSync() && File(file.localPath).existsSync()) {
           status =
               "$status - ${FileUtils.formatBytes(File(file.localPath).lengthSync())}";
         }
@@ -520,6 +520,9 @@ class DownloadManagerController extends GetxController {
             localPath: e.savedPath,
             remotePath: e.remotePath ?? "",
             sign: e.sign ?? "",
+            size: e.contentLength ?? 0,
+            thumb: e.thumbnail,
+            modifiedMilliseconds: 0,
           );
         }).toList();
         Get.toNamed(NamedRouter.videoPlayer,

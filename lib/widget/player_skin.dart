@@ -243,6 +243,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         _playing = playing;
         if (exception != null) {
           _exception = exception;
+          _locked = false;
         }
       });
 

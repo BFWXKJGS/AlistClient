@@ -75,7 +75,7 @@ const translationsEnUS = {
   "fileList_menu_details": "Details",
   "fileList_menu_open": "Open",
   "fileList_menu_copyLink": "Copy Link",
-  "fileList_menu_download": "下载",
+  "fileList_menu_download": "Download",
   "fileList_menu_copy": "Copy",
   "fileList_menu_move": "Move",
   "fileList_menu_rename": "Rename",
@@ -187,6 +187,9 @@ const translationsEnUS = {
       "It's already in the download queue, please don't add it again!",
   "downlodManager_tips_downloading": "This task is being downloaded",
   "downloadManager_tips_addToQueue": "Added to download queue",
+  "downloadManager_tips_noDownloadableFiles": "No downloadable files.",
+  "downloadManager_tips_fileDownloadFinish": "File '%s' download completed.",
+  "downloadManager_tips_fileDownloadFailed": "File '%s' download failed.",
   "downloadManager_downloadTipDialog_title": "Added to queue",
   "downloadManager_downloadTipDialog_content":
       "The file has been added to the download queue, you can check the download progress in \"Settings\"-\"Download Manager\".",

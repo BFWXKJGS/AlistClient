@@ -2,17 +2,20 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:alist/database/alist_database_controller.dart';
+import 'package:alist/database/table/file_download_record.dart';
 import 'package:alist/entity/downloads_info.dart';
 import 'package:alist/util/download/download_manager.dart';
 import 'package:alist/util/download/download_task_status.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:flustars/flustars.dart';
+import 'package:get/get.dart';
 
 class DownloadTask {
   final DownloadManager _downloadManager;
   final String url;
-  final String savedPath;
+  final FileDownloadRecord record;
   final CancelToken _cancelToken;
   final DownloadTaskStatusCallback _statusCallbacks;
   final Map<String, dynamic> requestHeaders;
@@ -28,7 +31,7 @@ class DownloadTask {
     required DownloadTaskStatusCallback statusCallback,
     required this.url,
     required this.requestHeaders,
-    required this.savedPath,
+    required this.record,
     required this.limitFrequency,
     required CancelToken cancelToken,
     DownloadTaskStatus status = DownloadTaskStatus.waiting,
@@ -48,8 +51,8 @@ class DownloadTask {
     }
     _setCurrentStatus(DownloadTaskStatus.downloading);
 
-    var tmpFile = File("$savedPath.tmp");
-    var fileDownloadInfo = File("$savedPath.downloads");
+    var tmpFile = File("${record.localPath}.tmp");
+    var fileDownloadInfo = File("${record.localPath}.downloads");
     DownloadsInfo? downloadsInfo;
     var tmpFileExists = tmpFile.existsSync();
     var downloadInfoFileExists = fileDownloadInfo.existsSync();
@@ -211,7 +214,7 @@ class DownloadTask {
   }
 
   void _setCurrentStatus(DownloadTaskStatus status, {String? reason}) {
-    LogUtil.d("download failed,reason=$reason");
+    LogUtil.d("download status = $status,reason=$reason");
     if (status == DownloadTaskStatus.failed) {
       failedReason = reason;
     } else if (failedReason != null) {
@@ -231,7 +234,7 @@ class DownloadTask {
 
   Future<void> _onDownloadFinish(
       bool decompress, File tmpFile, File fileDownloadInfo) async {
-    File savedFile = File(savedPath);
+    File savedFile = File(record.localPath);
     if (savedFile.existsSync()) {
       await savedFile.delete();
     }
@@ -244,7 +247,7 @@ class DownloadTask {
           .pipe(savedFile.openWrite());
       await tmpFile.delete();
     } else {
-      await tmpFile.rename(savedPath);
+      await tmpFile.rename(record.localPath);
     }
 
     if (!_cancelToken.isCancelled) {
@@ -252,6 +255,11 @@ class DownloadTask {
       if (fileDownloadInfo.existsSync()) {
         fileDownloadInfo.delete();
       }
+
+      AlistDatabaseController databaseController = Get.find();
+      record.finished = true;
+      var updateRecord = await databaseController.downloadRecordRecordDao.updateRecord(record);
+      LogUtil.d("update complete $updateRecord ${record.id}");
     } else {
       _setCurrentStatus(DownloadTaskStatus.canceled);
     }

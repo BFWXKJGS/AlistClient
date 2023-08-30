@@ -95,7 +95,7 @@ class _$AlistDatabase extends AlistDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `video_viewing_record` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `video_sign` TEXT NOT NULL, `path` TEXT NOT NULL, `video_duration` INTEGER NOT NULL, `video_current_position` INTEGER NOT NULL)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `file_download_record` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `sign` TEXT NOT NULL, `name` TEXT NOT NULL, `local_path` TEXT NOT NULL, `create_time` INTEGER NOT NULL, `thumbnail` TEXT, `request_headers` TEXT, `limit_frequency` INTEGER)');
+            'CREATE TABLE IF NOT EXISTS `file_download_record` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `sign` TEXT NOT NULL, `name` TEXT NOT NULL, `local_path` TEXT NOT NULL, `create_time` INTEGER NOT NULL, `thumbnail` TEXT, `request_headers` TEXT, `limit_frequency` INTEGER, `finished` INTEGER)');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `file_password` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `password` TEXT NOT NULL, `create_time` INTEGER NOT NULL)');
         await database.execute(
@@ -245,7 +245,9 @@ class _$FileDownloadRecordRecordDao extends FileDownloadRecordRecordDao {
                   'create_time': item.createTime,
                   'thumbnail': item.thumbnail,
                   'request_headers': item.requestHeaders,
-                  'limit_frequency': item.limitFrequency
+                  'limit_frequency': item.limitFrequency,
+                  'finished':
+                      item.finished == null ? null : (item.finished! ? 1 : 0)
                 }),
         _fileDownloadRecordUpdateAdapter = UpdateAdapter(
             database,
@@ -262,7 +264,9 @@ class _$FileDownloadRecordRecordDao extends FileDownloadRecordRecordDao {
                   'create_time': item.createTime,
                   'thumbnail': item.thumbnail,
                   'request_headers': item.requestHeaders,
-                  'limit_frequency': item.limitFrequency
+                  'limit_frequency': item.limitFrequency,
+                  'finished':
+                      item.finished == null ? null : (item.finished! ? 1 : 0)
                 }),
         _fileDownloadRecordDeletionAdapter = DeletionAdapter(
             database,
@@ -279,7 +283,9 @@ class _$FileDownloadRecordRecordDao extends FileDownloadRecordRecordDao {
                   'create_time': item.createTime,
                   'thumbnail': item.thumbnail,
                   'request_headers': item.requestHeaders,
-                  'limit_frequency': item.limitFrequency
+                  'limit_frequency': item.limitFrequency,
+                  'finished':
+                      item.finished == null ? null : (item.finished! ? 1 : 0)
                 });
 
   final sqflite.DatabaseExecutor database;
@@ -310,7 +316,7 @@ class _$FileDownloadRecordRecordDao extends FileDownloadRecordRecordDao {
   ) async {
     return _queryAdapter.query(
         'SELECT * FROM file_download_record WHERE server_url = ?1 AND user_id=?2 AND sign=?3 LIMIT 1',
-        mapper: (Map<String, Object?> row) => FileDownloadRecord(id: row['id'] as int?, serverUrl: row['server_url'] as String, userId: row['user_id'] as String, remotePath: row['remote_path'] as String, sign: row['sign'] as String, name: row['name'] as String, localPath: row['local_path'] as String, createTime: row['create_time'] as int, thumbnail: row['thumbnail'] as String?, requestHeaders: row['request_headers'] as String?, limitFrequency: row['limit_frequency'] as int?),
+        mapper: (Map<String, Object?> row) => FileDownloadRecord(id: row['id'] as int?, serverUrl: row['server_url'] as String, userId: row['user_id'] as String, remotePath: row['remote_path'] as String, sign: row['sign'] as String, name: row['name'] as String, localPath: row['local_path'] as String, createTime: row['create_time'] as int, thumbnail: row['thumbnail'] as String?, requestHeaders: row['request_headers'] as String?, limitFrequency: row['limit_frequency'] as int?, finished: row['finished'] == null ? null : (row['finished'] as int) != 0),
         arguments: [serverUrl, userId, sign]);
   }
 
@@ -322,7 +328,7 @@ class _$FileDownloadRecordRecordDao extends FileDownloadRecordRecordDao {
   ) async {
     return _queryAdapter.query(
         'SELECT * FROM file_download_record WHERE server_url = ?1 AND user_id=?2 AND remote_path=?3 LIMIT 1',
-        mapper: (Map<String, Object?> row) => FileDownloadRecord(id: row['id'] as int?, serverUrl: row['server_url'] as String, userId: row['user_id'] as String, remotePath: row['remote_path'] as String, sign: row['sign'] as String, name: row['name'] as String, localPath: row['local_path'] as String, createTime: row['create_time'] as int, thumbnail: row['thumbnail'] as String?, requestHeaders: row['request_headers'] as String?, limitFrequency: row['limit_frequency'] as int?),
+        mapper: (Map<String, Object?> row) => FileDownloadRecord(id: row['id'] as int?, serverUrl: row['server_url'] as String, userId: row['user_id'] as String, remotePath: row['remote_path'] as String, sign: row['sign'] as String, name: row['name'] as String, localPath: row['local_path'] as String, createTime: row['create_time'] as int, thumbnail: row['thumbnail'] as String?, requestHeaders: row['request_headers'] as String?, limitFrequency: row['limit_frequency'] as int?, finished: row['finished'] == null ? null : (row['finished'] as int) != 0),
         arguments: [serverUrl, userId, remotePath]);
   }
 
@@ -333,7 +339,7 @@ class _$FileDownloadRecordRecordDao extends FileDownloadRecordRecordDao {
   ) async {
     return _queryAdapter.queryList(
         'SELECT * FROM file_download_record WHERE server_url = ?1 AND user_id=?2 ORDER BY id DESC',
-        mapper: (Map<String, Object?> row) => FileDownloadRecord(id: row['id'] as int?, serverUrl: row['server_url'] as String, userId: row['user_id'] as String, remotePath: row['remote_path'] as String, sign: row['sign'] as String, name: row['name'] as String, localPath: row['local_path'] as String, createTime: row['create_time'] as int, thumbnail: row['thumbnail'] as String?, requestHeaders: row['request_headers'] as String?, limitFrequency: row['limit_frequency'] as int?),
+        mapper: (Map<String, Object?> row) => FileDownloadRecord(id: row['id'] as int?, serverUrl: row['server_url'] as String, userId: row['user_id'] as String, remotePath: row['remote_path'] as String, sign: row['sign'] as String, name: row['name'] as String, localPath: row['local_path'] as String, createTime: row['create_time'] as int, thumbnail: row['thumbnail'] as String?, requestHeaders: row['request_headers'] as String?, limitFrequency: row['limit_frequency'] as int?, finished: row['finished'] == null ? null : (row['finished'] as int) != 0),
         arguments: [serverUrl, userId]);
   }
 

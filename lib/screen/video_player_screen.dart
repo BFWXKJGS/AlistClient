@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:alist/database/alist_database_controller.dart';
+import 'package:alist/database/table/file_viewing_record.dart';
 import 'package:alist/database/table/video_viewing_record.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/util/download/download_manager.dart';
@@ -11,6 +12,7 @@ import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/player_skin.dart';
 import 'package:dio/dio.dart';
+import 'package:floor/floor.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -253,8 +255,32 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       index++;
       _videoTitle = videos[index].name.substringBeforeLast(".");
       _playWithProxyUrl(videos[index]);
+      _fileViewingRecord(videos[index]);
       setState(() {});
     }
+  }
+
+  @transaction
+  Future<void> _fileViewingRecord(VideoItem file) async {
+    var user = _userController.user.value;
+    AlistDatabaseController databaseController =
+        Get.find<AlistDatabaseController>();
+    var recordData = databaseController.fileViewingRecordDao;
+    await recordData.deleteByPath(
+        user.serverUrl, user.username, file.remotePath);
+    await recordData.insertRecord(FileViewingRecord(
+      serverUrl: user.serverUrl,
+      userId: user.username,
+      remotePath: file.remotePath,
+      name: file.name,
+      path: file.remotePath,
+      size: file.size ?? 0,
+      sign: file.sign,
+      thumb: file.thumb,
+      modified: file.modifiedMilliseconds ?? 0,
+      provider: file.provider ?? "",
+      createTime: DateTime.now().millisecondsSinceEpoch,
+    ));
   }
 }
 
@@ -264,6 +290,9 @@ class VideoItem {
   final String remotePath;
   final String? sign;
   final String? provider;
+  final String? thumb;
+  final int? size;
+  final int? modifiedMilliseconds;
 
   VideoItem({
     required this.name,
@@ -271,5 +300,8 @@ class VideoItem {
     required this.remotePath,
     this.sign,
     this.provider,
+    required this.thumb,
+    required this.size,
+    required this.modifiedMilliseconds,
   });
 }

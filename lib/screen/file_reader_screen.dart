@@ -173,14 +173,14 @@ class _FileReaderContainerState extends State<_FileReaderContainer> {
       setState(() {
         this.fileName = fileName;
         _downloadProgress = 100;
-        _localPath = _downloadTask?.savedPath;
+        _localPath = _downloadTask?.record.localPath;
       });
     } else {
       var fileName = widget.fileReaderItem.name;
       setState(() {
         this.fileName = fileName;
       });
-      _openFile(_downloadTask?.savedPath);
+      _openFile(_downloadTask?.record.localPath);
     }
   }
 

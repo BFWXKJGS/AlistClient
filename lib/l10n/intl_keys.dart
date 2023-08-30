@@ -177,6 +177,9 @@ class Intl {
   static const String downlodManager_tips_repeated = "downlodManager_tips_repeated";
   static const String downlodManager_tips_downloading = "downlodManager_tips_downloading";
   static const String downloadManager_tips_addToQueue = "downloadManager_tips_addToQueue";
+  static const String downloadManager_tips_noDownloadableFiles = "downloadManager_tips_noDownloadableFiles";
+  static const String downloadManager_tips_fileDownloadFinish = "downloadManager_tips_fileDownloadFinish";
+  static const String downloadManager_tips_fileDownloadFailed = "downloadManager_tips_fileDownloadFailed";
   static const String downloadManager_downloadTipDialog_title = "downloadManager_downloadTipDialog_title";
   static const String downloadManager_downloadTipDialog_content = "downloadManager_downloadTipDialog_content";
   static const String downloadManager_downloadTipDialog_iKnow = "downloadManager_downloadTipDialog_iKnow";

@@ -3,7 +3,7 @@ import 'package:floor/floor.dart';
 @Entity(tableName: "file_download_record")
 class FileDownloadRecord {
   @PrimaryKey(autoGenerate: true)
-  final int? id;
+  int? id;
 
   @ColumnInfo(name: 'server_url')
   final String serverUrl;
@@ -36,6 +36,9 @@ class FileDownloadRecord {
   @ColumnInfo(name: 'limit_frequency')
   final int? limitFrequency;
 
+  @ColumnInfo(name: 'finished')
+  bool? finished;
+
   FileDownloadRecord({
     this.id,
     required this.serverUrl,
@@ -48,5 +51,6 @@ class FileDownloadRecord {
     required this.thumbnail,
     required this.requestHeaders,
     required this.limitFrequency,
+    this.finished
   });
 }

@@ -45,10 +45,12 @@ class AlistDatabaseController extends GetxController {
   final migration4to5 = Migration(4, 5, (database) async {
     await database
         .execute('ALTER TABLE `file_download_record` ADD `thumbnail` TEXT');
+    await database.execute(
+        'ALTER TABLE `file_download_record` ADD `request_headers` TEXT');
+    await database.execute(
+        'ALTER TABLE `file_download_record` ADD `limit_frequency` INTEGER');
     await database
-        .execute('ALTER TABLE `file_download_record` ADD `request_headers` TEXT');
-    await database
-        .execute('ALTER TABLE `file_download_record` ADD `limit_frequency` INTEGER');
+        .execute('ALTER TABLE `file_download_record` ADD `finished` INTEGER');
   });
 
   Future<void> init() async {

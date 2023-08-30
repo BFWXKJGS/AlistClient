@@ -179,9 +179,12 @@ const translationsZhCN = {
   "downlodManager_tips_repeated": "已经在下载队列中了，请勿重复添加",
   "downlodManager_tips_downloading": "该任务正在下载中",
   "downloadManager_tips_addToQueue": "已加入下载队列",
+  "downloadManager_tips_fileDownloadFinish": "文件'%s'下载完成",
+  "downloadManager_tips_fileDownloadFailed": "文件'%s'下载失败",
   "downloadManager_downloadTipDialog_title": "已加入下载队列",
   "downloadManager_downloadTipDialog_content":
       "该文件已加入下载队列，可到\"设置\"-\"下载管理\"中查看下载进度",
+  "downloadManager_tips_noDownloadableFiles": "没有可下载的文件",
   "downloadManager_downloadTipDialog_iKnow": "知道了",
   "setMaxRunningTasksSizeDialog_title": "最大同时下载数",
   "setMaxRunningTasksSizeDialog_btn_confirm": "确认",

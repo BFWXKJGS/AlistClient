@@ -21,6 +21,7 @@ import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/file_details_dialog.dart';
 import 'package:alist/widget/file_list_item_view.dart';
 import 'package:dio/dio.dart';
+import 'package:floor/floor.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -144,6 +145,7 @@ class _RecentsScreenState extends State<RecentsScreen>
 
   void _onFileTap(BuildContext context, FileViewingRecord file) {
     FileType fileType = FileUtils.getFileType(false, file.name);
+    _fileViewingRecord(file);
 
     switch (fileType) {
       case FileType.video:
@@ -193,6 +195,26 @@ class _RecentsScreenState extends State<RecentsScreen>
         );
         break;
     }
+  }
+
+  @transaction
+  Future<void> _fileViewingRecord(FileViewingRecord file) async {
+    var user = _userController.user.value;
+    var recordData = _databaseController.fileViewingRecordDao;
+    await recordData.deleteRecord(file);
+    await recordData.insertRecord(FileViewingRecord(
+      serverUrl: user.serverUrl,
+      userId: user.username,
+      remotePath: file.path,
+      name: file.name,
+      path: file.path,
+      size: file.size,
+      sign: file.sign,
+      thumb: file.thumb,
+      modified: file.modified,
+      provider: file.provider,
+      createTime: DateTime.now().millisecondsSinceEpoch,
+    ));
   }
 
   void _previewMarkdown(FileViewingRecord file) async {
@@ -398,6 +420,9 @@ class _RecentsScreenState extends State<RecentsScreen>
             remotePath: e.path,
             sign: e.sign,
             provider: e.provider,
+            thumb: e.thumb,
+            size: e.size,
+            modifiedMilliseconds: e.modifiedMilliseconds,
           ),
         )
         .toList();

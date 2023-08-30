@@ -23,6 +23,7 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:sprintf/sprintf.dart';
 import 'package:uuid/uuid.dart';
 
 typedef DownloadTaskStatusCallback = void Function(
@@ -93,7 +94,7 @@ class DownloadManager {
           downloadManager: this,
           statusCallback: _taskStatusCallback,
           url: fileUrl,
-          savedPath: record.localPath,
+          record: record,
           cancelToken: cancelToken,
           requestHeaders: requestHeaders ?? {},
           limitFrequency: limitFrequency ?? 0,
@@ -121,7 +122,9 @@ class DownloadManager {
         limitFrequency: limitFrequency,
         createTime: DateTime.now().millisecondsSinceEpoch,
       );
-      await downloadRecordRecordDao.insertRecord(newRecord);
+      var recordId = await downloadRecordRecordDao.insertRecord(newRecord);
+      newRecord.id = recordId;
+      record = newRecord;
     } else {
       savedFileName = record.localPath.substringAfterLast("/")!;
       filePath = record.localPath;
@@ -135,7 +138,7 @@ class DownloadManager {
       downloadManager: this,
       statusCallback: _taskStatusCallback,
       url: fileUrl,
-      savedPath: filePath,
+      record: record,
       requestHeaders: requestHeaders ?? {},
       limitFrequency: limitFrequency ?? 0,
       cancelToken: cancelToken,
@@ -147,7 +150,7 @@ class DownloadManager {
   }
 
   Future<DownloadTask?> enqueueFile(FileItemVO file,
-      {CancelToken? cancelToken}) async {
+      {CancelToken? cancelToken, bool ignoreDuplicates = false}) async {
     final requestHeaders = <String, dynamic>{};
     var limitFrequency = 0;
     if (file.provider == "BaiduNetdisk") {
@@ -158,25 +161,25 @@ class DownloadManager {
     }
 
     return enqueue(
-      name: file.name,
-      remotePath: file.path,
-      sign: file.sign,
-      thumb: file.thumb,
-      requestHeaders: requestHeaders,
-      limitFrequency: limitFrequency,
-      cancelToken: cancelToken,
-    );
+        name: file.name,
+        remotePath: file.path,
+        sign: file.sign,
+        thumb: file.thumb,
+        requestHeaders: requestHeaders,
+        limitFrequency: limitFrequency,
+        cancelToken: cancelToken,
+        ignoreDuplicates: ignoreDuplicates);
   }
 
-  Future<DownloadTask?> enqueue({
-    required String name,
-    required String remotePath,
-    required String sign,
-    String? thumb,
-    Map<String, dynamic>? requestHeaders,
-    int? limitFrequency,
-    CancelToken? cancelToken,
-  }) async {
+  Future<DownloadTask?> enqueue(
+      {required String name,
+      required String remotePath,
+      required String sign,
+      String? thumb,
+      Map<String, dynamic>? requestHeaders,
+      int? limitFrequency,
+      CancelToken? cancelToken,
+      bool ignoreDuplicates = false}) async {
     var fileUrl = await FileUtils.makeFileLink(remotePath, sign);
     if (fileUrl == null) {
       return null;
@@ -202,6 +205,10 @@ class DownloadManager {
     var user = userController.user.value;
     var record = await downloadRecordRecordDao.findRecordByRemotePath(
         user.serverUrl, user.username, remotePath);
+
+    if (record != null && ignoreDuplicates) {
+      return null;
+    }
 
     if (record != null) {
       var localFile = File(record.localPath);
@@ -235,7 +242,9 @@ class DownloadManager {
         limitFrequency: limitFrequency,
         createTime: DateTime.now().millisecondsSinceEpoch,
       );
-      await downloadRecordRecordDao.insertRecord(newRecord);
+      var recordId = await downloadRecordRecordDao.insertRecord(newRecord);
+      newRecord.id = recordId;
+      record = newRecord;
     } else {
       savedFileName = record.localPath.substringAfterLast("/")!;
       filePath = record.localPath;
@@ -249,7 +258,7 @@ class DownloadManager {
       downloadManager: this,
       statusCallback: _taskStatusCallback,
       url: fileUrl,
-      savedPath: filePath,
+      record: record,
       requestHeaders: requestHeaders ?? {},
       limitFrequency: limitFrequency ?? 0,
       cancelToken: cancelToken,
@@ -338,10 +347,10 @@ class DownloadManager {
   }
 
   DownloadTask? findTaskBySavedPath(String path) {
-    var task =
-        _runningTasks.firstWhereOrNull((element) => element.savedPath == path);
-    task ??=
-        _waitingTasks.firstWhereOrNull((element) => element.savedPath == path);
+    var task = _runningTasks
+        .firstWhereOrNull((element) => element.record.localPath == path);
+    task ??= _waitingTasks
+        .firstWhereOrNull((element) => element.record.localPath == path);
     return task;
   }
 
@@ -405,6 +414,17 @@ class DownloadManager {
       case DownloadTaskStatus.canceled:
         _waitingTasks.remove(task);
         _runningTasks.remove(task);
+        if (status == DownloadTaskStatus.finished) {
+          SmartDialog.showToast(
+            sprintf(Intl.downloadManager_tips_fileDownloadFinish.tr,
+                [task.record.name]),
+          );
+        } else {
+          SmartDialog.showToast(
+            sprintf(Intl.downloadManager_tips_fileDownloadFailed.tr,
+                [task.record.name]),
+          );
+        }
 
         if (_waitingTasks.isNotEmpty &&
             _runningTasks.length < _maxRunningTaskCount) {
