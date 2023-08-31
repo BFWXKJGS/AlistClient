@@ -455,20 +455,20 @@ class _FavoriteScreenState extends State<FavoriteScreen>
     String? modifyTimeStr = resp.getReformatModified(modifyTime);
 
     return FileItemVO(
-        name: resp.name,
-        path: resp.getCompletePath(path),
-        size: resp.isDir ? null : resp.size,
-        sizeDesc: resp.formatBytes(),
-        isDir: resp.isDir,
-        modified: modifyTimeStr,
-        typeInt: resp.type,
-        type: resp.getFileType(),
-        thumb: resp.thumb,
-        sign: resp.sign,
-        icon: resp.getFileIcon(),
-        modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
-        provider: provider,
-        favorite: true);
+      name: resp.name,
+      path: resp.getCompletePath(path),
+      size: resp.isDir ? null : resp.size,
+      sizeDesc: resp.formatBytes(),
+      isDir: resp.isDir,
+      modified: modifyTimeStr,
+      typeInt: resp.type,
+      type: resp.getFileType(),
+      thumb: resp.thumb,
+      sign: resp.sign,
+      icon: resp.getFileIcon(),
+      modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
+      provider: provider,
+    );
   }
 
   void _gotoVideoPlayer(Favorite file) async {

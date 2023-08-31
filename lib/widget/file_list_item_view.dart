@@ -121,7 +121,6 @@ class FileItemVO {
   final FileType type;
   final String icon;
   final String? provider;
-  bool favorite;
 
   FileItemVO({
     required this.name,
@@ -136,7 +135,6 @@ class FileItemVO {
     required this.typeInt,
     required this.type,
     required this.icon,
-    required this.provider,
-    required this.favorite,
+    required this.provider
   });
 }

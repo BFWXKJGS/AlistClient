@@ -101,7 +101,6 @@ class _FileListScreenState extends State<FileListScreen>
   bool _hasWritePermission = false;
   User? _currentUser;
   StreamSubscription? _userStreamSubscription;
-  StreamSubscription? _favoriteSubscription;
 
   @override
   void initState() {
@@ -137,12 +136,6 @@ class _FileListScreenState extends State<FileListScreen>
         }
       });
     }
-    _favoriteSubscription =
-        _databaseController.favoriteDao.countStream().listen((event) {
-      if (_files.isNotEmpty) {
-        _refreshFavoriteState();
-      }
-    });
     Log.d("initState", tag: tag);
   }
 
@@ -196,7 +189,7 @@ class _FileListScreenState extends State<FileListScreen>
       var fileItemVOs = <FileItemVO>[];
       var files = data?.content ?? [];
       for (var file in files) {
-        var fileItemVO = await _fileResp2VO(data?.provider ?? "", file);
+        var fileItemVO = _fileResp2VO(data?.provider ?? "", file);
         fileItemVOs.add(fileItemVO);
       }
       _sort(fileItemVOs);
@@ -243,7 +236,6 @@ class _FileListScreenState extends State<FileListScreen>
   void dispose() {
     super.dispose();
     _userStreamSubscription?.cancel();
-    _favoriteSubscription?.cancel();
     _cancelToken.cancel();
     Log.d("dispose", tag: tag);
   }
@@ -379,7 +371,9 @@ class _FileListScreenState extends State<FileListScreen>
 
   AlistScaffold _buildScaffold(BuildContext context) {
     return AlistScaffold(
-      appbarTitle: OverflowText(text: _pageName ?? Intl.screenName_fileListRoot.tr,),
+      appbarTitle: OverflowText(
+        text: _pageName ?? Intl.screenName_fileListRoot.tr,
+      ),
       appbarActions: [_menuMoreIcon()],
       onLeadingDoubleTap: () =>
           Get.until((route) => route.isFirst, id: stackId),
@@ -610,23 +604,13 @@ class _FileListScreenState extends State<FileListScreen>
     });
   }
 
-  Future<FileItemVO> _fileResp2VO(
-      String provider, FileListRespContent resp) async {
+  FileItemVO _fileResp2VO(String provider, FileListRespContent resp) {
     DateTime? modifyTime = resp.parseModifiedTime();
     String? modifyTimeStr = resp.getReformatModified(modifyTime);
 
-    AlistDatabaseController databaseController = Get.find();
-    FavoriteDao favoriteDao = databaseController.favoriteDao;
-    UserController userController = Get.find();
-    var user = userController.user.value;
-
-    String fileRemotePath = resp.getCompletePath(path);
-    Favorite? favorite = await favoriteDao.findByPath(
-        user.serverUrl, user.username, fileRemotePath);
-
     return FileItemVO(
       name: resp.name,
-      path: fileRemotePath,
+      path: resp.getCompletePath(path),
       size: resp.isDir ? null : resp.size,
       sizeDesc: resp.formatBytes(),
       isDir: resp.isDir,
@@ -637,13 +621,18 @@ class _FileListScreenState extends State<FileListScreen>
       sign: resp.sign,
       icon: resp.getFileIcon(),
       modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
-      favorite: favorite != null,
       provider: provider,
     );
   }
 
   _showBottomMenuDialog(
-      BuildContext widgetContext, FileItemVO file, int index) {
+      BuildContext widgetContext, FileItemVO file, int index) async {
+    var user = _userController.user.value;
+    Favorite? favorite = await _databaseController.favoriteDao
+        .findByPath(user.serverUrl, user.username, file.path);
+    if (!mounted) {
+      return;
+    }
     showModalBottomSheet(
         context: Get.context!,
         isScrollControlled: true,
@@ -734,16 +723,16 @@ class _FileListScreenState extends State<FileListScreen>
                         _showRenameDialog(file);
                       },
                     ),
-                  if (!file.favorite)
+                  if (favorite == null)
                     ListTile(
                       leading: const Icon(Icons.favorite_border_rounded),
                       title: Text(Intl.fileList_menu_favorite.tr),
                       onTap: () {
                         Navigator.pop(context);
-                        _favorite(file);
+                        _favorite(file, true);
                       },
                     ),
-                  if (file.favorite)
+                  if (favorite != null)
                     ListTile(
                       leading: const Icon(
                         Icons.favorite_rounded,
@@ -751,7 +740,7 @@ class _FileListScreenState extends State<FileListScreen>
                       title: Text(Intl.fileList_menu_cancel_favorite.tr),
                       onTap: () {
                         Navigator.pop(context);
-                        _favorite(file);
+                        _favorite(file, false);
                       },
                     ),
                   if (_hasWritePermission)
@@ -861,13 +850,13 @@ class _FileListScreenState extends State<FileListScreen>
     _showBottomMenuDialog(context, _files[index], index);
   }
 
-  void _favorite(FileItemVO file) async {
+  void _favorite(FileItemVO file, bool favorite) async {
     AlistDatabaseController databaseController = Get.find();
     FavoriteDao favoriteDao = databaseController.favoriteDao;
     UserController userController = Get.find();
     var user = userController.user.value;
 
-    if (!file.favorite) {
+    if (favorite) {
       var favoriteId = await favoriteDao.insertRecord(
         Favorite(
             isDir: file.isDir,
@@ -891,8 +880,6 @@ class _FileListScreenState extends State<FileListScreen>
     } else {
       favoriteDao.deleteByPath(user.serverUrl, user.username, file.path);
     }
-    file.favorite = !file.favorite;
-    _files.refresh();
   }
 
   void _showRenameDialog(FileItemVO file) {
@@ -1027,28 +1014,6 @@ class _FileListScreenState extends State<FileListScreen>
             ],
           );
         });
-  }
-
-  void _refreshFavoriteState() async {
-    AlistDatabaseController databaseController = Get.find();
-    FavoriteDao favoriteDao = databaseController.favoriteDao;
-    UserController userController = Get.find();
-    var user = userController.user.value;
-
-    bool refresh = false;
-    for (var element in _files) {
-      Favorite? favorite = await favoriteDao.findByPath(
-          user.serverUrl, user.username, element.path);
-      bool isFavorite = favorite != null;
-      if (element.favorite != isFavorite) {
-        element.favorite = isFavorite;
-        refresh = true;
-      }
-    }
-
-    if (refresh) {
-      _files.refresh();
-    }
   }
 }
 
