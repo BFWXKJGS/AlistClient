@@ -46,17 +46,13 @@ class MyApp extends StatelessWidget {
 
   Widget _routerBuilder(BuildContext context, Widget? widget) {
     final smartDialogInit = FlutterSmartDialog.init();
-    // limit text scale factor, >=0.9 && <=1.1
-    final originalTextScaleFactor = MediaQuery.of(context).textScaleFactor;
-    var newTextScaleFactor = min(originalTextScaleFactor, 1.1);
-    newTextScaleFactor = max(newTextScaleFactor, 0.9);
     Get.put(AlistDatabaseController());
     Get.put(UserController());
     Get.put(ProxyServer());
 
     return MediaQuery(
       data:
-          MediaQuery.of(context).copyWith(textScaleFactor: newTextScaleFactor),
+          MediaQuery.of(context).copyWith(textScaleFactor: 1),
       child: smartDialogInit(context, widget),
     );
   }

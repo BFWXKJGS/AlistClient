@@ -110,17 +110,18 @@ class FileListItemView extends StatelessWidget {
 class FileItemVO {
   String name;
   String path;
-  int? size;
-  String? sizeDesc;
-  bool isDir;
-  String modified;
-  int modifiedMilliseconds;
-  String sign;
-  String thumb;
-  int typeInt;
-  FileType type;
-  String icon;
-  String? provider;
+  final int? size;
+  final String? sizeDesc;
+  final bool isDir;
+  final String modified;
+  final int modifiedMilliseconds;
+  final String sign;
+  final String thumb;
+  final int typeInt;
+  final FileType type;
+  final String icon;
+  final String? provider;
+  bool favorite;
 
   FileItemVO({
     required this.name,
@@ -136,5 +137,6 @@ class FileItemVO {
     required this.type,
     required this.icon,
     required this.provider,
+    required this.favorite,
   });
 }

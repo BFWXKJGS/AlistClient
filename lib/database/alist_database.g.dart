@@ -71,6 +71,8 @@ class _$AlistDatabase extends AlistDatabase {
 
   FileViewingRecordDao? _fileViewingRecordDaoInstance;
 
+  FavoriteDao? _favoriteDaoInstance;
+
   Future<sqflite.Database> open(
     String path,
     List<Migration> migrations, [
@@ -102,6 +104,8 @@ class _$AlistDatabase extends AlistDatabase {
             'CREATE TABLE IF NOT EXISTS `server` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `password` TEXT NOT NULL, `token` TEXT NOT NULL, `guest` INTEGER NOT NULL, `ignore_ssl_error` INTEGER NOT NULL, `create_time` INTEGER NOT NULL, `update_time` INTEGER NOT NULL)');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `file_viewing_record` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `name` TEXT NOT NULL, `size` INTEGER NOT NULL, `sign` TEXT, `thumb` TEXT, `modified` INTEGER NOT NULL, `provider` TEXT NOT NULL, `create_time` INTEGER NOT NULL, `path` TEXT NOT NULL)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `favorite` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `is_dir` INTEGER NOT NULL, `server_url` TEXT NOT NULL, `user_id` TEXT NOT NULL, `remote_path` TEXT NOT NULL, `name` TEXT NOT NULL, `size` INTEGER NOT NULL, `sign` TEXT, `thumb` TEXT, `modified` INTEGER NOT NULL, `provider` TEXT NOT NULL, `create_time` INTEGER NOT NULL, `path` TEXT NOT NULL)');
 
         await callback?.onCreate?.call(database, version);
       },
@@ -136,6 +140,11 @@ class _$AlistDatabase extends AlistDatabase {
   FileViewingRecordDao get fileViewingRecordDao {
     return _fileViewingRecordDaoInstance ??=
         _$FileViewingRecordDao(database, changeListener);
+  }
+
+  @override
+  FavoriteDao get favoriteDao {
+    return _favoriteDaoInstance ??= _$FavoriteDao(database, changeListener);
   }
 }
 
@@ -708,5 +717,157 @@ class _$FileViewingRecordDao extends FileViewingRecordDao {
   @override
   Future<int> deleteRecord(FileViewingRecord record) {
     return _fileViewingRecordDeletionAdapter.deleteAndReturnChangedRows(record);
+  }
+}
+
+class _$FavoriteDao extends FavoriteDao {
+  _$FavoriteDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database, changeListener),
+        _favoriteInsertionAdapter = InsertionAdapter(
+            database,
+            'favorite',
+            (Favorite item) => <String, Object?>{
+                  'id': item.id,
+                  'is_dir': item.isDir ? 1 : 0,
+                  'server_url': item.serverUrl,
+                  'user_id': item.userId,
+                  'remote_path': item.remotePath,
+                  'name': item.name,
+                  'size': item.size,
+                  'sign': item.sign,
+                  'thumb': item.thumb,
+                  'modified': item.modified,
+                  'provider': item.provider,
+                  'create_time': item.createTime,
+                  'path': item.path
+                },
+            changeListener),
+        _favoriteUpdateAdapter = UpdateAdapter(
+            database,
+            'favorite',
+            ['id'],
+            (Favorite item) => <String, Object?>{
+                  'id': item.id,
+                  'is_dir': item.isDir ? 1 : 0,
+                  'server_url': item.serverUrl,
+                  'user_id': item.userId,
+                  'remote_path': item.remotePath,
+                  'name': item.name,
+                  'size': item.size,
+                  'sign': item.sign,
+                  'thumb': item.thumb,
+                  'modified': item.modified,
+                  'provider': item.provider,
+                  'create_time': item.createTime,
+                  'path': item.path
+                },
+            changeListener),
+        _favoriteDeletionAdapter = DeletionAdapter(
+            database,
+            'favorite',
+            ['id'],
+            (Favorite item) => <String, Object?>{
+                  'id': item.id,
+                  'is_dir': item.isDir ? 1 : 0,
+                  'server_url': item.serverUrl,
+                  'user_id': item.userId,
+                  'remote_path': item.remotePath,
+                  'name': item.name,
+                  'size': item.size,
+                  'sign': item.sign,
+                  'thumb': item.thumb,
+                  'modified': item.modified,
+                  'provider': item.provider,
+                  'create_time': item.createTime,
+                  'path': item.path
+                },
+            changeListener);
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<Favorite> _favoriteInsertionAdapter;
+
+  final UpdateAdapter<Favorite> _favoriteUpdateAdapter;
+
+  final DeletionAdapter<Favorite> _favoriteDeletionAdapter;
+
+  @override
+  Future<Favorite?> findByPath(
+    String serverUrl,
+    String userId,
+    String path,
+  ) async {
+    return _queryAdapter.query(
+        'SELECT * FROM favorite WHERE server_url = ?1 AND user_id=?2 AND path=?3 LIMIT 1',
+        mapper: (Map<String, Object?> row) => Favorite(id: row['id'] as int?, isDir: (row['is_dir'] as int) != 0, serverUrl: row['server_url'] as String, userId: row['user_id'] as String, remotePath: row['remote_path'] as String, name: row['name'] as String, path: row['path'] as String, size: row['size'] as int, sign: row['sign'] as String?, thumb: row['thumb'] as String?, modified: row['modified'] as int, provider: row['provider'] as String, createTime: row['create_time'] as int),
+        arguments: [serverUrl, userId, path]);
+  }
+
+  @override
+  Stream<List<Favorite>?> list(
+    String serverUrl,
+    String userId,
+  ) {
+    return _queryAdapter.queryListStream(
+        'SELECT * FROM favorite WHERE server_url = ?1 AND user_id=?2 ORDER BY id DESC',
+        mapper: (Map<String, Object?> row) => Favorite(
+            id: row['id'] as int?,
+            isDir: (row['is_dir'] as int) != 0,
+            serverUrl: row['server_url'] as String,
+            userId: row['user_id'] as String,
+            remotePath: row['remote_path'] as String,
+            name: row['name'] as String,
+            path: row['path'] as String,
+            size: row['size'] as int,
+            sign: row['sign'] as String?,
+            thumb: row['thumb'] as String?,
+            modified: row['modified'] as int,
+            provider: row['provider'] as String,
+            createTime: row['create_time'] as int),
+        arguments: [serverUrl, userId],
+        queryableName: 'favorite',
+        isView: false);
+  }
+
+  @override
+  Stream<int?> countStream() {
+    return _queryAdapter.queryStream('SELECT COUNT(id) FROM favorite',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
+        queryableName: 'favorite',
+        isView: false);
+  }
+
+  @override
+  Future<void> deleteByPath(
+    String serverUrl,
+    String userId,
+    String remotePath,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM favorite WHERE server_url = ?1 AND user_id=?2 AND remote_path=?3',
+        arguments: [serverUrl, userId, remotePath]);
+  }
+
+  @override
+  Future<int> insertRecord(Favorite favorite) {
+    return _favoriteInsertionAdapter.insertAndReturnId(
+        favorite, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> updateRecord(Favorite favorite) {
+    return _favoriteUpdateAdapter.updateAndReturnChangedRows(
+        favorite, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> deleteRecord(Favorite favorite) {
+    return _favoriteDeletionAdapter.deleteAndReturnChangedRows(favorite);
   }
 }

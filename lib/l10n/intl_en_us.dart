@@ -8,6 +8,7 @@ const translationsEnUS = {
   "screenName_about": "About",
   "screenName_recents": "Recents",
   "screenName_uploadingFiles": "File upload",
+  "screenName_favorite": "Favorite",
   "loginScreen_label_username": "Username",
   "loginScreen_label_password": "Password",
   "loginScreen_label_serverUrl": "Server URL",
@@ -78,6 +79,8 @@ const translationsEnUS = {
   "fileList_menu_download": "Download",
   "fileList_menu_copy": "Copy",
   "fileList_menu_move": "Move",
+  "fileList_menu_favorite": "Favorite",
+  "fileList_menu_cancel_favorite": "Cancel favorite",
   "fileList_menu_rename": "Rename",
   "fileList_tips_noDownloadableFiles": "No downloadable files",
   "fileList_tips_deleting": "Deleting...",
@@ -171,9 +174,12 @@ const translationsEnUS = {
   "downloadManagerScreen_status_canceled": "Canceled",
   "downloadManagerScreen_tips_fileNotFound": "File not found",
   "downloadManagerScreen_tips_noRecord": "No download history",
-  "downloadManagerScreen_tips_allowNotification": " Please allow notification permission",
-  "downloadManagerScreen_tips_ignoreBatteryOptimizations": "Please allow ’ignore battery optimization‘ permission",
-  "downloadManagerScreen_tips_backgroundDownloadSupported": "Backstage downloads are now available",
+  "downloadManagerScreen_tips_allowNotification":
+      " Please allow notification permission",
+  "downloadManagerScreen_tips_ignoreBatteryOptimizations":
+      "Please allow ’ignore battery optimization‘ permission",
+  "downloadManagerScreen_tips_backgroundDownloadSupported":
+      "Backstage downloads are now available",
   "downloadManagerScreen_menu_startAll": "Start all",
   "downloadManagerScreen_menu_pauseAll": "Pause all",
   "downloadManagerScreen_menu_allowBackgroundDownloads": "Background Downloads",

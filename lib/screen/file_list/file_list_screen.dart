@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:alist/database/alist_database_controller.dart';
+import 'package:alist/database/dao/favorite_dao.dart';
+import 'package:alist/database/table/favorite.dart';
 import 'package:alist/database/table/file_password.dart';
 import 'package:alist/database/table/file_viewing_record.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
@@ -28,7 +30,6 @@ import 'package:alist/util/download/download_manager.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/focus_node_utils.dart';
-import 'package:alist/util/global.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/util/named_router.dart';
@@ -38,6 +39,7 @@ import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/file_details_dialog.dart';
 import 'package:alist/widget/file_list_item_view.dart';
+import 'package:alist/widget/overflow_text.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:floor/floor.dart';
 import 'package:flustars/flustars.dart';
@@ -99,6 +101,7 @@ class _FileListScreenState extends State<FileListScreen>
   bool _hasWritePermission = false;
   User? _currentUser;
   StreamSubscription? _userStreamSubscription;
+  StreamSubscription? _favoriteSubscription;
 
   @override
   void initState() {
@@ -134,6 +137,12 @@ class _FileListScreenState extends State<FileListScreen>
         }
       });
     }
+    _favoriteSubscription =
+        _databaseController.favoriteDao.countStream().listen((event) {
+      if (_files.isNotEmpty) {
+        _refreshFavoriteState();
+      }
+    });
     Log.d("initState", tag: tag);
   }
 
@@ -179,16 +188,19 @@ class _FileListScreenState extends State<FileListScreen>
 
     return DioUtils.instance.requestNetwork<FileListRespEntity>(
         Method.post, "fs/list", cancelToken: _cancelToken, params: body,
-        onSuccess: (data) {
+        onSuccess: (data) async {
       _passwordRetrying = false;
       _forceRefresh = false;
       _menuAnchorController.hasWritePermission.value = data?.write == true;
       _hasWritePermission = data?.write == true;
-      var files =
-          data?.content?.map((e) => _fileResp2VO(data.provider, e)).toList() ??
-              [];
-      _sort(files);
-      _files.value = files;
+      var fileItemVOs = <FileItemVO>[];
+      var files = data?.content ?? [];
+      for (var file in files) {
+        var fileItemVO = await _fileResp2VO(data?.provider ?? "", file);
+        fileItemVOs.add(fileItemVO);
+      }
+      _sort(fileItemVOs);
+      _files.value = fileItemVOs;
       _data.value = data;
     }, onError: (code, msg) {
       _forceRefresh = false;
@@ -231,6 +243,7 @@ class _FileListScreenState extends State<FileListScreen>
   void dispose() {
     super.dispose();
     _userStreamSubscription?.cancel();
+    _favoriteSubscription?.cancel();
     _cancelToken.cancel();
     Log.d("dispose", tag: tag);
   }
@@ -366,7 +379,7 @@ class _FileListScreenState extends State<FileListScreen>
 
   AlistScaffold _buildScaffold(BuildContext context) {
     return AlistScaffold(
-      appbarTitle: Text(_pageName ?? Intl.screenName_fileListRoot.tr),
+      appbarTitle: OverflowText(text: _pageName ?? Intl.screenName_fileListRoot.tr,),
       appbarActions: [_menuMoreIcon()],
       onLeadingDoubleTap: () =>
           Get.until((route) => route.isFirst, id: stackId),
@@ -597,13 +610,23 @@ class _FileListScreenState extends State<FileListScreen>
     });
   }
 
-  FileItemVO _fileResp2VO(String provider, FileListRespContent resp) {
+  Future<FileItemVO> _fileResp2VO(
+      String provider, FileListRespContent resp) async {
     DateTime? modifyTime = resp.parseModifiedTime();
     String? modifyTimeStr = resp.getReformatModified(modifyTime);
 
+    AlistDatabaseController databaseController = Get.find();
+    FavoriteDao favoriteDao = databaseController.favoriteDao;
+    UserController userController = Get.find();
+    var user = userController.user.value;
+
+    String fileRemotePath = resp.getCompletePath(path);
+    Favorite? favorite = await favoriteDao.findByPath(
+        user.serverUrl, user.username, fileRemotePath);
+
     return FileItemVO(
       name: resp.name,
-      path: resp.getCompletePath(path),
+      path: fileRemotePath,
       size: resp.isDir ? null : resp.size,
       sizeDesc: resp.formatBytes(),
       isDir: resp.isDir,
@@ -614,6 +637,7 @@ class _FileListScreenState extends State<FileListScreen>
       sign: resp.sign,
       icon: resp.getFileIcon(),
       modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
+      favorite: favorite != null,
       provider: provider,
     );
   }
@@ -708,6 +732,26 @@ class _FileListScreenState extends State<FileListScreen>
                       onTap: () {
                         Navigator.pop(context);
                         _showRenameDialog(file);
+                      },
+                    ),
+                  if (!file.favorite)
+                    ListTile(
+                      leading: const Icon(Icons.favorite_border_rounded),
+                      title: Text(Intl.fileList_menu_favorite.tr),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _favorite(file);
+                      },
+                    ),
+                  if (file.favorite)
+                    ListTile(
+                      leading: const Icon(
+                        Icons.favorite_rounded,
+                      ),
+                      title: Text(Intl.fileList_menu_cancel_favorite.tr),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _favorite(file);
                       },
                     ),
                   if (_hasWritePermission)
@@ -815,6 +859,40 @@ class _FileListScreenState extends State<FileListScreen>
 
   _onFileMoreIconButtonTap(BuildContext context, int index) {
     _showBottomMenuDialog(context, _files[index], index);
+  }
+
+  void _favorite(FileItemVO file) async {
+    AlistDatabaseController databaseController = Get.find();
+    FavoriteDao favoriteDao = databaseController.favoriteDao;
+    UserController userController = Get.find();
+    var user = userController.user.value;
+
+    if (!file.favorite) {
+      var favoriteId = await favoriteDao.insertRecord(
+        Favorite(
+            isDir: file.isDir,
+            serverUrl: user.serverUrl,
+            userId: user.username,
+            remotePath: file.path,
+            name: file.name,
+            path: file.path,
+            size: file.size ?? 0,
+            sign: file.sign,
+            thumb: file.thumb,
+            modified: file.modifiedMilliseconds,
+            provider: file.provider ?? "",
+            createTime: DateTime.now().millisecondsSinceEpoch),
+      );
+      LogUtil.d("add favorite , id : $favoriteId");
+
+      var find = await favoriteDao.findByPath(
+          user.serverUrl, user.username, file.path);
+      LogUtil.d("find = $find");
+    } else {
+      favoriteDao.deleteByPath(user.serverUrl, user.username, file.path);
+    }
+    file.favorite = !file.favorite;
+    _files.refresh();
   }
 
   void _showRenameDialog(FileItemVO file) {
@@ -949,6 +1027,28 @@ class _FileListScreenState extends State<FileListScreen>
             ],
           );
         });
+  }
+
+  void _refreshFavoriteState() async {
+    AlistDatabaseController databaseController = Get.find();
+    FavoriteDao favoriteDao = databaseController.favoriteDao;
+    UserController userController = Get.find();
+    var user = userController.user.value;
+
+    bool refresh = false;
+    for (var element in _files) {
+      Favorite? favorite = await favoriteDao.findByPath(
+          user.serverUrl, user.username, element.path);
+      bool isFavorite = favorite != null;
+      if (element.favorite != isFavorite) {
+        element.favorite = isFavorite;
+        refresh = true;
+      }
+    }
+
+    if (refresh) {
+      _files.refresh();
+    }
   }
 }
 

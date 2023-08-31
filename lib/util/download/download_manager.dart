@@ -419,7 +419,7 @@ class DownloadManager {
             sprintf(Intl.downloadManager_tips_fileDownloadFinish.tr,
                 [task.record.name]),
           );
-        } else {
+        } else if (status == DownloadTaskStatus.failed) {
           SmartDialog.showToast(
             sprintf(Intl.downloadManager_tips_fileDownloadFailed.tr,
                 [task.record.name]),

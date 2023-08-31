@@ -2,10 +2,12 @@
 
 import 'dart:async';
 
+import 'package:alist/database/dao/favorite_dao.dart';
 import 'package:alist/database/dao/file_download_record_dao.dart';
 import 'package:alist/database/dao/file_password_dao.dart';
 import 'package:alist/database/dao/file_viewing_record_dao.dart';
 import 'package:alist/database/dao/server_dao.dart';
+import 'package:alist/database/table/favorite.dart';
 import 'package:alist/database/table/file_download_record.dart';
 import 'package:alist/database/table/file_password.dart';
 import 'package:alist/database/table/file_viewing_record.dart';
@@ -23,7 +25,8 @@ part 'alist_database.g.dart'; // the generated code will be there
   FileDownloadRecord,
   FilePassword,
   Server,
-  FileViewingRecord
+  FileViewingRecord,
+  Favorite,
 ])
 abstract class AlistDatabase extends FloorDatabase {
   VideoViewingRecordDao get videoViewingRecordDao;
@@ -35,4 +38,6 @@ abstract class AlistDatabase extends FloorDatabase {
   ServerDao get serverDao;
 
   FileViewingRecordDao get fileViewingRecordDao;
+
+  FavoriteDao get favoriteDao;
 }

@@ -8,6 +8,7 @@ class Intl {
   static const String screenName_about = "screenName_about";
   static const String screenName_recents = "screenName_recents";
   static const String screenName_uploadingFiles = "screenName_uploadingFiles";
+  static const String screenName_favorite = "screenName_favorite";
   static const String loginScreen_label_username = "loginScreen_label_username";
   static const String loginScreen_label_password = "loginScreen_label_password";
   static const String loginScreen_label_serverUrl = "loginScreen_label_serverUrl";
@@ -75,6 +76,8 @@ class Intl {
   static const String fileList_menu_download = "fileList_menu_download";
   static const String fileList_menu_copy = "fileList_menu_copy";
   static const String fileList_menu_move = "fileList_menu_move";
+  static const String fileList_menu_favorite = "fileList_menu_favorite";
+  static const String fileList_menu_cancel_favorite = "fileList_menu_cancel_favorite";
   static const String fileList_menu_rename = "fileList_menu_rename";
   static const String fileList_tips_noDownloadableFiles = "fileList_tips_noDownloadableFiles";
   static const String fileList_tips_deleting = "fileList_tips_deleting";

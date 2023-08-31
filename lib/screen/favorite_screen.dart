@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:alist/database/alist_database_controller.dart';
+import 'package:alist/database/table/favorite.dart';
 import 'package:alist/database/table/file_viewing_record.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/l10n/intl_keys.dart';
@@ -12,7 +13,6 @@ import 'package:alist/screen/pdf_reader_screen.dart';
 import 'package:alist/screen/video_player_screen.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
-import 'package:alist/util/global.dart';
 import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/string_utils.dart';
@@ -28,20 +28,20 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
-class RecentsScreen extends StatefulWidget {
-  const RecentsScreen({Key? key}) : super(key: key);
+class FavoriteScreen extends StatefulWidget {
+  const FavoriteScreen({Key? key}) : super(key: key);
 
   @override
-  State<RecentsScreen> createState() => _RecentsScreenState();
+  State<FavoriteScreen> createState() => _FavoriteScreenState();
 }
 
-class _RecentsScreenState extends State<RecentsScreen>
+class _FavoriteScreenState extends State<FavoriteScreen>
     with AutomaticKeepAliveClientMixin {
   final UserController _userController = Get.find();
   final CancelToken _cancelToken = CancelToken();
   final AlistDatabaseController _databaseController = Get.find();
   final _loading = true.obs;
-  final _list = <FileViewingRecord>[].obs;
+  final _list = <Favorite>[].obs;
   StreamSubscription? _recordListSubscription;
   StreamSubscription? _userStreamSubscription;
   User? _currentUser;
@@ -73,7 +73,7 @@ class _RecentsScreenState extends State<RecentsScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return AlistScaffold(
-      appbarTitle: Text(Intl.screenName_recents.tr),
+      appbarTitle: Text(Intl.screenName_favorite.tr),
       body: Obx(
         () => !_loading.value && _list.isEmpty
             ? Center(
@@ -97,7 +97,7 @@ class _RecentsScreenState extends State<RecentsScreen>
     );
   }
 
-  Widget _fileListItemView(BuildContext context, FileViewingRecord record) {
+  Widget _fileListItemView(BuildContext context, Favorite record) {
     var createTime = DateTime.fromMillisecondsSinceEpoch(record.createTime);
     return Slidable(
       key: Key(record.path),
@@ -111,7 +111,7 @@ class _RecentsScreenState extends State<RecentsScreen>
             label: Intl.recentsScreen_menu_details.tr,
           ),
           SlidableAction(
-            onPressed: (context) => _deleteRecord(record),
+            onPressed: (context) => _cancelFavorite(record),
             backgroundColor: const Color(0xFFFE4A49),
             foregroundColor: Colors.white,
             label: Intl.recentsScreen_menu_delete.tr,
@@ -119,11 +119,11 @@ class _RecentsScreenState extends State<RecentsScreen>
         ],
       ),
       child: FileListItemView(
-        icon: FileUtils.getFileIcon(false, record.name),
+        icon: FileUtils.getFileIcon(record.isDir, record.name),
         fileName: record.name,
         thumbnail: record.thumb,
         time: FileUtils.getReformatTime(createTime, ""),
-        sizeDesc: FileUtils.formatBytes(record.size),
+        sizeDesc: record.isDir ? null : FileUtils.formatBytes(record.size),
         onTap: () => _onFileTap(context, record),
         onMoreIconButtonTap: () => _showBottomMenuDialog(context, record),
       ),
@@ -135,19 +135,29 @@ class _RecentsScreenState extends State<RecentsScreen>
 
   void _queryRecents() {
     var user = _userController.user.value;
-    _recordListSubscription = _databaseController.fileViewingRecordDao
-        .recordList(user.serverUrl, user.username)
+    _recordListSubscription = _databaseController.favoriteDao
+        .list(user.serverUrl, user.username)
         .listen((list) {
       _list.value = list ?? [];
       _loading.value = false;
     });
   }
 
-  void _onFileTap(BuildContext context, FileViewingRecord file) {
-    FileType fileType = FileUtils.getFileType(false, file.name);
-    _fileViewingRecord(file);
+  void _onFileTap(BuildContext context, Favorite file) {
+    FileType fileType = FileUtils.getFileType(file.isDir, file.name);
+    if (!file.isDir) {
+      _fileViewingRecord(file);
+    }
 
     switch (fileType) {
+      case FileType.folder:
+        Get.toNamed(
+          NamedRouter.fileList,
+          arguments: {
+            "path": file.path,
+          },
+        );
+        break;
       case FileType.video:
         _gotoVideoPlayer(file);
         break;
@@ -198,11 +208,11 @@ class _RecentsScreenState extends State<RecentsScreen>
   }
 
   @transaction
-  Future<void> _fileViewingRecord(FileViewingRecord file) async {
+  Future<void> _fileViewingRecord(Favorite file) async {
     var user = _userController.user.value;
-    var recordData = _databaseController.fileViewingRecordDao;
-    await recordData.deleteRecord(file);
-    await recordData.insertRecord(FileViewingRecord(
+    var recordDao = _databaseController.fileViewingRecordDao;
+    await recordDao.deleteByPath(user.serverUrl, user.username, file.path);
+    await recordDao.insertRecord(FileViewingRecord(
       serverUrl: user.serverUrl,
       userId: user.username,
       remotePath: file.path,
@@ -217,7 +227,7 @@ class _RecentsScreenState extends State<RecentsScreen>
     ));
   }
 
-  void _previewMarkdown(FileViewingRecord file) async {
+  void _previewMarkdown(Favorite file) async {
     var fileLink = await FileUtils.makeFileLink(file.remotePath, file.sign);
     if (fileLink != null) {
       Get.toNamed(NamedRouter.web, arguments: {
@@ -227,11 +237,11 @@ class _RecentsScreenState extends State<RecentsScreen>
     }
   }
 
-  void _deleteRecord(FileViewingRecord record) {
-    _databaseController.fileViewingRecordDao.deleteRecord(record);
+  void _cancelFavorite(Favorite favorite) {
+    _databaseController.favoriteDao.deleteRecord(favorite);
   }
 
-  _showDetailsDialog(BuildContext context, FileViewingRecord record) {
+  _showDetailsDialog(BuildContext context, Favorite record) {
     var modified = DateTime.fromMillisecondsSinceEpoch(record.modified);
     showModalBottomSheet(
       context: context,
@@ -246,7 +256,7 @@ class _RecentsScreenState extends State<RecentsScreen>
     );
   }
 
-  _showBottomMenuDialog(BuildContext context, FileViewingRecord record) {
+  _showBottomMenuDialog(BuildContext context, Favorite record) {
     var modified = DateTime.fromMillisecondsSinceEpoch(record.modified);
     showModalBottomSheet(
         context: context,
@@ -257,7 +267,7 @@ class _RecentsScreenState extends State<RecentsScreen>
               child: Wrap(
                 children: [
                   FileListItemView(
-                    icon: FileUtils.getFileIcon(false, record.name),
+                    icon: FileUtils.getFileIcon(record.isDir, record.name),
                     fileName: record.name,
                     thumbnail: record.thumb,
                     time: FileUtils.getReformatTime(modified, ""),
@@ -293,11 +303,11 @@ class _RecentsScreenState extends State<RecentsScreen>
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.delete),
-                    title: Text(Intl.recentsScreen_menu_delete.tr),
+                    leading: const Icon(Icons.favorite_rounded),
+                    title: Text(Intl.fileList_menu_cancel_favorite.tr),
                     onTap: () {
                       Navigator.pop(context);
-                      _deleteRecord(record);
+                      _cancelFavorite(record);
                     },
                   ),
                   ListTile(
@@ -315,7 +325,7 @@ class _RecentsScreenState extends State<RecentsScreen>
         });
   }
 
-  void _openFileDirectory(FileViewingRecord record) {
+  void _openFileDirectory(Favorite record) {
     var path = record.path;
     var index = path.lastIndexOf("/");
     if (index >= 0) {
@@ -364,7 +374,7 @@ class _RecentsScreenState extends State<RecentsScreen>
     List<FileItemVO>? result;
     await DioUtils.instance.requestNetwork<FileListRespEntity>(
         Method.post, "fs/list", cancelToken: _cancelToken, params: body,
-        onSuccess: (data) {
+        onSuccess: (data) async {
       var files = data?.content
           ?.map((e) => _fileResp2VO(folderPath, data.provider, e))
           .where((element) => element.type == fileType)
@@ -384,24 +394,23 @@ class _RecentsScreenState extends State<RecentsScreen>
     String? modifyTimeStr = resp.getReformatModified(modifyTime);
 
     return FileItemVO(
-      name: resp.name,
-      path: resp.getCompletePath(path),
-      size: resp.isDir ? null : resp.size,
-      sizeDesc: resp.formatBytes(),
-      isDir: resp.isDir,
-      modified: modifyTimeStr,
-      typeInt: resp.type,
-      type: resp.getFileType(),
-      thumb: resp.thumb,
-      sign: resp.sign,
-      icon: resp.getFileIcon(),
-      modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
-      provider: provider,
-      favorite: false
-    );
+        name: resp.name,
+        path: resp.getCompletePath(path),
+        size: resp.isDir ? null : resp.size,
+        sizeDesc: resp.formatBytes(),
+        isDir: resp.isDir,
+        modified: modifyTimeStr,
+        typeInt: resp.type,
+        type: resp.getFileType(),
+        thumb: resp.thumb,
+        sign: resp.sign,
+        icon: resp.getFileIcon(),
+        modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
+        provider: provider,
+        favorite: true);
   }
 
-  void _gotoVideoPlayer(FileViewingRecord file) async {
+  void _gotoVideoPlayer(Favorite file) async {
     SmartDialog.showLoading();
     var files = await _loadFilesPrepare(
         file.path.substringBeforeLast("/")!, file.path, FileType.video);
@@ -436,7 +445,7 @@ class _RecentsScreenState extends State<RecentsScreen>
     );
   }
 
-  void _gotoAudioPlayer(FileViewingRecord file) async {
+  void _gotoAudioPlayer(Favorite file) async {
     SmartDialog.showLoading();
     var files = await _loadFilesPrepare(
         file.path.substringBeforeLast("/")!, file.path, FileType.audio);
@@ -469,7 +478,7 @@ class _RecentsScreenState extends State<RecentsScreen>
     );
   }
 
-  void _gotoGalleryScreen(FileViewingRecord file) async {
+  void _gotoGalleryScreen(Favorite file) async {
     SmartDialog.showLoading();
     var files = await _loadFilesPrepare(
         file.path.substringBeforeLast("/")!, file.path, FileType.image);

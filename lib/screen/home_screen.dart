@@ -18,6 +18,8 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'favorite_screen.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -51,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
             isInFileListStack: _currentPage == 0,
           ),
           const RecentsScreen(),
+          const FavoriteScreen(),
           const SettingsScreen(),
         ],
       ),
@@ -65,11 +68,16 @@ class _HomeScreenState extends State<HomeScreen> {
             label: Intl.screenName_recents.tr,
           ),
           BottomNavigationBarItem(
+            icon: const Icon(Icons.star_rounded),
+            label: Intl.screenName_favorite.tr,
+          ),
+          BottomNavigationBarItem(
             icon: const Icon(Icons.settings_rounded),
             label: Intl.screenName_settings.tr,
           )
         ],
         currentIndex: _currentPage,
+        type: BottomNavigationBarType.fixed,
         onTap: (int idx) => _pageController.jumpToPage(idx),
         onLongPress: (int idx) {
           LogUtil.d("onDoubleTap: $idx");
