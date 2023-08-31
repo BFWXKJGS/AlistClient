@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/table/favorite.dart';
@@ -11,6 +12,8 @@ import 'package:alist/screen/file_reader_screen.dart';
 import 'package:alist/screen/gallery_screen.dart';
 import 'package:alist/screen/pdf_reader_screen.dart';
 import 'package:alist/screen/video_player_screen.dart';
+import 'package:alist/util/constant.dart';
+import 'package:alist/util/download/download_manager.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/markdown_utils.dart';
@@ -310,6 +313,45 @@ class _FavoriteScreenState extends State<FavoriteScreen>
                       _cancelFavorite(record);
                     },
                   ),
+                  if (!record.isDir)
+                    ListTile(
+                      leading: const Icon(Icons.download_rounded),
+                      title: Text(Intl.fileList_menu_download.tr),
+                      onTap: () async {
+                        Navigator.pop(context);
+
+                        final requestHeaders = <String, dynamic>{};
+                        var limitFrequency = 0;
+                        if (record.provider == "BaiduNetdisk") {
+                          requestHeaders[HttpHeaders.userAgentHeader] =
+                              "pan.baidu.com";
+                        } else if (record.provider == "AliyundriveOpen") {
+                          // 阿里云盘下载请求频率限制为 1s/次
+                          limitFrequency = 1;
+                        }
+                        final task = await DownloadManager.instance.enqueue(
+                            name: record.name,
+                            remotePath: record.remotePath,
+                            sign: record.sign ?? "",
+                            thumb: record.thumb,
+                            requestHeaders: requestHeaders,
+                            limitFrequency: limitFrequency);
+                        if (task != null) {
+                          var isFirstTimeDownload = SpUtil.getBool(
+                            AlistConstant.isFirstTimeDownload,
+                            defValue: true,
+                          );
+                          if (isFirstTimeDownload == true) {
+                            SpUtil.putBool(
+                                AlistConstant.isFirstTimeDownload, false);
+                            _showDownloadTipDialog();
+                          } else {
+                            SmartDialog.showToast(
+                                Intl.downloadManager_tips_addToQueue.tr);
+                          }
+                        }
+                      },
+                    ),
                   ListTile(
                     leading: const Icon(Icons.info),
                     title: Text(Intl.recentsScreen_menu_details.tr),
@@ -321,6 +363,25 @@ class _FavoriteScreenState extends State<FavoriteScreen>
                 ],
               ),
             ),
+          );
+        });
+  }
+
+  void _showDownloadTipDialog() {
+    SmartDialog.show(
+        clickMaskDismiss: false,
+        builder: (context) {
+          return AlertDialog(
+            title: Text(Intl.downloadManager_downloadTipDialog_title.tr),
+            content: Text(Intl.downloadManager_downloadTipDialog_content.tr),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  SmartDialog.dismiss();
+                },
+                child: Text(Intl.downloadManager_downloadTipDialog_iKnow.tr),
+              ),
+            ],
           );
         });
   }

@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:alist/database/alist_database_controller.dart';
+import 'package:alist/database/table/favorite.dart';
 import 'package:alist/database/table/file_viewing_record.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/l10n/intl_keys.dart';
@@ -10,9 +12,10 @@ import 'package:alist/screen/file_reader_screen.dart';
 import 'package:alist/screen/gallery_screen.dart';
 import 'package:alist/screen/pdf_reader_screen.dart';
 import 'package:alist/screen/video_player_screen.dart';
+import 'package:alist/util/constant.dart';
+import 'package:alist/util/download/download_manager.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
-import 'package:alist/util/global.dart';
 import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/string_utils.dart';
@@ -246,7 +249,14 @@ class _RecentsScreenState extends State<RecentsScreen>
     );
   }
 
-  _showBottomMenuDialog(BuildContext context, FileViewingRecord record) {
+  _showBottomMenuDialog(BuildContext context, FileViewingRecord record) async {
+    var user = _userController.user.value;
+    Favorite? favorite = await _databaseController.favoriteDao
+        .findByPath(user.serverUrl, user.username, record.path);
+    if (!mounted) {
+      return;
+    }
+
     var modified = DateTime.fromMillisecondsSinceEpoch(record.modified);
     showModalBottomSheet(
         context: context,
@@ -284,12 +294,68 @@ class _RecentsScreenState extends State<RecentsScreen>
                       _openFileDirectory(record);
                     },
                   ),
+                  if (favorite != null)
+                    ListTile(
+                      leading: const Icon(Icons.favorite_rounded),
+                      title: Text(Intl.fileList_menu_cancel_favorite.tr),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _cancelFavorite(favorite);
+                      },
+                    ),
+                  if (favorite == null)
+                    ListTile(
+                      leading: const Icon(Icons.favorite_outline_rounded),
+                      title: Text(Intl.fileList_menu_favorite.tr),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _favorite(record);
+                      },
+                    ),
                   ListTile(
                     leading: const Icon(Icons.link_rounded),
                     title: Text(Intl.fileList_menu_copyLink.tr),
                     onTap: () {
                       Navigator.pop(context);
                       FileUtils.copyFileLink(record.path, record.sign);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.download_rounded),
+                    title: Text(Intl.fileList_menu_download.tr),
+                    onTap: () async {
+                      Navigator.pop(context);
+
+                      final requestHeaders = <String, dynamic>{};
+                      var limitFrequency = 0;
+                      if (record.provider == "BaiduNetdisk") {
+                        requestHeaders[HttpHeaders.userAgentHeader] =
+                            "pan.baidu.com";
+                      } else if (record.provider == "AliyundriveOpen") {
+                        // 阿里云盘下载请求频率限制为 1s/次
+                        limitFrequency = 1;
+                      }
+                      final task = await DownloadManager.instance.enqueue(
+                          name: record.name,
+                          remotePath: record.remotePath,
+                          sign: record.sign ?? "",
+                          thumb: record.thumb,
+                          requestHeaders: requestHeaders,
+                          limitFrequency: limitFrequency);
+                      if (task != null) {
+                        var isFirstTimeDownload = SpUtil.getBool(
+                          AlistConstant.isFirstTimeDownload,
+                          defValue: true,
+                        );
+                        if (isFirstTimeDownload == true) {
+                          SpUtil.putBool(
+                              AlistConstant.isFirstTimeDownload, false);
+                          _showDownloadTipDialog();
+                        } else {
+                          SmartDialog.showToast(
+                              Intl.downloadManager_tips_addToQueue.tr);
+                        }
+                      }
                     },
                   ),
                   ListTile(
@@ -311,6 +377,25 @@ class _RecentsScreenState extends State<RecentsScreen>
                 ],
               ),
             ),
+          );
+        });
+  }
+
+  void _showDownloadTipDialog() {
+    SmartDialog.show(
+        clickMaskDismiss: false,
+        builder: (context) {
+          return AlertDialog(
+            title: Text(Intl.downloadManager_downloadTipDialog_title.tr),
+            content: Text(Intl.downloadManager_downloadTipDialog_content.tr),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  SmartDialog.dismiss();
+                },
+                child: Text(Intl.downloadManager_downloadTipDialog_iKnow.tr),
+              ),
+            ],
           );
         });
   }
@@ -384,21 +469,20 @@ class _RecentsScreenState extends State<RecentsScreen>
     String? modifyTimeStr = resp.getReformatModified(modifyTime);
 
     return FileItemVO(
-      name: resp.name,
-      path: resp.getCompletePath(path),
-      size: resp.isDir ? null : resp.size,
-      sizeDesc: resp.formatBytes(),
-      isDir: resp.isDir,
-      modified: modifyTimeStr,
-      typeInt: resp.type,
-      type: resp.getFileType(),
-      thumb: resp.thumb,
-      sign: resp.sign,
-      icon: resp.getFileIcon(),
-      modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
-      provider: provider,
-      favorite: false
-    );
+        name: resp.name,
+        path: resp.getCompletePath(path),
+        size: resp.isDir ? null : resp.size,
+        sizeDesc: resp.formatBytes(),
+        isDir: resp.isDir,
+        modified: modifyTimeStr,
+        typeInt: resp.type,
+        type: resp.getFileType(),
+        thumb: resp.thumb,
+        sign: resp.sign,
+        icon: resp.getFileIcon(),
+        modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
+        provider: provider,
+        favorite: false);
   }
 
   void _gotoVideoPlayer(FileViewingRecord file) async {
@@ -498,6 +582,31 @@ class _RecentsScreenState extends State<RecentsScreen>
         "files": photos,
         "index": index,
       },
+    );
+  }
+
+  void _cancelFavorite(Favorite favorite) {
+    var user = _userController.user.value;
+    _databaseController.favoriteDao
+        .deleteByPath(user.serverUrl, user.username, favorite.path);
+  }
+
+  void _favorite(FileViewingRecord file) {
+    var user = _userController.user.value;
+    _databaseController.favoriteDao.insertRecord(
+      Favorite(
+          isDir: false,
+          serverUrl: user.serverUrl,
+          userId: user.username,
+          remotePath: file.path,
+          name: file.name,
+          path: file.path,
+          size: file.size,
+          sign: file.sign,
+          thumb: file.thumb,
+          modified: file.modified,
+          provider: file.provider,
+          createTime: DateTime.now().millisecondsSinceEpoch),
     );
   }
 }
