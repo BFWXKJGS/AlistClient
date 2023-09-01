@@ -84,8 +84,8 @@ class _FileListScreenState extends State<FileListScreen>
       FileListMenuAnchorController();
 
   static const String tag = "_FileListScreenState";
-  final Rx<FileListRespEntity?> _data = Rx<FileListRespEntity?>(null);
-  final _files = <FileItemVO>[].obs;
+  FileListRespEntity? _data;
+  List<FileItemVO> _files = List.empty(growable: false);
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
 
@@ -130,8 +130,10 @@ class _FileListScreenState extends State<FileListScreen>
             _currentUser?.serverUrl != event.serverUrl) {
           _currentUser = event;
           _loadFilesPrepare(event, "/");
-          _data.value = null;
-          _files.value = [];
+          setState(() {
+            _data = null;
+            _files = [];
+          });
           LogUtil.d("切换User ${_userController.user.value.username}");
         }
       });
@@ -193,8 +195,10 @@ class _FileListScreenState extends State<FileListScreen>
         fileItemVOs.add(fileItemVO);
       }
       _sort(fileItemVOs);
-      _files.value = fileItemVOs;
-      _data.value = data;
+      setState(() {
+        _files = fileItemVOs;
+      });
+      _data = data;
     }, onError: (code, msg) {
       _forceRefresh = false;
       if (code == 403) {
@@ -269,7 +273,11 @@ class _FileListScreenState extends State<FileListScreen>
           case MenuGroupId.sort:
             _menuAnchorController.sortBy.value = menu.menuId;
             _menuAnchorController.sortByUp.value = menu.isUp ?? false;
-            _sort(_files);
+            var newFiles = _files.toList();
+            _sort(newFiles);
+            setState(() {
+              _files = newFiles;
+            });
             break;
         }
       },
@@ -381,17 +389,17 @@ class _FileListScreenState extends State<FileListScreen>
         key: _refreshIndicatorKey,
         onRefresh: () => _loadFiles(),
         child: SlidableAutoCloseBehavior(
-          child: Obx(() => _FileListView(
-                path: path,
-                readme: _data.value?.readme,
-                files: _files,
-                hasWritePermission: _hasWritePermission,
-                onFileItemClick: _onFileTap,
-                onFileMoreIconButtonTap: _onFileMoreIconButtonTap,
-                fileDeleteCallback: (context, index) {
-                  _tryDeleteFile(_files[index]);
-                },
-              )),
+          child: _FileListView(
+            path: path,
+            readme: _data?.readme,
+            files: _files,
+            hasWritePermission: _hasWritePermission,
+            onFileItemClick: _onFileTap,
+            onFileMoreIconButtonTap: _onFileMoreIconButtonTap,
+            fileDeleteCallback: (context, index) {
+              _tryDeleteFile(_files[index]);
+            },
+          ),
         ),
       ),
     );
