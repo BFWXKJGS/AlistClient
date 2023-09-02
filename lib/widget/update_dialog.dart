@@ -71,7 +71,7 @@ class UpdateDialogController extends GetxController {
     } else if (Platform.isAndroid) {
       bool isGooglePlayInstalled =
           await AlistPlugin.isAppInstall("com.android.vending");
-      if (isGooglePlayInstalled && appVersion.android.githubUrl.isNotEmpty) {
+      if (isGooglePlayInstalled && appVersion.android.googlePlayUrl.isNotEmpty) {
         AlistPlugin.launchApp("com.android.vending",
             uri: appVersion.android.googlePlayUrl);
       } else {
