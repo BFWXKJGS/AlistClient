@@ -41,6 +41,12 @@ final menuGroupOperations = MenuGroupEntity(
       name: Intl.fileList_menu_uploadFiles.tr,
       iconData: Icons.upload_rounded,
     ),
+    MenuItemEntity(
+      menuGroupId: MenuGroupId.operations,
+      menuId: MenuId.configFileNameLines,
+      name: Intl.fileList_menu_fileNameLines.tr,
+      iconData: Icons.line_weight_rounded,
+    ),
   ],
 );
 
@@ -133,6 +139,12 @@ class FileListMenuAnchor extends StatelessWidget {
             menuId: MenuId.downloadAll,
             name: Intl.fileList_menu_downloadAll.tr,
             iconData: Icons.download_rounded,
+          ),
+          MenuItemEntity(
+            menuGroupId: MenuGroupId.operations,
+            menuId: MenuId.configFileNameLines,
+            name: Intl.fileList_menu_fileNameLines.tr,
+            iconData: Icons.line_weight_rounded,
           )
         ],
       );
@@ -252,6 +264,7 @@ enum MenuId {
   downloadAll,
   uploadPhotos,
   uploadFiles,
+  configFileNameLines,
 }
 
 class MenuGroupEntity {

@@ -79,6 +79,7 @@ class Intl {
   static const String fileList_menu_favorite = "fileList_menu_favorite";
   static const String fileList_menu_cancel_favorite = "fileList_menu_cancel_favorite";
   static const String fileList_menu_rename = "fileList_menu_rename";
+  static const String fileList_menu_fileNameLines = "fileList_menu_fileNameLines";
   static const String fileList_tips_noDownloadableFiles = "fileList_tips_noDownloadableFiles";
   static const String fileList_tips_deleting = "fileList_tips_deleting";
   static const String fileList_tips_renaming = "fileList_tips_renaming";
@@ -189,4 +190,15 @@ class Intl {
   static const String setMaxRunningTasksSizeDialog_title = "setMaxRunningTasksSizeDialog_title";
   static const String setMaxRunningTasksSizeDialog_btn_confirm = "setMaxRunningTasksSizeDialog_btn_confirm";
   static const String setMaxRunningTasksSizeDialog_btn_cancel = "setMaxRunningTasksSizeDialog_btn_cancel";
+  static const String pullRefresh_canRefreshText = "pullRefresh_canRefreshText";
+  static const String pullRefresh_refreshingText = "pullRefresh_refreshingText";
+  static const String pullRefresh_idleRefreshText = "pullRefresh_idleRefreshText";
+  static const String pullRefresh_refreshFailedText = "pullRefresh_refreshFailedText";
+  static const String pullRefresh_refreshCompleteText = "pullRefresh_refreshCompleteText";
+  static const String fileSearchScreen_cancel = "fileSearchScreen_cancel";
+  static const String fileSearchScreen_searchHint = "fileSearchScreen_searchHint";
+  static const String configFileNameMaxLinesDialog_title = "configFileNameMaxLinesDialog_title";
+  static const String configFileNameMaxLinesDialog_choice_one = "configFileNameMaxLinesDialog_choice_one";
+  static const String configFileNameMaxLinesDialog_choice_two = "configFileNameMaxLinesDialog_choice_two";
+  static const String configFileNameMaxLinesDialog_choice_noLimit = "configFileNameMaxLinesDialog_choice_noLimit";
 }

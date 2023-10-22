@@ -57,7 +57,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     var currentVideo = videos[index];
     _videoTitle = currentVideo.name.substringBeforeLast(".");
     _playWithProxyUrl(currentVideo);
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+    // SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
   }
 
   void _playWithProxyUrl(VideoItem file) async {
@@ -122,33 +122,38 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       width: width,
       height: height,
     );
-    return Container(
-      color: Colors.black,
-      width: width,
-      height: height,
-      child: Stack(
-        children: [
-          aliPlayerView,
-          AlistPlayerSkin(
-            player: _fAliplayer,
-            buildContext: context,
-            videoTitle: _videoTitle ?? "",
-            playPreviousCallback: index == 0 ? null : () => _playPrevious(),
-            playNextCallback:
-                index == videos.length - 1 ? null : () => _playNext(),
-            onPlayProgressChange: (currentPos, duration) {
-              if (_currentPos >= duration - 1000) {
-                _deleteViewingRecord();
-              } else if (currentPos < 10 * 1000 ||
-                  (currentPos / 1000) % 10 != 0) {
-                _currentPos = currentPos;
-                _duration = duration;
-              } else {
-                _saveViewingRecord(currentPos, duration);
-              }
-            },
-          )
-        ],
+    return AnnotatedRegion(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        body: Container(
+          color: Colors.black,
+          width: width,
+          height: height,
+          child: Stack(
+            children: [
+              aliPlayerView,
+              AlistPlayerSkin(
+                player: _fAliplayer,
+                buildContext: context,
+                videoTitle: _videoTitle ?? "",
+                playPreviousCallback: index == 0 ? null : () => _playPrevious(),
+                playNextCallback:
+                    index == videos.length - 1 ? null : () => _playNext(),
+                onPlayProgressChange: (currentPos, duration) {
+                  if (_currentPos >= duration - 1000) {
+                    _deleteViewingRecord();
+                  } else if (currentPos < 10 * 1000 ||
+                      (currentPos / 1000) % 10 != 0) {
+                    _currentPos = currentPos;
+                    _duration = duration;
+                  } else {
+                    _saveViewingRecord(currentPos, duration);
+                  }
+                },
+              )
+            ],
+          ),
+        ),
       ),
     );
   }

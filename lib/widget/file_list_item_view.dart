@@ -1,6 +1,7 @@
 import 'package:alist/generated/images.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
+import 'package:alist/util/global.dart';
 import 'package:alist/util/widget_utils.dart';
 import 'package:alist/widget/overflow_text.dart';
 import 'package:extended_image/extended_image.dart';
@@ -17,6 +18,7 @@ class FileListItemView extends StatelessWidget {
     this.thumbnail,
     required this.onTap,
     this.onMoreIconButtonTap,
+    this.fileNameMaxLines,
   }) : super(key: key);
   final GestureTapCallback onTap;
   final GestureTapCallback? onMoreIconButtonTap;
@@ -25,11 +27,17 @@ class FileListItemView extends StatelessWidget {
   final String fileName;
   final String? time;
   final String? sizeDesc;
+  final int? fileNameMaxLines;
 
   @override
   Widget build(BuildContext context) {
     String? thumbnail = FileUtils.getCompleteThumbnail(this.thumbnail);
     bool isDarkMode = WidgetUtils.isDarkMode(context);
+    String subtitle = time ?? "";
+    if (sizeDesc != null) {
+      subtitle = "$subtitle - $sizeDesc";
+    }
+
     return ListTile(
       horizontalTitleGap: 6,
       minVerticalPadding: 12,
@@ -43,13 +51,23 @@ class FileListItemView extends StatelessWidget {
         ],
       ),
       trailing: _moreIconButton(isDarkMode),
-      title: OverflowText(text: fileName),
-      subtitle: time != null
-          ? Row(
-              children: [
-                Text(time!),
-                if (sizeDesc != null) Text(" - ${sizeDesc!}"),
-              ],
+      title: Obx(() {
+        int globalFileNameMaxLines = Global.fileNameMaxLines.value;
+        int fileNameMaxLines =
+            this.fileNameMaxLines ?? globalFileNameMaxLines;
+        return fileNameMaxLines == 1
+            ? OverflowText(text: fileName)
+            : Text(
+          fileName,
+          maxLines: fileNameMaxLines > 2 ? 1000 : 2,
+          overflow: TextOverflow.ellipsis,
+        );
+      }),
+      subtitle: subtitle.isNotEmpty
+          ? Text(
+              subtitle,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
             )
           : null,
       onTap: onTap,
@@ -122,19 +140,18 @@ class FileItemVO {
   final String icon;
   final String? provider;
 
-  FileItemVO({
-    required this.name,
-    required this.path,
-    required this.size,
-    required this.sizeDesc,
-    required this.isDir,
-    required this.modified,
-    required this.modifiedMilliseconds,
-    required this.sign,
-    required this.thumb,
-    required this.typeInt,
-    required this.type,
-    required this.icon,
-    required this.provider
-  });
+  FileItemVO(
+      {required this.name,
+      required this.path,
+      required this.size,
+      required this.sizeDesc,
+      required this.isDir,
+      required this.modified,
+      required this.modifiedMilliseconds,
+      required this.sign,
+      required this.thumb,
+      required this.typeInt,
+      required this.type,
+      required this.icon,
+      required this.provider});
 }

@@ -9,6 +9,7 @@ import 'package:alist/database/table/file_viewing_record.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/entity/file_remove_req.dart';
 import 'package:alist/entity/file_rename_req.dart';
+import 'package:alist/entity/public_settings_resp.dart';
 import 'package:alist/generated/images.dart';
 import 'package:alist/generated/mkdir_req.dart';
 import 'package:alist/l10n/intl_keys.dart';
@@ -36,13 +37,16 @@ import 'package:alist/util/named_router.dart';
 import 'package:alist/util/proxy.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
+import 'package:alist/widget/alist_checkbox.dart';
 import 'package:alist/widget/alist_scaffold.dart';
+import 'package:alist/widget/config_file_name_max_lines_dialog.dart';
 import 'package:alist/widget/file_details_dialog.dart';
 import 'package:alist/widget/file_list_item_view.dart';
 import 'package:alist/widget/overflow_text.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:floor/floor.dart';
 import 'package:flustars/flustars.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_document_picker/flutter_document_picker.dart';
@@ -51,6 +55,7 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 typedef FileItemClickCallback = Function(BuildContext context, int index);
 
@@ -86,14 +91,13 @@ class _FileListScreenState extends State<FileListScreen>
   static const String tag = "_FileListScreenState";
   FileListRespEntity? _data;
   List<FileItemVO> _files = List.empty(growable: false);
-  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
-      GlobalKey<RefreshIndicatorState>();
 
   // use key to get the more icon's location and size
   final GlobalKey _moreIconKey = GlobalKey();
-  final dio.CancelToken _cancelToken = dio.CancelToken();
+  dio.CancelToken? _cancelToken;
   String? _pageName;
   String? _password;
+  bool _queryPassword = false;
   bool _passwordRetrying = false;
   String path = "";
   bool _forceRefresh = false;
@@ -101,6 +105,8 @@ class _FileListScreenState extends State<FileListScreen>
   bool _hasWritePermission = false;
   User? _currentUser;
   StreamSubscription? _userStreamSubscription;
+  final RefreshController _refreshController =
+      RefreshController(initialRefresh: true);
 
   @override
   void initState() {
@@ -123,13 +129,15 @@ class _FileListScreenState extends State<FileListScreen>
 
     var user = _userController.user.value;
     _currentUser = user;
-    _loadFilesPrepare(user, path);
     if (path == "/") {
       _userStreamSubscription = _userController.user.stream.listen((event) {
         if (_currentUser?.username != event.username ||
             _currentUser?.serverUrl != event.serverUrl) {
           _currentUser = event;
-          _loadFilesPrepare(event, "/");
+
+          _queryPassword = false;
+          _password = null;
+          _refreshController.requestRefresh();
           setState(() {
             _data = null;
             _files = [];
@@ -138,41 +146,26 @@ class _FileListScreenState extends State<FileListScreen>
         }
       });
     }
-    Log.d("initState", tag: tag);
+    _userController.loadSettings();
+    LogUtil.d("initState", tag: tag);
   }
 
-  Future<void> _loadFilesPrepare(User user, String path) async {
+  Future<void> _loadFiles() async {
     // query file's password from database.
-    var filePassword = await _databaseController.filePasswordDao
-        .findPasswordByPath(user.serverUrl, user.username, path);
-    if (filePassword != null) {
-      _password = filePassword.password;
+    if (_queryPassword) {
+      var user = _userController.user.value;
+      var filePassword = await _databaseController.filePasswordDao
+          .findPasswordByPath(user.serverUrl, user.username, path);
+      if (filePassword != null) {
+        _password = filePassword.password;
+      }
     }
-    if (mounted) {
-      _loadFilesWhileWidgetReady();
-    }
+    return _loadFilesInner();
   }
 
   bool _isRootPath(String? path) => path == '/' || path == null || path == '';
 
-  // load files when ui ready
-  _loadFilesWhileWidgetReady() async {
-    do {
-      final currentState = _refreshIndicatorKey.currentState;
-      if (currentState != null) {
-        Log.d("start load file", tag: tag);
-        currentState.show();
-        break;
-      }
-      Log.d("ignore load file", tag: tag);
-      await Future.delayed(const Duration(milliseconds: 17));
-      if (!mounted) {
-        break;
-      }
-    } while (true);
-  }
-
-  Future<void> _loadFiles() async {
+  Future<void> _loadFilesInner() async {
     var body = {
       "path": path,
       "password": _password ?? "",
@@ -181,6 +174,8 @@ class _FileListScreenState extends State<FileListScreen>
       "refresh": _forceRefresh
     };
 
+    _cancelToken?.cancel();
+    _cancelToken = dio.CancelToken();
     return DioUtils.instance.requestNetwork<FileListRespEntity>(
         Method.post, "fs/list", cancelToken: _cancelToken, params: body,
         onSuccess: (data) async {
@@ -199,7 +194,9 @@ class _FileListScreenState extends State<FileListScreen>
         _files = fileItemVOs;
       });
       _data = data;
+      _refreshController.refreshCompleted();
     }, onError: (code, msg) {
+      _refreshController.refreshFailed();
       _forceRefresh = false;
       if (code == 403) {
         _showDirectorPasswordDialog();
@@ -224,7 +221,7 @@ class _FileListScreenState extends State<FileListScreen>
             directorPasswordCallback: (password, remember) {
               _password = password;
               _passwordRetrying = true;
-              _refreshIndicatorKey.currentState?.show();
+              _refreshController.requestRefresh();
 
               if (remember) {
                 rememberPassword(password);
@@ -240,7 +237,7 @@ class _FileListScreenState extends State<FileListScreen>
   void dispose() {
     super.dispose();
     _userStreamSubscription?.cancel();
-    _cancelToken.cancel();
+    _cancelToken?.cancel();
     Log.d("dispose", tag: tag);
   }
 
@@ -255,7 +252,7 @@ class _FileListScreenState extends State<FileListScreen>
           case MenuGroupId.operations:
             if (menu.menuId == MenuId.forceRefresh) {
               _forceRefresh = true;
-              _refreshIndicatorKey.currentState?.show();
+              _refreshController.requestRefresh();
             } else if (menu.menuId == MenuId.newFolder) {
               _showNewFolderDialog();
             } else if (menu.menuId == MenuId.uploadFiles) {
@@ -268,6 +265,10 @@ class _FileListScreenState extends State<FileListScreen>
               _uploadPhotos();
             } else if (menu.menuId == MenuId.downloadAll) {
               _downloadAll();
+            } else if (menu.menuId == MenuId.configFileNameLines) {
+              SmartDialog.show(builder: (context) {
+                return const ConfigFileNameMaxLinesDialog();
+              });
             }
             break;
           case MenuGroupId.sort:
@@ -301,7 +302,7 @@ class _FileListScreenState extends State<FileListScreen>
         "originalFileNames": originalFileNames,
       },
     );
-    _refreshIndicatorKey.currentState?.show();
+    _refreshController.requestRefresh();
   }
 
   Future<void> _uploadPhotos() async {
@@ -340,7 +341,7 @@ class _FileListScreenState extends State<FileListScreen>
           "originalFileNames": originalFileNames,
         },
       );
-      _refreshIndicatorKey.currentState?.show();
+      _refreshController.requestRefresh();
     }
   }
 
@@ -382,24 +383,32 @@ class _FileListScreenState extends State<FileListScreen>
       appbarTitle: OverflowText(
         text: _pageName ?? Intl.screenName_fileListRoot.tr,
       ),
-      appbarActions: [_menuMoreIcon()],
+      appbarActions: [
+        Obx(() => _userController.searchIndex.isNotEmpty
+            ? IconButton(
+                onPressed: () {
+                  final args = {"folder": path};
+                  Get.toNamed(NamedRouter.fileSearch, arguments: args);
+                },
+                icon: const Icon(Icons.search_rounded))
+            : const SizedBox()),
+        _menuMoreIcon()
+      ],
       onLeadingDoubleTap: () =>
           Get.until((route) => route.isFirst, id: stackId),
-      body: RefreshIndicator(
-        key: _refreshIndicatorKey,
-        onRefresh: () => _loadFiles(),
-        child: SlidableAutoCloseBehavior(
-          child: _FileListView(
-            path: path,
-            readme: _data?.readme,
-            files: _files,
-            hasWritePermission: _hasWritePermission,
-            onFileItemClick: _onFileTap,
-            onFileMoreIconButtonTap: _onFileMoreIconButtonTap,
-            fileDeleteCallback: (context, index) {
-              _tryDeleteFile(_files[index]);
-            },
-          ),
+      body: SlidableAutoCloseBehavior(
+        child: _FileListView(
+          path: path,
+          readme: _data?.readme,
+          files: _files,
+          refreshController: _refreshController,
+          hasWritePermission: _hasWritePermission,
+          onFileItemClick: _onFileTap,
+          onFileMoreIconButtonTap: _onFileMoreIconButtonTap,
+          refreshCallback: _loadFiles,
+          fileDeleteCallback: (context, index) {
+            _tryDeleteFile(_files[index]);
+          },
         ),
       ),
     );
@@ -792,7 +801,7 @@ class _FileListScreenState extends State<FileListScreen>
     );
     future.then((value) {
       if (value != null && value["result"] == true) {
-        _refreshIndicatorKey.currentState?.show();
+        _refreshController.requestRefresh();
       }
     });
   }
@@ -847,7 +856,7 @@ class _FileListScreenState extends State<FileListScreen>
     DioUtils.instance.requestNetwork<String?>(Method.post, "fs/remove",
         params: req.toJson(), onSuccess: (data) {
       SmartDialog.dismiss();
-      _refreshIndicatorKey.currentState?.show();
+      _refreshController.requestRefresh();
     }, onError: (code, msg) {
       SmartDialog.showToast(msg);
       SmartDialog.dismiss();
@@ -920,7 +929,7 @@ class _FileListScreenState extends State<FileListScreen>
       file.path = "${file.path.substringBeforeLast(file.name)!}$newName";
       file.name = newName;
       _files[_files.indexOf(file)] = file;
-      _refreshIndicatorKey.currentState?.show();
+      _refreshController.requestRefresh();
       SmartDialog.dismiss();
     }, onError: (code, msg) {
       SmartDialog.dismiss();
@@ -960,7 +969,7 @@ class _FileListScreenState extends State<FileListScreen>
       onSuccess: (data) {
         SmartDialog.dismiss();
         SmartDialog.showToast(Intl.mkdirDialog_createSuccess.tr);
-        _refreshIndicatorKey.currentState?.show();
+        _refreshController.requestRefresh();
       },
       onError: (code, msg) {
         SmartDialog.dismiss();
@@ -1033,8 +1042,10 @@ class _FileListView extends StatelessWidget {
     required this.readme,
     required this.onFileItemClick,
     this.hasWritePermission = false,
+    required this.refreshController,
     this.onFileMoreIconButtonTap,
     this.fileDeleteCallback,
+    required this.refreshCallback,
   }) : super(key: key);
   final String? path;
   final String? readme;
@@ -1043,6 +1054,8 @@ class _FileListView extends StatelessWidget {
   final FileItemClickCallback onFileItemClick;
   final FileMoreIconClickCallback? onFileMoreIconButtonTap;
   final FileDeleteCallback? fileDeleteCallback;
+  final RefreshController refreshController;
+  final VoidCallback refreshCallback;
 
   @override
   Widget build(BuildContext context) {
@@ -1051,73 +1064,77 @@ class _FileListView extends StatelessWidget {
       itemCount++;
     }
 
-    return ListView.separated(
-      itemCount: itemCount,
-      separatorBuilder: (context, index) => const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 18), child: Divider()),
-      itemBuilder: (context, index) {
-        if (index == files.length) {
-          // it's readme
-          return FileListItemView(
-            icon: Images.fileTypeMd,
-            fileName: "README.md",
-            time: null,
-            sizeDesc: null,
-            onTap: () {
-              if (GetUtils.isURL(readme!)) {
-                Get.toNamed(NamedRouter.web, arguments: {
-                  "url": MarkdownUtil.makePreviewUrl(readme!),
-                  "title": "README.md"
-                });
-              } else {
-                _readMarkdownContent();
-              }
-            },
-          );
-        } else {
-          // it's file
-          final file = files[index];
-          return Slidable(
-            key: Key(file.path),
-            endActionPane: ActionPane(
-              motion: const DrawerMotion(),
-              extentRatio: hasWritePermission ? 0.5 : 0.25,
-              children: [
-                SlidableAction(
-                  onPressed: (context) => _showDetailsDialog(context, file),
-                  backgroundColor: Get.theme.colorScheme.secondary,
-                  foregroundColor: Colors.white,
-                  label: Intl.recentsScreen_menu_details.tr,
-                ),
-                if (hasWritePermission)
-                  SlidableAction(
-                    onPressed: (context) {
-                      if (null != fileDeleteCallback) {
-                        fileDeleteCallback!(context, index);
-                      }
-                    },
-                    backgroundColor: const Color(0xFFFE4A49),
-                    foregroundColor: Colors.white,
-                    label: Intl.recentsScreen_menu_delete.tr,
-                  ),
-              ],
-            ),
-            child: FileListItemView(
-              icon: file.icon,
-              fileName: file.name,
-              thumbnail: file.thumb,
-              time: file.modified,
-              sizeDesc: file.sizeDesc,
-              onTap: () => onFileItemClick(context, index),
-              onMoreIconButtonTap: () {
-                if (onFileMoreIconButtonTap != null) {
-                  onFileMoreIconButtonTap!(context, index);
+    return SmartRefresher(
+      controller: refreshController,
+      onRefresh: refreshCallback,
+      child: ListView.separated(
+        itemCount: itemCount,
+        separatorBuilder: (context, index) => const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 18), child: Divider()),
+        itemBuilder: (context, index) {
+          if (index == files.length) {
+            // it's readme
+            return FileListItemView(
+              icon: Images.fileTypeMd,
+              fileName: "README.md",
+              time: null,
+              sizeDesc: null,
+              onTap: () {
+                if (GetUtils.isURL(readme!)) {
+                  Get.toNamed(NamedRouter.web, arguments: {
+                    "url": MarkdownUtil.makePreviewUrl(readme!),
+                    "title": "README.md"
+                  });
+                } else {
+                  _readMarkdownContent();
                 }
               },
-            ),
-          );
-        }
-      },
+            );
+          } else {
+            // it's file
+            final file = files[index];
+            return Slidable(
+              key: Key(file.path),
+              endActionPane: ActionPane(
+                motion: const DrawerMotion(),
+                extentRatio: hasWritePermission ? 0.5 : 0.25,
+                children: [
+                  SlidableAction(
+                    onPressed: (context) => _showDetailsDialog(context, file),
+                    backgroundColor: Get.theme.colorScheme.secondary,
+                    foregroundColor: Colors.white,
+                    label: Intl.recentsScreen_menu_details.tr,
+                  ),
+                  if (hasWritePermission)
+                    SlidableAction(
+                      onPressed: (context) {
+                        if (null != fileDeleteCallback) {
+                          fileDeleteCallback!(context, index);
+                        }
+                      },
+                      backgroundColor: const Color(0xFFFE4A49),
+                      foregroundColor: Colors.white,
+                      label: Intl.recentsScreen_menu_delete.tr,
+                    ),
+                ],
+              ),
+              child: FileListItemView(
+                icon: file.icon,
+                fileName: file.name,
+                thumbnail: file.thumb,
+                time: file.modified,
+                sizeDesc: file.sizeDesc,
+                onTap: () => onFileItemClick(context, index),
+                onMoreIconButtonTap: () {
+                  if (onFileMoreIconButtonTap != null) {
+                    onFileMoreIconButtonTap!(context, index);
+                  }
+                },
+              ),
+            );
+          }
+        },
+      ),
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:alist/entity/my_info_resp.dart';
+import 'package:alist/entity/public_settings_resp.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:flustars/flustars.dart';
@@ -8,9 +9,11 @@ import 'constant.dart';
 
 class UserController extends GetxController {
   var user = User(baseUrl: "", serverUrl: "").obs;
+  var searchIndex = "".obs;
 
   void login(User user, {bool fromCache = false}) {
     this.user.value = user;
+    searchIndex.value = "";
 
     SpUtil.putString(AlistConstant.serverUrl, user.serverUrl);
     SpUtil.putString(AlistConstant.baseUrl, user.baseUrl);
@@ -26,7 +29,22 @@ class UserController extends GetxController {
     }
   }
 
+  void loadSettings() {
+    if (searchIndex.value != "") {
+      return;
+    }
+    DioUtils.instance.requestNetwork<PublicSettingsResp>(
+        Method.get, "public/settings", onSuccess: (data) {
+      if (data?.searchIndex != null && data?.searchIndex != "none") {
+        searchIndex.value = data!.searchIndex!;
+      } else {
+        searchIndex.value = "";
+      }
+    });
+  }
+
   void logout() {
+    searchIndex.value = "";
     var currentUserValue = user.value;
     var isUseDemoServer = currentUserValue.useDemoServer;
     var guest = currentUserValue.guest;

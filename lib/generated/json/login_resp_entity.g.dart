@@ -15,3 +15,12 @@ Map<String, dynamic> $LoginRespEntityToJson(LoginRespEntity entity) {
   data['token'] = entity.token;
   return data;
 }
+
+extension LoginRespEntityExtension on LoginRespEntity {
+  LoginRespEntity copyWith({
+    String? token,
+  }) {
+    return LoginRespEntity()
+      ..token = token ?? this.token;
+  }
+}

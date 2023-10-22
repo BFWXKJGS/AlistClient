@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.7+8
+version: 1.0.8+9
 
 environment:
   sdk: '>=2.19.6 <3.0.0'
@@ -58,7 +58,7 @@ dependencies:
   # package info in android、ios...
   package_info_plus: ^4.0.2
   # image loader
-  extended_image: ^8.0.2
+  extended_image: ^8.1.1
   # screen hibernation control
   wakelock: ^0.6.2
   # database
@@ -71,12 +71,7 @@ dependencies:
   # permission
   permission_handler: ^10.2.0
   # native webview
-  webview_flutter: ^4.2.2
-  webview_flutter_android:
-    git:
-      url: git@github.com:GeekTR/webview_flutter.git
-      ref: master
-      path: packages/webview_flutter/webview_flutter_android
+  flutter_inappwebview: ^5.8.0
   # volume_controller
   volume_controller: ^2.0.6
   # screen_brightness
@@ -100,14 +95,10 @@ dependencies:
   url_launcher: ^6.1.12
   image_gallery_saver: '^2.0.3'
   uuid: ^3.0.7
+  pull_to_refresh: ^2.0.0
 
 dependency_overrides:
   win32: ^5.0.0
-  webview_flutter_android:
-    git:
-      url: git@github.com:GeekTR/webview_flutter.git
-      ref: master
-      path: packages/webview_flutter/webview_flutter_android
 
 dev_dependencies:
   flutter_test:

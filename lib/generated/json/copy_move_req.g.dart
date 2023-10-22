@@ -11,7 +11,7 @@ CopyMoveReq $CopyMoveReqFromJson(Map<String, dynamic> json) {
   if (dstDir != null) {
     copyMoveReq.dstDir = dstDir;
   }
-  final List<String>? names = (json['names'] as List<dynamic>).map(
+  final List<String>? names = (json['names'] as List<dynamic>?)?.map(
           (e) => jsonConvert.convert<String>(e) as String).toList();
   if (names != null) {
     copyMoveReq.names = names;
@@ -25,4 +25,17 @@ Map<String, dynamic> $CopyMoveReqToJson(CopyMoveReq entity) {
   data['dst_dir'] = entity.dstDir;
   data['names'] = entity.names;
   return data;
+}
+
+extension CopyMoveReqExtension on CopyMoveReq {
+  CopyMoveReq copyWith({
+    String? srcDir,
+    String? dstDir,
+    List<String>? names,
+  }) {
+    return CopyMoveReq()
+      ..srcDir = srcDir ?? this.srcDir
+      ..dstDir = dstDir ?? this.dstDir
+      ..names = names ?? this.names;
+  }
 }

@@ -25,6 +25,7 @@ class AlistConstant {
   static const String ignoreAppVersion = "ignoreAppVersion";
   static const String isFirstTimeDownload = "isFirstTimeDownload";
   static const String maxRunningTaskCount = "maxRunningTaskCount";
+  static const String fileNameMaxLines = 'fileNameMaxLines';
 
   static const String locale = 'locale';
 }

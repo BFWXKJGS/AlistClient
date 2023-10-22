@@ -46,4 +46,7 @@ class NamedRouter {
 
   // download manager
   static const downloadManager = "/downloadManager";
+
+  // file list search
+  static const fileSearch = "/fileSearch";
 }

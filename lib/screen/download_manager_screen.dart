@@ -67,7 +67,7 @@ class DownloadManagerScreen extends StatelessWidget {
             )
           : ListView.separated(
               itemBuilder: (context, index) =>
-                  _buildDownloadItem(controller, index),
+                  Obx(() => _buildDownloadItem(controller, index)),
               separatorBuilder: (context, index) => const Divider(),
               itemCount: controller._downloadList.length,
             ),
@@ -109,10 +109,8 @@ class DownloadManagerScreen extends StatelessWidget {
         ],
       ),
       title: OverflowText(text: downloadItem.name),
-      subtitle: Obx(() {
-        return OverflowText(text: downloadItem.status.value);
-      }),
-      trailing: Obx(() => _buildTrailing(controller, downloadItem)),
+      subtitle: OverflowText(text: downloadItem.status.value),
+      trailing: _buildTrailing(controller, downloadItem),
       onTap: () => controller.onTap(downloadItem),
     );
     return Slidable(

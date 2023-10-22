@@ -15,3 +15,12 @@ Map<String, dynamic> $MkdirReqToJson(MkdirReq entity) {
   data['path'] = entity.path;
   return data;
 }
+
+extension MkdirReqExtension on MkdirReq {
+  MkdirReq copyWith({
+    String? path,
+  }) {
+    return MkdirReq()
+      ..path = path ?? this.path;
+  }
+}

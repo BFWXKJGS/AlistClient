@@ -7,7 +7,7 @@ FileRemoveReq $FileRemoveReqFromJson(Map<String, dynamic> json) {
   if (dir != null) {
     fileRemoveReq.dir = dir;
   }
-  final List<String>? names = (json['names'] as List<dynamic>).map(
+  final List<String>? names = (json['names'] as List<dynamic>?)?.map(
           (e) => jsonConvert.convert<String>(e) as String).toList();
   if (names != null) {
     fileRemoveReq.names = names;
@@ -20,4 +20,15 @@ Map<String, dynamic> $FileRemoveReqToJson(FileRemoveReq entity) {
   data['dir'] = entity.dir;
   data['names'] = entity.names;
   return data;
+}
+
+extension FileRemoveReqExtension on FileRemoveReq {
+  FileRemoveReq copyWith({
+    String? dir,
+    List<String>? names,
+  }) {
+    return FileRemoveReq()
+      ..dir = dir ?? this.dir
+      ..names = names ?? this.names;
+  }
 }

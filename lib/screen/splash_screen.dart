@@ -76,6 +76,9 @@ class _SplashScreenState extends State<SplashScreen> {
     String? basePath = SpUtil.getString(AlistConstant.basePath, defValue: null);
     bool guest = SpUtil.getBool(AlistConstant.guest) ?? false;
     bool useDemoServer = SpUtil.getBool(AlistConstant.useDemoServer) ?? false;
+    int fileNameMaxLines =
+        SpUtil.getInt(AlistConstant.fileNameMaxLines, defValue: 1) ?? 1;
+    Global.fileNameMaxLines.value = fileNameMaxLines;
     userController.login(
       User(
         baseUrl: baseUrl ?? "",

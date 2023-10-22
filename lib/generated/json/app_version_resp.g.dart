@@ -28,6 +28,19 @@ Map<String, dynamic> $AppVersionRespToJson(AppVersionResp entity) {
   return data;
 }
 
+extension AppVersionRespExtension on AppVersionResp {
+  AppVersionResp copyWith({
+    String? updates,
+    AppVersionRespAndroid? android,
+    AppVersionRespIos? ios,
+  }) {
+    return AppVersionResp()
+      ..updates = updates ?? this.updates
+      ..android = android ?? this.android
+      ..ios = ios ?? this.ios;
+  }
+}
+
 AppVersionRespAndroid $AppVersionRespAndroidFromJson(
     Map<String, dynamic> json) {
   final AppVersionRespAndroid appVersionRespAndroid = AppVersionRespAndroid();
@@ -56,6 +69,19 @@ Map<String, dynamic> $AppVersionRespAndroidToJson(
   return data;
 }
 
+extension AppVersionRespAndroidExtension on AppVersionRespAndroid {
+  AppVersionRespAndroid copyWith({
+    String? version,
+    String? githubUrl,
+    String? googlePlayUrl,
+  }) {
+    return AppVersionRespAndroid()
+      ..version = version ?? this.version
+      ..githubUrl = githubUrl ?? this.githubUrl
+      ..googlePlayUrl = googlePlayUrl ?? this.googlePlayUrl;
+  }
+}
+
 AppVersionRespIos $AppVersionRespIosFromJson(Map<String, dynamic> json) {
   final AppVersionRespIos appVersionRespIos = AppVersionRespIos();
   final String? version = jsonConvert.convert<String>(json['version']);
@@ -74,4 +100,15 @@ Map<String, dynamic> $AppVersionRespIosToJson(AppVersionRespIos entity) {
   data['version'] = entity.version;
   data['appStoreUrl'] = entity.appStoreUrl;
   return data;
+}
+
+extension AppVersionRespIosExtension on AppVersionRespIos {
+  AppVersionRespIos copyWith({
+    String? version,
+    String? appStoreUrl,
+  }) {
+    return AppVersionRespIos()
+      ..version = version ?? this.version
+      ..appStoreUrl = appStoreUrl ?? this.appStoreUrl;
+  }
 }

@@ -4,17 +4,19 @@ import 'package:flutter/material.dart';
 class AlistScaffold extends StatelessWidget {
   const AlistScaffold({
     Key? key,
-    required this.appbarTitle,
+    this.appbarTitle,
     required this.body,
     this.onLeadingDoubleTap,
     this.resizeToAvoidBottomInset,
     this.appbarActions,
+    this.showAppbar = true,
   }) : super(key: key);
-  final Widget appbarTitle;
+  final Widget? appbarTitle;
   final Widget body;
   final GestureTapCallback? onLeadingDoubleTap;
   final bool? resizeToAvoidBottomInset;
   final List<Widget>? appbarActions;
+  final bool showAppbar;
 
   @override
   Widget build(BuildContext context) {
@@ -41,19 +43,22 @@ class AlistScaffold extends StatelessWidget {
               ),
         child: Scaffold(
           backgroundColor: isDarkMode ? null : Colors.transparent,
-          resizeToAvoidBottomInset : resizeToAvoidBottomInset ?? true,
-          appBar: AppBar(
-            leading: canPop
-                ? GestureDetector(
-                    onDoubleTap: onLeadingDoubleTap,
-                    child: const BackButton(),
-                  )
-                : null,
-            backgroundColor: isDarkMode ? null : Colors.transparent,
-            title: appbarTitle,
-            actions: appbarActions,
-          ),
-          body: body,
+          resizeToAvoidBottomInset: resizeToAvoidBottomInset ?? true,
+          appBar: !showAppbar
+              ? null
+              : AppBar(
+                  leading: canPop
+                      ? GestureDetector(
+                          onDoubleTap: onLeadingDoubleTap,
+                          child: const BackButton(),
+                        )
+                      : null,
+                  automaticallyImplyLeading: false,
+                  backgroundColor: isDarkMode ? null : Colors.transparent,
+                  title: appbarTitle,
+                  actions: appbarActions,
+                ),
+          body: SafeArea(child: body),
         ));
   }
 }

@@ -43,9 +43,9 @@ class AlistPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
                     || Build.VERSION.SDK_INT < Build.VERSION_CODES.M
                 ) {
-                    result.success(false)
-                } else {
                     result.success(true)
+                } else {
+                    result.success(false)
                 }
             }
 

@@ -148,6 +148,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       Log.d(
           "OnInfo infoCode=$infoCode extraValue=$extraValue extraMsg=$extraMsg",
           tag: tag);
+      if (!mounted) {
+        return;
+      }
       if (infoCode == FlutterAvpdef.CURRENTPOSITION) {
         setState(() {
           _currentPos = Duration(milliseconds: extraValue!);
@@ -170,6 +173,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     _player.setOnLoadingStatusListener(
       loadingBegin: (String playerId) {
         Log.d("loadingBegin", tag: tag);
+        if (!mounted) {
+          return;
+        }
         setState(() {
           _loading = true;
         });
@@ -178,6 +184,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         Log.d("loadingBegin percent=$percent netSpeed=$netSpeed", tag: tag);
       },
       loadingEnd: (String playerId) {
+        if (!mounted) {
+          return;
+        }
         setState(() {
           _loading = false;
         });
@@ -197,6 +206,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         // ready
         case FlutterAvpdef.AVPStatus_AVPStatusPrepared:
           _player.getMediaInfo().then((value) {
+            if (!mounted) {
+              return;
+            }
             setState(() {
               _duration = Duration(milliseconds: value['duration']);
             });
@@ -227,6 +239,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     });
 
     _volumeSubscription = VolumeController().listener((volume) {
+      if (!mounted) {
+        return;
+      }
       setState(() {
         Log.d("VolumeController listener volume $volume");
         _systemVolumeListenValue = volume;
@@ -239,6 +254,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
 
   void _setPlaying(bool playing, {String? exception}) {
     if (_playing != playing || exception != null) {
+      if (!mounted) {
+        return;
+      }
       setState(() {
         _playing = playing;
         if (exception != null) {
@@ -479,6 +497,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
         overlays: []);
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _fullscreen = true;
     });
@@ -489,7 +510,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
         overlays: [SystemUiOverlay.bottom, SystemUiOverlay.top]);
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+    // SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
     setState(() {
       _fullscreen = false;
     });
@@ -571,7 +592,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       ),
       systemOverlayStyle: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.light,
         systemNavigationBarColor: Theme.of(context).colorScheme.background,
         systemNavigationBarIconBrightness: Brightness.light,
       ),
@@ -801,6 +822,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
     Log.d(
         "lastVolume=$_systemVolumeDragStartValue ratio=$ratio _volume=$newVolumeValue",
         tag: tag);
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _systemVolumeDragIndicatorValue = newVolumeValue;
     });

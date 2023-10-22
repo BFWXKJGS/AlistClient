@@ -40,6 +40,23 @@ Map<String, dynamic> $FileListRespEntityToJson(FileListRespEntity entity) {
   return data;
 }
 
+extension FileListRespEntityExtension on FileListRespEntity {
+  FileListRespEntity copyWith({
+    List<FileListRespContent>? content,
+    int? total,
+    String? readme,
+    bool? write,
+    String? provider,
+  }) {
+    return FileListRespEntity()
+      ..content = content ?? this.content
+      ..total = total ?? this.total
+      ..readme = readme ?? this.readme
+      ..write = write ?? this.write
+      ..provider = provider ?? this.provider;
+  }
+}
+
 FileListRespContent $FileListRespContentFromJson(Map<String, dynamic> json) {
   final FileListRespContent fileListRespContent = FileListRespContent();
   final String? name = jsonConvert.convert<String>(json['name']);
@@ -88,4 +105,27 @@ Map<String, dynamic> $FileListRespContentToJson(FileListRespContent entity) {
   data['type'] = entity.type;
   data['readme'] = entity.readme;
   return data;
+}
+
+extension FileListRespContentExtension on FileListRespContent {
+  FileListRespContent copyWith({
+    String? name,
+    int? size,
+    bool? isDir,
+    String? modified,
+    String? sign,
+    String? thumb,
+    int? type,
+    String? readme,
+  }) {
+    return FileListRespContent()
+      ..name = name ?? this.name
+      ..size = size ?? this.size
+      ..isDir = isDir ?? this.isDir
+      ..modified = modified ?? this.modified
+      ..sign = sign ?? this.sign
+      ..thumb = thumb ?? this.thumb
+      ..type = type ?? this.type
+      ..readme = readme ?? this.readme;
+  }
 }

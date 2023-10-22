@@ -55,3 +55,28 @@ Map<String, dynamic> $MyInfoRespToJson(MyInfoResp entity) {
   data['otp'] = entity.otp;
   return data;
 }
+
+extension MyInfoRespExtension on MyInfoResp {
+  MyInfoResp copyWith({
+    int? id,
+    String? username,
+    String? password,
+    String? basePath,
+    int? role,
+    bool? disabled,
+    int? permission,
+    String? ssoId,
+    bool? otp,
+  }) {
+    return MyInfoResp()
+      ..id = id ?? this.id
+      ..username = username ?? this.username
+      ..password = password ?? this.password
+      ..basePath = basePath ?? this.basePath
+      ..role = role ?? this.role
+      ..disabled = disabled ?? this.disabled
+      ..permission = permission ?? this.permission
+      ..ssoId = ssoId ?? this.ssoId
+      ..otp = otp ?? this.otp;
+  }
+}

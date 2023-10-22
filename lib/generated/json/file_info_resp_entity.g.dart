@@ -65,3 +65,32 @@ Map<String, dynamic> $FileInfoRespEntityToJson(FileInfoRespEntity entity) {
   data['related'] = entity.related;
   return data;
 }
+
+extension FileInfoRespEntityExtension on FileInfoRespEntity {
+  FileInfoRespEntity copyWith({
+    String? name,
+    int? size,
+    bool? isDir,
+    String? modified,
+    String? sign,
+    String? thumb,
+    int? type,
+    String? rawUrl,
+    String? readme,
+    String? provider,
+    dynamic related,
+  }) {
+    return FileInfoRespEntity()
+      ..name = name ?? this.name
+      ..size = size ?? this.size
+      ..isDir = isDir ?? this.isDir
+      ..modified = modified ?? this.modified
+      ..sign = sign ?? this.sign
+      ..thumb = thumb ?? this.thumb
+      ..type = type ?? this.type
+      ..rawUrl = rawUrl ?? this.rawUrl
+      ..readme = readme ?? this.readme
+      ..provider = provider ?? this.provider
+      ..related = related ?? this.related;
+  }
+}

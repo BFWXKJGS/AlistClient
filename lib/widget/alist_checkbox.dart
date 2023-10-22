@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 class AlistCheckBox extends StatelessWidget {
   final bool? value;
@@ -17,9 +17,9 @@ class AlistCheckBox extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Checkbox(
+        CupertinoCheckbox(
           value: value,
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          // materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           onChanged: onChanged,
         ),
         GestureDetector(

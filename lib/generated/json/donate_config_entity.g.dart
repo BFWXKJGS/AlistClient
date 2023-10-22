@@ -30,3 +30,18 @@ Map<String, dynamic> $DonateConfigEntityToJson(DonateConfigEntity entity) {
   data['alipay_small'] = entity.alipaySmall;
   return data;
 }
+
+extension DonateConfigEntityExtension on DonateConfigEntity {
+  DonateConfigEntity copyWith({
+    String? wechat,
+    String? wechatSmall,
+    String? alipay,
+    String? alipaySmall,
+  }) {
+    return DonateConfigEntity()
+      ..wechat = wechat ?? this.wechat
+      ..wechatSmall = wechatSmall ?? this.wechatSmall
+      ..alipay = alipay ?? this.alipay
+      ..alipaySmall = alipaySmall ?? this.alipaySmall;
+  }
+}

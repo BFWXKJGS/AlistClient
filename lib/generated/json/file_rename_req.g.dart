@@ -20,3 +20,14 @@ Map<String, dynamic> $FileRenameReqToJson(FileRenameReq entity) {
   data['name'] = entity.name;
   return data;
 }
+
+extension FileRenameReqExtension on FileRenameReq {
+  FileRenameReq copyWith({
+    String? path,
+    String? name,
+  }) {
+    return FileRenameReq()
+      ..path = path ?? this.path
+      ..name = name ?? this.name;
+  }
+}

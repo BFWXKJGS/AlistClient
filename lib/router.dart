@@ -1,9 +1,11 @@
 import 'package:alist/screen/aboute_screen.dart';
+import 'package:alist/screen/account_screen.dart';
 import 'package:alist/screen/audio_player_screen.dart';
 import 'package:alist/screen/donate_screen.dart';
 import 'package:alist/screen/download_manager_screen.dart';
 import 'package:alist/screen/file_list/file_list_screen.dart';
 import 'package:alist/screen/file_reader_screen.dart';
+import 'package:alist/screen/file_search_screen.dart';
 import 'package:alist/screen/gallery_screen.dart';
 import 'package:alist/screen/home_screen.dart';
 import 'package:alist/screen/login_screen.dart';
@@ -13,7 +15,6 @@ import 'package:alist/screen/splash_screen.dart';
 import 'package:alist/screen/uploading_files_screen.dart';
 import 'package:alist/screen/video_player_screen.dart';
 import 'package:alist/screen/web_screen.dart';
-import 'package:alist/screen/account_screen.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:get/get_navigation/src/routes/get_route.dart';
 
@@ -40,5 +41,6 @@ class AlistRouter {
     GetPage(name: NamedRouter.uploadingFiles, page: () => const UploadingFilesScreen()),
     GetPage(name: NamedRouter.account, page: () => const AccountScreen()),
     GetPage(name: NamedRouter.downloadManager, page: () => DownloadManagerScreen()),
+    GetPage(name: NamedRouter.fileSearch, page: () => FileSearchScreen()),
   ];
 }
