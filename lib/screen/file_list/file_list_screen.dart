@@ -146,7 +146,6 @@ class _FileListScreenState extends State<FileListScreen>
         }
       });
     }
-    _userController.loadSettings();
     LogUtil.d("initState", tag: tag);
   }
 

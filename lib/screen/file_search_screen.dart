@@ -92,7 +92,8 @@ class FileSearchScreen extends StatelessWidget {
                 GestureDetector(
                   onTap: () => Get.back(),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
                     child: Text(Intl.fileSearchScreen_cancel.tr),
                   ),
                 )
@@ -175,7 +176,20 @@ class FileSearchController extends GetxController {
     DioUtils.instance.requestNetwork<FileSearchResp>(Method.post, "fs/search",
         params: body, onSuccess: (data) {
       if (textEditingController.text.trim() == text) {
+        UserController userController = Get.find<UserController>();
+        var user = userController.user.value;
+        if (user.basePath != null &&
+            user.basePath != '' &&
+            user.basePath != '/') {
+          data?.content?.forEach((element) {
+            element.parent = element.parent?.substring(user.basePath!.length);
+          });
+        }
         list.value = data?.content ?? [];
+      }
+    }, onError: (code, msg) {
+      if (textEditingController.text.trim() == text) {
+        SmartDialog.showToast(msg);
       }
     }, cancelToken: _cancelToken);
   }

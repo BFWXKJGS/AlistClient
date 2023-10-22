@@ -3,6 +3,7 @@ import 'package:alist/entity/public_settings_resp.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:flustars/flustars.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
 import 'constant.dart';
@@ -27,6 +28,7 @@ class UserController extends GetxController {
     if (fromCache || user.basePath == null || user.basePath!.isEmpty) {
       requestBasePath(user);
     }
+    loadSettings();
   }
 
   void loadSettings() {
