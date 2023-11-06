@@ -33,4 +33,19 @@ class AlistPlugin {
   static Future onDownloadingEnd() async {
     await methodChannel.invokeMethod("onDownloadingEnd");
   }
+
+  // just for android Q above
+  static Future saveFileToLocal(String fileName, String filePath) async {
+    await methodChannel.invokeMethod(
+        "saveFileToLocal", {"fileName": fileName, "filePath": filePath});
+  }
+
+  // just for android
+  static Future<String> getExternalDownloadDir() async {
+    dynamic result = await methodChannel.invokeMethod("getExternalDownloadDir");
+    if (result is String) {
+      return result;
+    }
+    return "";
+  }
 }

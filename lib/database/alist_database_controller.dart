@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:alist/database/alist_database.dart';
 import 'package:alist/database/dao/favorite_dao.dart';
 import 'package:alist/database/dao/file_download_record_dao.dart';
@@ -7,6 +10,8 @@ import 'package:alist/database/dao/server_dao.dart';
 import 'package:alist/database/dao/video_viewing_record_dao.dart';
 import 'package:floor/floor.dart';
 import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 
 class AlistDatabaseController extends GetxController {
   late final AlistDatabase database;
@@ -58,8 +63,21 @@ class AlistDatabaseController extends GetxController {
   });
 
   Future<void> init() async {
-    database =
-        await $FloorAlistDatabase.databaseBuilder('alist.db').addMigrations([
+    var dbName = "alist.db";
+    if (Platform.isIOS) {
+      var directory = await getApplicationSupportDirectory();
+      var dbPath = path.join(directory.path, "database", "alist.db");
+      if (!await File(dbPath).exists()) {
+        var directoryOld = await getApplicationDocumentsDirectory();
+        var dbPathOld = path.join(directoryOld.path, "alist.db");
+        if (await File(dbPathOld).exists()) {
+          await File(dbPathOld).rename(dbPath);
+        }
+      }
+      dbName = dbPath;
+    }
+
+    database = await $FloorAlistDatabase.databaseBuilder(dbName).addMigrations([
       _migration1to2,
       _migration2to3,
       _migration3to4,

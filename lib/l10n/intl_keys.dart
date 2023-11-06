@@ -158,6 +158,10 @@ class Intl {
   static const String galleryScreen_savePhotoSucceed = "galleryScreen_savePhotoSucceed";
   static const String downloadManagerScreen_title = "downloadManagerScreen_title";
   static const String downloadManagerScreen_menu_delete = "downloadManagerScreen_menu_delete";
+  static const String downloadManagerScreen_menu_save = "downloadManagerScreen_menu_save";
+  static const String downloadManagerScreen_tips_saved = "downloadManagerScreen_tips_saved";
+  static const String downloadManagerScreen_tips_saved_first_ios = "downloadManagerScreen_tips_saved_first_ios";
+  static const String downloadManagerScreen_tips_saved_first_android = "downloadManagerScreen_tips_saved_first_android";
   static const String downloadManagerScreen_status_waiting = "downloadManagerScreen_status_waiting";
   static const String downloadManagerScreen_status_downloading = "downloadManagerScreen_status_downloading";
   static const String downloadManagerScreen_status_finish = "downloadManagerScreen_status_finish";

@@ -1,7 +1,7 @@
 apply from: "privacy.gradle"
 
 buildscript {
-    ext.kotlin_version = '1.7.10'
+    ext.kotlin_version = '1.9.10'
     repositories {
         google()
         mavenCentral()

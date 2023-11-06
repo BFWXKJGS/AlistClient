@@ -34,4 +34,8 @@ abstract class FileDownloadRecordRecordDao {
   @Query(
       "SELECT * FROM file_download_record WHERE server_url = :serverUrl AND user_id=:userId ORDER BY id DESC")
   Future<List<FileDownloadRecord>?> findAll(String serverUrl, String userId);
+
+  @Query(
+      "UPDATE file_download_record SET local_path = :newLocalPath WHERE id = :id")
+  Future<void> updateLocalPath(int id, String newLocalPath);
 }

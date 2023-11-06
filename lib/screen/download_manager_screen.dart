@@ -17,10 +17,10 @@ import 'package:alist/util/download/download_manager.dart';
 import 'package:alist/util/download/download_task_status.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
-import 'package:alist/util/global.dart';
 import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/proxy.dart';
+import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/overflow_text.dart';
@@ -32,7 +32,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:path/path.dart' as path;
 
 typedef OnDownloadManagerMenuClickCallback = Function(
     DownloadManagerMenuId menuId);
@@ -98,6 +100,12 @@ class DownloadManagerScreen extends StatelessWidget {
     var downloadItem = controller._downloadList[index];
     String? thumbnail = FileUtils.getCompleteThumbnail(downloadItem.thumbnail);
     String icon = FileUtils.getFileIcon(false, downloadItem.name);
+    bool canSave =
+        downloadItem.downloadStatus.value == DownloadTaskStatus.finished &&
+            (Platform.isAndroid ||
+                (controller.shareDirectoryPath != null &&
+                    !downloadItem.savedPath.value
+                        .startsWith(controller.shareDirectoryPath!)));
     Widget content = ListTile(
       leading: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -117,8 +125,15 @@ class DownloadManagerScreen extends StatelessWidget {
       key: Key(downloadItem.id.toString()),
       endActionPane: ActionPane(
         motion: const DrawerMotion(),
-        extentRatio: 0.25,
+        extentRatio: canSave ? 0.5 : 0.25,
         children: [
+          if (canSave)
+            SlidableAction(
+              onPressed: (context) => controller.saveFileToLocal(downloadItem),
+              backgroundColor: Get.theme.colorScheme.secondary,
+              foregroundColor: Colors.white,
+              label: Intl.downloadManagerScreen_menu_save.tr,
+            ),
           SlidableAction(
             onPressed: (context) => controller.delete(downloadItem),
             backgroundColor: Colors.red,
@@ -251,6 +266,7 @@ class DownloadManagerController extends GetxController {
   final isMenuOpen = false.obs;
   final menuController = MenuController();
   var menuWidth = 160.0;
+  String? shareDirectoryPath;
 
   @override
   void onInit() {
@@ -261,8 +277,8 @@ class DownloadManagerController extends GetxController {
       if (task.status != DownloadTaskStatus.downloading) {
         return;
       }
-      var item = _downloadList
-          .firstWhereOrNull((element) => element.savedPath == task.record.localPath);
+      var item = _downloadList.firstWhereOrNull(
+          (element) => element.savedPath.value == task.record.localPath);
       if (item != null) {
         item.downloadStatus.value = task.status;
         item.downloaded = task.downloaded;
@@ -276,8 +292,8 @@ class DownloadManagerController extends GetxController {
 
     _downloadStatusSubscription =
         DownloadManager.instance.listenDownloadStatusChange((task) {
-      var item = _downloadList
-          .firstWhereOrNull((element) => element.savedPath == task.record.localPath);
+      var item = _downloadList.firstWhereOrNull(
+          (element) => element.savedPath.value == task.record.localPath);
       if (item != null) {
         item.downloadStatus.value = task.status;
         switch (item.downloadStatus.value) {
@@ -329,6 +345,11 @@ class DownloadManagerController extends GetxController {
         }
       }
     });
+
+    if (Platform.isIOS || Platform.isMacOS) {
+      getApplicationDocumentsDirectory()
+          .then((value) => shareDirectoryPath = value.path);
+    }
 
     if (Get.locale.toString().contains("zh")) {
       menuWidth = 160;
@@ -405,7 +426,8 @@ class DownloadManagerController extends GetxController {
       if (downloadStatus != DownloadTaskStatus.finished && downloadedInt > 0) {
         status = _resetStatus(status, downloadedInt, contentLengthInt);
       } else if (downloadStatus == DownloadTaskStatus.finished) {
-        if (File(file.localPath).existsSync() && File(file.localPath).existsSync()) {
+        if (File(file.localPath).existsSync() &&
+            File(file.localPath).existsSync()) {
           status =
               "$status - ${FileUtils.formatBytes(File(file.localPath).lengthSync())}";
         }
@@ -459,25 +481,25 @@ class DownloadManagerController extends GetxController {
   }
 
   void pause(DownloadItem downloadItem) {
-    DownloadManager.instance.pause(downloadItem.savedPath);
+    DownloadManager.instance.pause(downloadItem.savedPath.value);
   }
 
   void delete(DownloadItem downloadItem) {
-    DownloadManager.instance.cancel(downloadItem.savedPath);
+    DownloadManager.instance.cancel(downloadItem.savedPath.value);
     _downloadList.removeWhere((element) => element == downloadItem);
     AlistDatabaseController databaseController = Get.find();
     FileDownloadRecordRecordDao downloadRecordRecordDao =
         databaseController.downloadRecordRecordDao;
     downloadRecordRecordDao.deleteById(downloadItem.id);
-    var savedFile = File(downloadItem.savedPath);
+    var savedFile = File(downloadItem.savedPath.value);
     if (savedFile.existsSync()) {
       savedFile.delete();
     }
-    var tmpFile = File("${downloadItem.savedPath}.tmp");
+    var tmpFile = File("${downloadItem.savedPath.value}.tmp");
     if (tmpFile.existsSync()) {
       tmpFile.delete();
     }
-    var downloadInfoFile = File("${downloadItem.savedPath}.downloads");
+    var downloadInfoFile = File("${downloadItem.savedPath.value}.downloads");
     if (downloadInfoFile.existsSync()) {
       downloadInfoFile.delete();
     }
@@ -492,7 +514,7 @@ class DownloadManagerController extends GetxController {
       }
       return;
     }
-    if (!File(downloadItem.savedPath).existsSync()) {
+    if (!File(downloadItem.savedPath.value).existsSync()) {
       SmartDialog.showToast(Intl.downloadManagerScreen_tips_fileNotFound.tr);
       return;
     }
@@ -515,7 +537,7 @@ class DownloadManagerController extends GetxController {
         var videos = files.map((e) {
           return VideoItem(
             name: e.name,
-            localPath: e.savedPath,
+            localPath: e.savedPath.value,
             remotePath: e.remotePath ?? "",
             sign: e.sign ?? "",
             size: e.contentLength ?? 0,
@@ -530,7 +552,7 @@ class DownloadManagerController extends GetxController {
         var audios = files.map((e) {
           return AudioItem(
             name: e.name,
-            localPath: e.savedPath,
+            localPath: e.savedPath.value,
             remotePath: e.remotePath ?? "",
             sign: e.sign ?? "",
           );
@@ -542,7 +564,7 @@ class DownloadManagerController extends GetxController {
         var photos = files.map((e) {
           return PhotoItem(
             name: e.name,
-            localPath: e.savedPath,
+            localPath: e.savedPath.value,
             remotePath: e.remotePath ?? "",
             sign: e.sign ?? "",
           );
@@ -553,7 +575,7 @@ class DownloadManagerController extends GetxController {
       case FileType.pdf:
         var pdfItem = PdfItem(
           name: downloadItem.name,
-          localPath: downloadItem.savedPath,
+          localPath: downloadItem.savedPath.value,
           remotePath: downloadItem.remotePath ?? "",
           sign: downloadItem.sign,
           thumb: downloadItem.thumbnail,
@@ -569,7 +591,7 @@ class DownloadManagerController extends GetxController {
       default:
         var fileReaderItem = FileReaderItem(
           name: downloadItem.name,
-          localPath: downloadItem.savedPath,
+          localPath: downloadItem.savedPath.value,
           remotePath: downloadItem.remotePath ?? "",
           sign: downloadItem.sign,
           thumb: downloadItem.thumbnail,
@@ -587,7 +609,7 @@ class DownloadManagerController extends GetxController {
     ProxyServer proxyServer = Get.find();
     // 开启本地代理服务器
     await proxyServer.start();
-    var file = File(item.savedPath);
+    var file = File(item.savedPath.value);
     var fileContent = await file.readAsString();
 
     var proxyUri =
@@ -662,7 +684,7 @@ class DownloadManagerController extends GetxController {
       if (item.downloadStatus.value == DownloadTaskStatus.waiting ||
           item.downloadStatus.value == DownloadTaskStatus.downloading ||
           item.downloadStatus.value == DownloadTaskStatus.decompressing) {
-        DownloadManager.instance.pause(item.savedPath);
+        DownloadManager.instance.pause(item.savedPath.value);
       }
     }
   }
@@ -701,6 +723,110 @@ class DownloadManagerController extends GetxController {
     if (isNotificationGranted && isIgnoreBatteryOptimizations) {
       SmartDialog.showToast(
           Intl.downloadManagerScreen_tips_backgroundDownloadSupported.tr);
+    }
+  }
+
+  void saveFileToLocal(DownloadItem downloadItem) async {
+    if (downloadItem.downloadStatus.value != DownloadTaskStatus.finished) {
+      return;
+    }
+
+    SmartDialog.showLoading();
+    if (Platform.isAndroid) {
+      if (await AlistPlugin.isScopedStorage()) {
+        await AlistPlugin.saveFileToLocal(
+            downloadItem.name, downloadItem.savedPath.value);
+        SmartDialog.showToast(Intl.downloadManagerScreen_tips_saved.tr);
+        _showTipsWhenFirstSaved();
+      } else {
+        PermissionStatus permissionStatus = await Permission.storage.request();
+        if (permissionStatus.isGranted) {
+          String downloadDir = await AlistPlugin.getExternalDownloadDir();
+          var savedPath = path.join(downloadDir,
+              downloadItem.name.replaceAll(" ", "-").replaceAll("/", "_"));
+          savedPath = _savedPathRename(savedPath);
+          File file = File(downloadItem.savedPath.value);
+          file.parent.create(recursive: true);
+          file.copy(savedPath);
+          SmartDialog.showToast(Intl.downloadManagerScreen_tips_saved.tr);
+          _showTipsWhenFirstSaved();
+        } else {
+          SmartDialog.showToast(Intl.galleryScreen_storagePermissionDenied.tr);
+        }
+      }
+    } else if (Platform.isIOS || Platform.isMacOS) {
+      final directory = await getApplicationDocumentsDirectory();
+      var savedPath = path.join(directory.path,
+          downloadItem.name.replaceAll(" ", "-").replaceAll("/", "_"));
+      if (downloadItem.savedPath.value != savedPath) {
+        savedPath = _savedPathRename(savedPath);
+
+        await File(downloadItem.savedPath.value).rename(savedPath);
+        downloadItem.savedPath.value = savedPath;
+
+        AlistDatabaseController databaseController = Get.find();
+        FileDownloadRecordRecordDao downloadRecordRecordDao =
+            databaseController.downloadRecordRecordDao;
+
+        await downloadRecordRecordDao.updateLocalPath(
+            downloadItem.id, savedPath);
+      }
+      SmartDialog.showToast(Intl.downloadManagerScreen_tips_saved.tr);
+      _showTipsWhenFirstSaved();
+    }
+    SmartDialog.dismiss(status: SmartStatus.loading);
+  }
+
+  String _savedPathRename(String savedPath) {
+    int nameIndex = 0;
+    while (File(savedPath).existsSync()) {
+      final pre = savedPath.substringBeforeLast("/");
+      var name = savedPath.substringAfterLast("/")!;
+      final extIndex = name.indexOf(".");
+      late final String ext;
+      late final String nameWithoutExt;
+      if (extIndex > -1) {
+        ext = name.substringAfterLast(".")!;
+        nameWithoutExt = name.substringBeforeLast(".")!;
+      } else {
+        ext = "";
+        nameWithoutExt = name;
+      }
+      nameIndex++;
+      if (ext != "") {
+        savedPath = "$pre/$nameWithoutExt($nameIndex).$ext";
+      } else {
+        savedPath = "$pre/$nameWithoutExt($nameIndex)";
+      }
+    }
+    return savedPath;
+  }
+
+  _showTipsWhenFirstSaved() {
+    var isFirstTimeSaveToLocal = SpUtil.getBool(
+      AlistConstant.isFirstTimeSaveToLocal,
+      defValue: true,
+    );
+    if (isFirstTimeSaveToLocal == true) {
+      SmartDialog.show(
+          clickMaskDismiss: false,
+          builder: (context) {
+            return AlertDialog(
+              title: Text(Intl.davTipsDialog_title.tr),
+              content: Text(Platform.isAndroid
+                  ? Intl.downloadManagerScreen_tips_saved_first_android.tr
+                  : Intl.downloadManagerScreen_tips_saved_first_ios.tr),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    SpUtil.putBool(AlistConstant.isFirstTimeSaveToLocal, false);
+                    SmartDialog.dismiss();
+                  },
+                  child: Text(Intl.downloadManager_downloadTipDialog_iKnow.tr),
+                ),
+              ],
+            );
+          });
     }
   }
 }
@@ -784,7 +910,7 @@ class DownloadItem {
   final Rx<DownloadTaskStatus> downloadStatus;
   final Map<String, dynamic> requestHeaders;
   final int limitFrequency;
-  final String savedPath;
+  RxString savedPath;
   String? thumbnail;
   int downloaded;
   int? contentLength;
@@ -793,7 +919,7 @@ class DownloadItem {
     required this.id,
     required this.name,
     required this.remotePath,
-    required this.savedPath,
+    required String savedPath,
     required this.sign,
     required String status,
     required DownloadTaskStatus downloadStatus,
@@ -803,6 +929,7 @@ class DownloadItem {
     this.downloaded = 0,
     this.contentLength,
   })  : status = status.obs,
+        savedPath = savedPath.obs,
         downloadStatus = downloadStatus.obs;
 }
 

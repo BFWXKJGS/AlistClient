@@ -353,6 +353,16 @@ class _$FileDownloadRecordRecordDao extends FileDownloadRecordRecordDao {
   }
 
   @override
+  Future<void> updateLocalPath(
+    int id,
+    String newLocalPath,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'UPDATE file_download_record SET local_path = ?2 WHERE id = ?1',
+        arguments: [id, newLocalPath]);
+  }
+
+  @override
   Future<int> insertRecord(FileDownloadRecord record) {
     return _fileDownloadRecordInsertionAdapter.insertAndReturnId(
         record, OnConflictStrategy.abort);
