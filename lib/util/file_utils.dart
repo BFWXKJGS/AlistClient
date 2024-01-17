@@ -249,17 +249,15 @@ class FileUtils {
       return null;
     }
 
-    var encodedPath = "";
-    path.split("/").forEach((element) {
-      encodedPath += "/${Uri.encodeComponent(element)}";
-    });
-    if (encodedPath.startsWith("//")) {
-      encodedPath = encodedPath.substring(1);
+    var encodedPath = Uri.encodeFull(path);
+    var encodeBasePath = Uri.encodeFull(user.basePath ?? "");
+    if (encodeBasePath.startsWith("//")) {
+      encodeBasePath = encodeBasePath.substring(1);
     }
 
     var filePath =
-        user.basePath!.endsWith("/") ? encodedPath.substring(1) : encodedPath;
-    String url = "${user.serverUrl}d${user.basePath}$filePath";
+        encodeBasePath.endsWith("/") ? encodedPath.substring(1) : encodedPath;
+    String url = "${user.serverUrl}d$encodeBasePath$filePath";
     if (sign != null && sign.isNotEmpty) {
       url = "$url?sign=$sign";
     }
