@@ -9,6 +9,7 @@ const translationsEnUS = {
   "screenName_recents": "Recents",
   "screenName_uploadingFiles": "File upload",
   "screenName_favorite": "Favorite",
+  "screenName_cacheManagement": "Cache Management",
   "loginScreen_label_username": "Username",
   "loginScreen_label_password": "Password",
   "loginScreen_label_serverUrl": "Server URL",
@@ -24,6 +25,7 @@ const translationsEnUS = {
   "settingsScreen_item_about": "About",
   "settingsScreen_item_privacyPolicy": "Privacy Policy",
   "settingsScreen_item_downloads": "Download Manager",
+  "settingsScreen_item_cacheManagement": "Cache Management",
   "photo_load_failed": "Failed to load photo",
   "wechat": "WeChat",
   "alipay": "Alipay",
@@ -168,8 +170,10 @@ const translationsEnUS = {
   "downloadManagerScreen_menu_delete": "Delete",
   "downloadManagerScreen_menu_save": "Save",
   "downloadManagerScreen_tips_saved": "Saved.",
-  "downloadManagerScreen_tips_saved_first_ios": "The file has been saved, please open \"File APP\" and go to \"My iPhone\"\-\"ALClient\" to check.",
-  "downloadManagerScreen_tips_saved_first_android": "The file has been saved, please open the file manager and go to the download directory to view it.",
+  "downloadManagerScreen_tips_saved_first_ios":
+      "The file has been saved, please open \"File APP\" and go to \"My iPhone\"\-\"ALClient\" to check.",
+  "downloadManagerScreen_tips_saved_first_android":
+      "The file has been saved, please open the file manager and go to the download directory to view it.",
   "downloadManagerScreen_status_waiting": "Waiting...",
   "downloadManagerScreen_status_downloading": "Downloading...",
   "downloadManagerScreen_status_finish": "Finished",
@@ -219,4 +223,8 @@ const translationsEnUS = {
   "configFileNameMaxLinesDialog_choice_one": "Takes up to 1 line",
   "configFileNameMaxLinesDialog_choice_two": "Takes up to 2 lines",
   "configFileNameMaxLinesDialog_choice_noLimit": "No limit",
+  "cacheManagement_imageCache": "Image Cache",
+  "cacheManagement_audioCache": "Audio Cache",
+  "cacheManagement_otherCache": "Other cache",
+  "cacheManagement_tips_clearing_cache": "Clearing cache...",
 };

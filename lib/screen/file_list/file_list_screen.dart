@@ -11,7 +11,7 @@ import 'package:alist/entity/file_remove_req.dart';
 import 'package:alist/entity/file_rename_req.dart';
 import 'package:alist/entity/public_settings_resp.dart';
 import 'package:alist/generated/images.dart';
-import 'package:alist/generated/mkdir_req.dart';
+import 'package:alist/entity/mkdir_req.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/router.dart';

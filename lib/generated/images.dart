@@ -20,6 +20,7 @@ class Images {
   static const String loginScreenPassword = 'assets/images/login_screen_password.png';
   static const String loginScreenServerUrl = 'assets/images/login_screen_server_url.png';
   static const String logo = 'assets/images/logo.png';
+  static const String settingsScreenCacheManager = 'assets/images/settingsScreenCacheManager.png';
   static const String settingsScreenAbout = 'assets/images/settings_screen_about.png';
   static const String settingsScreenAccount = 'assets/images/settings_screen_account.png';
   static const String settingsScreenDonate = 'assets/images/settings_screen_donate.png';

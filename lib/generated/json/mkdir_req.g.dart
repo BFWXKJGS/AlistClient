@@ -1,5 +1,5 @@
 import 'package:alist/generated/json/base/json_convert_content.dart';
-import 'package:alist/generated/mkdir_req.dart';
+import 'package:alist/entity/mkdir_req.dart';
 
 MkdirReq $MkdirReqFromJson(Map<String, dynamic> json) {
   final MkdirReq mkdirReq = MkdirReq();

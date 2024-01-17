@@ -9,6 +9,7 @@ class Intl {
   static const String screenName_recents = "screenName_recents";
   static const String screenName_uploadingFiles = "screenName_uploadingFiles";
   static const String screenName_favorite = "screenName_favorite";
+  static const String screenName_cacheManagement = "screenName_cacheManagement";
   static const String loginScreen_label_username = "loginScreen_label_username";
   static const String loginScreen_label_password = "loginScreen_label_password";
   static const String loginScreen_label_serverUrl = "loginScreen_label_serverUrl";
@@ -24,6 +25,7 @@ class Intl {
   static const String settingsScreen_item_about = "settingsScreen_item_about";
   static const String settingsScreen_item_privacyPolicy = "settingsScreen_item_privacyPolicy";
   static const String settingsScreen_item_downloads = "settingsScreen_item_downloads";
+  static const String settingsScreen_item_cacheManagement = "settingsScreen_item_cacheManagement";
   static const String photo_load_failed = "photo_load_failed";
   static const String wechat = "wechat";
   static const String alipay = "alipay";
@@ -205,4 +207,8 @@ class Intl {
   static const String configFileNameMaxLinesDialog_choice_one = "configFileNameMaxLinesDialog_choice_one";
   static const String configFileNameMaxLinesDialog_choice_two = "configFileNameMaxLinesDialog_choice_two";
   static const String configFileNameMaxLinesDialog_choice_noLimit = "configFileNameMaxLinesDialog_choice_noLimit";
+  static const String cacheManagement_imageCache = "cacheManagement_imageCache";
+  static const String cacheManagement_audioCache = "cacheManagement_audioCache";
+  static const String cacheManagement_otherCache = "cacheManagement_otherCache";
+  static const String cacheManagement_tips_clearing_cache = "cacheManagement_tips_clearing_cache";
 }

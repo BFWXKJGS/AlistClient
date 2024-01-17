@@ -49,4 +49,7 @@ class NamedRouter {
 
   // file list search
   static const fileSearch = "/fileSearch";
+
+  // cache manager
+  static const cacheManager = "/cacheManager";
 }
