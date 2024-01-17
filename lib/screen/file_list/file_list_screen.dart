@@ -118,7 +118,18 @@ class _FileListScreenState extends State<FileListScreen>
     this.path = path;
     stackId = !widget.isRootStack ? AlistRouter.fileListRouterStackId : null;
     LogUtil.d("sortBy=${widget.sortBy}");
-    _menuAnchorController.updateSortBy(widget.sortBy, widget.sortByUp);
+    if (widget.sortBy != null) {
+      _menuAnchorController.updateSortBy(widget.sortBy, widget.sortByUp);
+    } else {
+      var fileSortWayIndex =
+          SpUtil.getInt(AlistConstant.fileSortWayIndex, defValue: -1) ?? -1;
+      if (fileSortWayIndex > -1) {
+        var fileSortWayUp =
+            SpUtil.getBool(AlistConstant.fileSortWayUp) ?? false;
+        _menuAnchorController.updateSortBy(
+            MenuId.values[fileSortWayIndex], fileSortWayUp);
+      }
+    }
 
     if (_isRootPath(path)) {
       _pageName == null;
@@ -273,6 +284,9 @@ class _FileListScreenState extends State<FileListScreen>
           case MenuGroupId.sort:
             _menuAnchorController.sortBy.value = menu.menuId;
             _menuAnchorController.sortByUp.value = menu.isUp ?? false;
+            SpUtil.putInt(AlistConstant.fileSortWayIndex, menu.menuId.index);
+            SpUtil.putBool(AlistConstant.fileSortWayUp, menu.isUp ?? false);
+
             var newFiles = _files.toList();
             _sort(newFiles);
             setState(() {

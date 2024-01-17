@@ -27,6 +27,8 @@ class AlistConstant {
   static const String isFirstTimeSaveToLocal = "isFirstTimeSaveToLocal";
   static const String maxRunningTaskCount = "maxRunningTaskCount";
   static const String fileNameMaxLines = 'fileNameMaxLines';
+  static const String fileSortWayIndex = 'fileSortWayIndex';
+  static const String fileSortWayUp = 'fileSortWayUp';
 
   static const String locale = 'locale';
 }
