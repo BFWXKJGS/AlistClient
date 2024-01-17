@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:alist/entity/app_version_resp.dart';
 import 'package:alist/l10n/intl_keys.dart';
@@ -118,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
     var versionInt = 0;
     var arr = version.split(".");
     for (int i = 0; i < arr.length; i++) {
-      versionInt += int.parse(arr[i]) * (100 ^ i);
+      versionInt += int.parse(arr[i]) * pow(100, arr.length - i - 1).toInt();
     }
     return versionInt;
   }
