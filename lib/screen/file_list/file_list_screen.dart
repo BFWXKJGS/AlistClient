@@ -9,9 +9,8 @@ import 'package:alist/database/table/file_viewing_record.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/entity/file_remove_req.dart';
 import 'package:alist/entity/file_rename_req.dart';
-import 'package:alist/entity/public_settings_resp.dart';
-import 'package:alist/generated/images.dart';
 import 'package:alist/entity/mkdir_req.dart';
+import 'package:alist/generated/images.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/router.dart';
@@ -37,7 +36,6 @@ import 'package:alist/util/named_router.dart';
 import 'package:alist/util/proxy.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
-import 'package:alist/widget/alist_checkbox.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/config_file_name_max_lines_dialog.dart';
 import 'package:alist/widget/file_details_dialog.dart';
@@ -46,7 +44,6 @@ import 'package:alist/widget/overflow_text.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:floor/floor.dart';
 import 'package:flustars/flustars.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_document_picker/flutter_document_picker.dart';
@@ -647,7 +644,7 @@ class _FileListScreenState extends State<FileListScreen>
       modified: modifyTimeStr,
       typeInt: resp.type,
       type: resp.getFileType(),
-      thumb: resp.thumb,
+      thumb: resp.isDir ? "" : resp.thumb,
       sign: resp.sign,
       icon: resp.getFileIcon(),
       modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,
