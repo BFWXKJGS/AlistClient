@@ -171,7 +171,7 @@ const translationsEnUS = {
   "downloadManagerScreen_menu_save": "Save",
   "downloadManagerScreen_tips_saved": "Saved.",
   "downloadManagerScreen_tips_saved_first_ios":
-      "The file has been saved, please open \"File APP\" and go to \"My iPhone\"\-\"ALClient\" to check.",
+      "The file has been saved. Please open the file manager and check in the \"Downloads\" directory.",
   "downloadManagerScreen_tips_saved_first_android":
       "The file has been saved, please open the file manager and go to the download directory to view it.",
   "downloadManagerScreen_status_waiting": "Waiting...",

@@ -463,7 +463,7 @@ class _FavoriteScreenState extends State<FavoriteScreen>
       modified: modifyTimeStr,
       typeInt: resp.type,
       type: resp.getFileType(),
-      thumb: resp.thumb,
+      thumb: resp.isDir ? "" : resp.thumb,
       sign: resp.sign,
       icon: resp.getFileIcon(),
       modifiedMilliseconds: modifyTime?.millisecondsSinceEpoch ?? -1,

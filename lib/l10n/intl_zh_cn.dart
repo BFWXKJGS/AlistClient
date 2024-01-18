@@ -166,7 +166,7 @@ const translationsZhCN = {
   "downloadManagerScreen_tips_saved": "已保存",
   "downloadManagerScreen_tips_saved_first_ios":
       "该文件已保存，请打开\"文件APP\"，到\"我的iPhone\"-\"ALClient\"查看",
-  "downloadManagerScreen_tips_saved_first_android": "该文件已保存，请打开文件管理器，到下载目录中查看",
+  "downloadManagerScreen_tips_saved_first_android": "该文件已保存，请打开文件管理器，到“下载”目录中查看",
   "downloadManagerScreen_status_waiting": "等待中...",
   "downloadManagerScreen_status_downloading": "下载中...",
   "downloadManagerScreen_status_finish": "下载完毕",
