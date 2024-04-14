@@ -123,6 +123,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
 
   double _volume = 1.0;
 
+  List<AVPTrackInfo>? _audioTracks;
+  int _audioTrackIndex = 0;
+
   final barHeight = 40.0;
 
   void _readIfIpad() async {
@@ -209,7 +212,13 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
             if (!mounted) {
               return;
             }
+            var mediaInfo = AVPMediaInfo.fromJson(value);
+            var audioTracks = mediaInfo.tracks;
+            audioTracks?.removeWhere((element) => element.trackType != 1);
+
             setState(() {
+              _audioTrackIndex = 0;
+              _audioTracks = audioTracks;
               _duration = Duration(milliseconds: value['duration']);
             });
           });
@@ -425,6 +434,25 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
               duration: _duration,
               prepared: _prepared,
             ),
+
+            if (_audioTracks != null && _audioTracks!.length > 1)
+              IconButton(
+                icon: const Text(
+                  "音轨",
+                  style: TextStyle(color: Colors.white),
+                ),
+                onPressed: () {
+                  if (_locked) {
+                    return;
+                  }
+                  _hideTimer?.cancel();
+                  var nextAudioTrackIndex =
+                      (_audioTrackIndex + 1) % _audioTracks!.length;
+                  _player.selectTrack(
+                      _audioTracks![nextAudioTrackIndex].trackIndex ?? 0);
+                  _audioTrackIndex = nextAudioTrackIndex;
+                },
+              ),
 
             IconButton(
               onPressed: () {
