@@ -126,6 +126,10 @@ class DioUtils {
           }
         }
       }
+      if (response.statusCode == 404) {
+        return BaseEntity(404, "http 404", null);
+      }
+
       final String responseData = response.data.toString();
 
       /// 集成测试无法使用 isolate https://github.com/flutter/flutter/issues/24703
