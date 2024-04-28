@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.10+11
+version: 1.1.0+12
 
 environment:
   sdk: '>=2.19.6 <3.0.0'
@@ -62,7 +62,7 @@ dependencies:
   # screen hibernation control
   wakelock: ^0.6.2
   # database
-  floor: ^1.4.2
+  floor: 1.4.2
   path_provider: ^2.0.15
   # md5 ...
   crypto: ^3.0.3
@@ -90,15 +90,19 @@ dependencies:
   just_audio_background: ^0.0.1-beta.11
   scroll_to_index: ^3.0.1
   # device_info
-  device_info_plus: ^9.0.2
+  device_info_plus: 9.0.2
   rxdart: ^0.27.7
   url_launcher: ^6.1.12
-  image_gallery_saver: '^2.0.3'
+  image_gallery_saver: ^2.0.3
   uuid: ^3.0.7
   pull_to_refresh: ^2.0.0
+  flutter_staggered_grid_view: 0.7.0
 
 dependency_overrides:
-  win32: ^5.0.0
+  win32: 5.0.0
+  sqflite_common: 2.5.0
+  sqflite: 2.3.0
+  sqflite_common_ffi: 2.3.0+2
 
 dev_dependencies:
   flutter_test:

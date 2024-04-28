@@ -53,15 +53,14 @@ class FileListItemView extends StatelessWidget {
       trailing: _moreIconButton(isDarkMode),
       title: Obx(() {
         int globalFileNameMaxLines = Global.fileNameMaxLines.value;
-        int fileNameMaxLines =
-            this.fileNameMaxLines ?? globalFileNameMaxLines;
+        int fileNameMaxLines = this.fileNameMaxLines ?? globalFileNameMaxLines;
         return fileNameMaxLines == 1
             ? OverflowText(text: fileName)
             : Text(
-          fileName,
-          maxLines: fileNameMaxLines > 2 ? 1000 : 2,
-          overflow: TextOverflow.ellipsis,
-        );
+                fileName,
+                maxLines: fileNameMaxLines > 2 ? 1000 : 2,
+                overflow: TextOverflow.ellipsis,
+              );
       }),
       subtitle: subtitle.isNotEmpty
           ? Text(
@@ -71,6 +70,7 @@ class FileListItemView extends StatelessWidget {
             )
           : null,
       onTap: onTap,
+      onLongPress: onMoreIconButtonTap,
     );
   }
 

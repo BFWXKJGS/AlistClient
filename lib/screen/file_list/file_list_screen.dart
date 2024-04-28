@@ -36,6 +36,7 @@ import 'package:alist/util/named_router.dart';
 import 'package:alist/util/proxy.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
+import 'package:alist/util/video_player_util.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/config_file_name_max_lines_dialog.dart';
 import 'package:alist/widget/file_details_dialog.dart';
@@ -53,6 +54,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 typedef FileItemClickCallback = Function(BuildContext context, int index);
 
@@ -413,7 +415,9 @@ class _FileListScreenState extends State<FileListScreen>
           files: _files,
           refreshController: _refreshController,
           hasWritePermission: _hasWritePermission,
-          onFileItemClick: _onFileTap,
+          onFileItemClick: (context, index) {
+            _onFileTap(context, index, false);
+          },
           onFileMoreIconButtonTap: _onFileMoreIconButtonTap,
           refreshCallback: _loadFiles,
           fileDeleteCallback: (context, index) {
@@ -443,7 +447,7 @@ class _FileListScreenState extends State<FileListScreen>
     );
   }
 
-  void _onFileTap(BuildContext context, int index) {
+  void _onFileTap(BuildContext context, int index, bool fromDialog) {
     var file = _files[index];
     var files = _files;
     FileType fileType = file.type;
@@ -465,7 +469,7 @@ class _FileListScreenState extends State<FileListScreen>
         );
         break;
       case FileType.video:
-        _goVideoPlayerScreen(file, files);
+        _goVideoPlayerScreen(context, file, files, fromDialog);
         break;
       case FileType.audio:
         _goAudioPlayerScreen(file, files);
@@ -677,7 +681,7 @@ class _FileListScreenState extends State<FileListScreen>
                     sizeDesc: file.sizeDesc,
                     onTap: () {
                       Navigator.pop(context);
-                      _onFileTap(context, index);
+                      _onFileTap(context, index, true);
                     },
                   ),
                   const Divider(),
@@ -686,7 +690,7 @@ class _FileListScreenState extends State<FileListScreen>
                     title: Text(Intl.fileList_menu_open.tr),
                     onTap: () {
                       Navigator.pop(context);
-                      _onFileTap(context, index);
+                      _onFileTap(context, index, true);
                     },
                   ),
                   if (!file.isDir)
@@ -992,7 +996,8 @@ class _FileListScreenState extends State<FileListScreen>
     FileUtils.copyFileLink(file.path, file.sign);
   }
 
-  void _goVideoPlayerScreen(FileItemVO file, List<FileItemVO> files) {
+  void _goVideoPlayerScreen(BuildContext context, FileItemVO file,
+      List<FileItemVO> files, bool showSelector) {
     var videos = files
         .where((element) => element.type == FileType.video)
         .map((e) => VideoItem(
@@ -1008,10 +1013,11 @@ class _FileListScreenState extends State<FileListScreen>
     final index =
         videos.indexWhere((element) => element.remotePath == file.path);
 
-    Get.toNamed(
-      NamedRouter.videoPlayer,
-      arguments: {"videos": videos, "index": index},
-    );
+    if (showSelector) {
+      VideoPlayerUtil.selectThePlayerToPlay(Get.context!, videos, index);
+    } else {
+      VideoPlayerUtil.go(videos, index);
+    }
   }
 
   void _previewMarkdown(FileItemVO file) async {

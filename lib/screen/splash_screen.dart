@@ -2,6 +2,7 @@ import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
 import 'package:alist/net/intercept.dart';
+import 'package:alist/util/alist_plugin.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/download/download_manager.dart';
 import 'package:alist/util/global.dart';
@@ -33,6 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> init() async {
+    AlistPlugin.setupChannel();
     await _databaseController.init();
     await SpUtil.getInstance();
     await JustAudioBackground.init(
@@ -53,8 +55,8 @@ class _SplashScreenState extends State<SplashScreen> {
     Locale? currentLocal = Get.locale;
     Log.d("local = $currentLocal");
     if (currentLocal?.toString().startsWith("zh_") == true) {
-      Global.configServerHost = "alistc.geektang.cn";
-      Global.demoServerBaseUrl = "https://www.geektang.cn/alist/";
+      Global.configServerHost = "alistc.techyifu.com";
+      Global.demoServerBaseUrl = "https://www.techyifu.com/alist/";
     }
     makeSureLoginUserInfo(token);
     if ((token == null || token.isEmpty) &&

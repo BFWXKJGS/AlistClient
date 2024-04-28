@@ -15,10 +15,14 @@
         tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <queries>
         <package android:name="com.android.vending" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="video/*" />
+        </intent>
     </queries>
 
     <application
@@ -28,7 +32,7 @@
         android:usesCleartextTraffic="true"
         tools:replace="android:label">
         <activity
-            android:name="com.github.alist.MainActivity"
+            android:name="com.github.alist.activity.MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:exported="true"
             android:hardwareAccelerated="true"
@@ -48,9 +52,44 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name="com.github.alist.activity.PlayerActivity"
+            android:theme="@style/PlayerTheme"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name="io.flutter.plugins.urllauncher.WebViewActivity"
+            tools:node="remove" />
+        <activity
+            android:name="com.pichillilorenzo.flutter_inappwebview.chrome_custom_tabs.ChromeCustomTabsActivity"
+            tools:node="remove" />
+        <activity
+            android:name="com.pichillilorenzo.flutter_inappwebview.chrome_custom_tabs.TrustedWebActivity"
+            tools:node="remove" />
+        <activity
+            android:name="com.pichillilorenzo.flutter_inappwebview.chrome_custom_tabs.ChromeCustomTabsActivitySingleInstance"
+            tools:node="remove" />
+        <activity
+            android:name="com.pichillilorenzo.flutter_inappwebview.chrome_custom_tabs.TrustedWebActivitySingleInstance"
+            tools:node="remove" />
+        <activity
+            android:name="com.pichillilorenzo.flutter_inappwebview.in_app_browser.InAppBrowserActivity"
+            tools:node="remove" />
+
         <service
             android:name="com.github.alist.DownloadingNotificationService"
             android:exported="false" />
+
+        <provider
+            android:name="com.github.alist.fileprovider.AListFileProvider"
+            android:authorities="${applicationId}.alist_file_provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/alist_file_paths" />
+        </provider>
 
         <!-- ADD THIS "SERVICE" element -->
         <service

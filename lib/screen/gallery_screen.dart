@@ -195,7 +195,7 @@ class GalleryController extends GetxController {
   }
 
   Future<void> saveToAlbum(int index) async {
-    if (Platform.isAndroid && await AlistPlugin.isScopedStorage()) {
+    if (Platform.isAndroid && !(await AlistPlugin.isScopedStorage())) {
       if (!await Permission.storage.isGranted) {
         var storagePermissionStatus = await Permission.storage.request();
         if (!storagePermissionStatus.isGranted) {

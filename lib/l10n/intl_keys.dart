@@ -8,6 +8,7 @@ class Intl {
   static const String screenName_about = "screenName_about";
   static const String screenName_recents = "screenName_recents";
   static const String screenName_uploadingFiles = "screenName_uploadingFiles";
+  static const String screenName_playerSettings = "screenName_playerSettings";
   static const String screenName_favorite = "screenName_favorite";
   static const String screenName_cacheManagement = "screenName_cacheManagement";
   static const String loginScreen_label_username = "loginScreen_label_username";
@@ -26,6 +27,7 @@ class Intl {
   static const String settingsScreen_item_privacyPolicy = "settingsScreen_item_privacyPolicy";
   static const String settingsScreen_item_downloads = "settingsScreen_item_downloads";
   static const String settingsScreen_item_cacheManagement = "settingsScreen_item_cacheManagement";
+  static const String settingsScreen_item_videoPlayer = "settingsScreen_item_videoPlayer";
   static const String photo_load_failed = "photo_load_failed";
   static const String wechat = "wechat";
   static const String alipay = "alipay";
@@ -211,4 +213,5 @@ class Intl {
   static const String cacheManagement_audioCache = "cacheManagement_audioCache";
   static const String cacheManagement_otherCache = "cacheManagement_otherCache";
   static const String cacheManagement_tips_clearing_cache = "cacheManagement_tips_clearing_cache";
+  static const String playerSettings_player_in_use = "playerSettings_player_in_use";
 }

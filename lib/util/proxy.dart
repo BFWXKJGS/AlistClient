@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:alist/util/constant.dart';
+import 'package:alist/util/string_utils.dart';
 import 'package:flustars/flustars.dart';
+import 'package:flutter/cupertino.dart';
 
 /// 使用代理服务器规避重定向后header设置失效、下载链接有效期过短等问题
 class ProxyServer {
@@ -17,6 +19,7 @@ class ProxyServer {
 
   // 通过 key 保存请求返回的内容，目前暂时用于 markdown 内容的保存
   final _content = <String, String>{};
+  final _files = <String, File>{};
   static const _maxRedirectTimes = 20;
 
   // 正在代理的链接数量
@@ -26,18 +29,30 @@ class ProxyServer {
     var httpClient = _httpClient;
     final targetUrl = request.uri.queryParameters['targetUrl'];
     final contentKey = request.uri.queryParameters['contentKey'];
+    final file = request.uri.queryParameters['file'];
     LogUtil.d("targetUrl=$targetUrl");
     LogUtil.d("contentKey=$contentKey");
+    LogUtil.d("file=$file");
     final hasTargetUrl = !(targetUrl == null || targetUrl.isEmpty);
     final hasContentKey = !(contentKey == null || contentKey.isEmpty);
+    final hasFile = !(file == null || file.isEmpty);
 
-    if (httpClient == null || (!hasTargetUrl && !hasContentKey)) {
+    if (httpClient == null || (!hasTargetUrl && !hasContentKey && !hasFile)) {
       request.response.statusCode = HttpStatus.badRequest;
       request.response.close();
       return;
     }
     if (hasContentKey) {
       _writeContentResponse(contentKey, request);
+      return;
+    }
+    if (hasFile) {
+      File? targetFile = _files[file];
+      if (targetFile == null || !targetFile.existsSync()) {
+        _write404Response(request);
+      } else {
+        _writeFileResponse(targetFile, request);
+      }
       return;
     }
 
@@ -285,6 +300,20 @@ class ProxyServer {
     );
   }
 
+  Uri makeFileUri(File file) {
+    if (_httpServer == null) throw Exception("Proxy server is not started");
+    String pathHash = file.absolute.path.md5String();
+    _files[pathHash] = file;
+
+    var queryParameters = {"file": pathHash};
+    return Uri(
+      scheme: "http",
+      host: "127.0.0.1",
+      port: _port,
+      queryParameters: queryParameters,
+    );
+  }
+
   Uri makeContentUri(String key, String value) {
     if (_httpServer == null) throw Exception("Proxy server is not started");
     var encodeKey = Uri.encodeComponent(key);
@@ -312,6 +341,43 @@ class ProxyServer {
       // ignore error
     }
     LogUtil.d("stop proxy server", tag: tag);
+  }
+
+  void _write404Response(HttpRequest request) {
+    request.response.statusCode = HttpStatus.notFound;
+    request.response.close();
+  }
+
+  void _writeFileResponse(File file, HttpRequest request) async {
+    try {
+      var rangeHeader = request.headers.value(HttpHeaders.rangeHeader);
+      if (rangeHeader != null) {
+        final matches = RegExp(r'bytes=(\d+)-(\d+)?').firstMatch(rangeHeader);
+        if (matches != null) {
+          int start = int.parse(matches.group(1)!);
+          int? end = matches.group(2) != null ? int.parse(matches.group(2)!) : file.lengthSync() - 1;
+          request.response.statusCode = HttpStatus.partialContent;
+          request.response.headers.set(HttpHeaders.contentRangeHeader, 'bytes $start-$end/${file.lengthSync()}');
+          request.response.headers.set(HttpHeaders.contentLengthHeader, end - start + 1);
+          file.openRead(start, end + 1).pipe(request.response).catchError((e) {
+            request.response.statusCode = HttpStatus.internalServerError;
+            request.response.close();
+          });
+          return;
+        }
+      }
+
+      // 如果没有Range请求，发送整个文件
+      request.response.headers.contentType = ContentType.binary;
+      file.openRead().pipe(request.response).catchError((e) {
+        request.response.statusCode = HttpStatus.internalServerError;
+        request.response.close();
+      });
+    } catch (e) {
+      request.response
+        ..statusCode = HttpStatus.internalServerError
+        ..close();
+    }
   }
 }
 

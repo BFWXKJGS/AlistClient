@@ -7,6 +7,7 @@ class AlistConstant {
   static bool isDriverTest = false;
   static bool isUnitTest = false;
 
+  static const String appName = "AList Client";
   static const String data = 'data';
   static const String message = 'message';
   static const String code = 'code';
@@ -29,6 +30,9 @@ class AlistConstant {
   static const String fileNameMaxLines = 'fileNameMaxLines';
   static const String fileSortWayIndex = 'fileSortWayIndex';
   static const String fileSortWayUp = 'fileSortWayUp';
+  static const String videoPlayerName = 'videoPlayerName';
+  static const String videoPlayerRouter = 'videoPlayerRouter';
+  static const String playerType = 'playerType';
 
   static const String locale = 'locale';
 }

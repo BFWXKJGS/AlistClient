@@ -52,4 +52,7 @@ class NamedRouter {
 
   // cache manager
   static const cacheManager = "/cacheManager";
+
+  // player settings
+  static const playerSettings = "/playerSettings";
 }

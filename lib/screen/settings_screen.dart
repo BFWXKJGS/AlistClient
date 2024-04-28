@@ -90,6 +90,7 @@ class _SettingsContainerState extends State<_SettingsContainer>
           case MenuId.donate:
           case MenuId.account:
           case MenuId.cacheManager:
+          case MenuId.playerSettings:
             Get.toNamed(settingsMenu.route!);
             break;
           case MenuId.privacyPolicy:
@@ -153,6 +154,11 @@ class _SettingsContainerState extends State<_SettingsContainer>
           name: Intl.settingsScreen_item_cacheManagement.tr,
           icon: Images.settingsScreenCacheManager,
           route: NamedRouter.cacheManager),
+      SettingsMenu(
+          menuId: MenuId.playerSettings,
+          name: Intl.settingsScreen_item_videoPlayer.tr,
+          icon: Images.settingsScreenPlayer,
+          route: NamedRouter.playerSettings),
       SettingsMenu(
           menuId: MenuId.privacyPolicy,
           name: Intl.settingsScreen_item_privacyPolicy.tr,
@@ -223,5 +229,6 @@ enum MenuId {
   donate,
   privacyPolicy,
   about,
-  cacheManager
+  cacheManager,
+  playerSettings
 }

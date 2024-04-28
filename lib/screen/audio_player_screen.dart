@@ -355,7 +355,7 @@ class AudioPlayerScreenController extends GetxController {
     final mediaItem = MediaItem(
       id: audio.remotePath,
       title: audio.name,
-      artUri: Uri.parse("https://alistc.geektang.cn/ic_music_head.png"),
+      artUri: Uri.parse("https://alistc.techyifu.com/ic_music_head.png"),
     );
 
     if (audio.localPath == null || audio.localPath!.isEmpty) {

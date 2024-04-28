@@ -1,5 +1,8 @@
 package com.github.alist.plugin
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.ComponentName
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
@@ -12,21 +15,30 @@ import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import androidx.annotation.RequiresApi
 import com.github.alist.DownloadingNotificationService
+import com.github.alist.activity.PlayerActivity
+import com.github.alist.utils.FlutterMethods
+import com.github.alist.utils.FileProviderUtils
+import com.github.alist.utils.GsonUtils
+import com.github.alist.utils.PackageManagerUtils
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import okio.buffer
 import okio.sink
 import okio.source
 import java.io.File
 
-class AlistPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
+class AlistPlugin(private val activity: Activity, private val scope: CoroutineScope) :
+    FlutterPlugin, MethodChannel.MethodCallHandler {
 
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(binding.binaryMessenger, "com.github.alist.client.plugin")
+        FlutterMethods.channel = channel
         context = binding.applicationContext
         channel.setMethodCallHandler(this)
     }
@@ -67,8 +79,63 @@ class AlistPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
                 saveFileToLocal(result, call)
             }
-            "getExternalDownloadDir" ->{
-                result.success(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).path)
+
+            "getExternalDownloadDir" -> {
+                result.success(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path)
+            }
+
+            "loadExternalPlayerList" -> {
+                scope.launch {
+                    val list = PackageManagerUtils.loadExternalPlayerList(activity)
+                    result.success(GsonUtils.toJsonString(list))
+                }
+            }
+
+            "playVideoWithInternalPlayer" -> {
+                val videos = call.argument<String>("videos")
+                val index = call.argument<Int>("index")
+                val headers = call.argument<String?>("headers")
+                val playerType = call.argument<String>("playerType")
+
+                val intent = Intent(activity, PlayerActivity::class.java)
+                intent.putExtra("videos", videos)
+                intent.putExtra("index", index)
+                intent.putExtra("headers", headers)
+                intent.putExtra("playerType", playerType)
+                activity.startActivity(intent)
+            }
+
+            "playVideoWithExternalPlayer" -> {
+                val packageName = call.argument<String?>("packageName")
+                val targetActivityClazz = call.argument<String?>("activity")
+                val url = call.argument<String>("url")
+
+                if (packageName.isNullOrEmpty() || targetActivityClazz.isNullOrEmpty() || url.isNullOrEmpty()) {
+                    result.error("-1", "arguments error", null)
+                    return
+                }
+
+                val intent = Intent(Intent.ACTION_VIEW)
+                intent.setComponent(ComponentName(packageName, targetActivityClazz))
+                if (url.startsWith("/")) {
+                    // 已下载的本地视频，使用 FileProvider 提供给对应的播放器播放
+                    FileProviderUtils.setIntentDataAndType(
+                        activity,
+                        intent,
+                        "video/*",
+                        File(url),
+                        false
+                    )
+                } else {
+                    // 提供 url 给对应的播放器播放
+                    intent.setDataAndType(Uri.parse(url), "video/*")
+                }
+                try {
+                    activity.startActivity(intent)
+                    result.success(true)
+                } catch (e: ActivityNotFoundException) {
+                    result.success(false)
+                }
             }
 
             else -> {

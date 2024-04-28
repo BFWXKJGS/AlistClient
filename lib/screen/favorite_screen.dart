@@ -20,6 +20,7 @@ import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
+import 'package:alist/util/video_player_util.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/file_details_dialog.dart';
 import 'package:alist/widget/file_list_item_view.dart';
@@ -127,7 +128,7 @@ class _FavoriteScreenState extends State<FavoriteScreen>
         thumbnail: record.thumb,
         time: FileUtils.getReformatTime(createTime, ""),
         sizeDesc: record.isDir ? null : FileUtils.formatBytes(record.size),
-        onTap: () => _onFileTap(context, record),
+        onTap: () => _onFileTap(context, record, false),
         onMoreIconButtonTap: () => _showBottomMenuDialog(context, record),
       ),
     );
@@ -146,7 +147,7 @@ class _FavoriteScreenState extends State<FavoriteScreen>
     });
   }
 
-  void _onFileTap(BuildContext context, Favorite file) {
+  void _onFileTap(BuildContext context, Favorite file, bool fromDialog) {
     FileType fileType = FileUtils.getFileType(file.isDir, file.name);
     if (!file.isDir) {
       _fileViewingRecord(file);
@@ -162,7 +163,7 @@ class _FavoriteScreenState extends State<FavoriteScreen>
         );
         break;
       case FileType.video:
-        _gotoVideoPlayer(file);
+        _gotoVideoPlayer(context, file, fromDialog);
         break;
       case FileType.audio:
         _gotoAudioPlayer(file);
@@ -277,7 +278,7 @@ class _FavoriteScreenState extends State<FavoriteScreen>
                     sizeDesc: FileUtils.formatBytes(record.size),
                     onTap: () {
                       Navigator.pop(context);
-                      _onFileTap(context, record);
+                      _onFileTap(context, record, true);
                     },
                   ),
                   const Divider(),
@@ -286,7 +287,7 @@ class _FavoriteScreenState extends State<FavoriteScreen>
                     title: Text(Intl.recentsScreen_menu_open.tr),
                     onTap: () {
                       Navigator.pop(context);
-                      _onFileTap(context, record);
+                      _onFileTap(context, record, true);
                     },
                   ),
                   ListTile(
@@ -471,7 +472,8 @@ class _FavoriteScreenState extends State<FavoriteScreen>
     );
   }
 
-  void _gotoVideoPlayer(Favorite file) async {
+  void _gotoVideoPlayer(
+      BuildContext context, Favorite file, bool showSelector) async {
     SmartDialog.showLoading();
     var files = await _loadFilesPrepare(
         file.path.substringBeforeLast("/")!, file.path, FileType.video);
@@ -497,13 +499,13 @@ class _FavoriteScreenState extends State<FavoriteScreen>
           ),
         )
         .toList();
-    Get.toNamed(
-      NamedRouter.videoPlayer,
-      arguments: {
-        "videos": videos,
-        "index": index,
-      },
-    );
+    if (showSelector) {
+      if (context.mounted) {
+        VideoPlayerUtil.selectThePlayerToPlay(Get.context!, videos, index);
+      }
+    } else {
+      VideoPlayerUtil.go(videos, index);
+    }
   }
 
   void _gotoAudioPlayer(Favorite file) async {

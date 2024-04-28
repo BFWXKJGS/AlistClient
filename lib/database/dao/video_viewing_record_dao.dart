@@ -15,8 +15,8 @@ abstract class VideoViewingRecordDao {
   @Query(
       "SELECT * FROM video_viewing_record WHERE server_url = :serverUrl AND user_id=:userId AND path=:path LIMIT 1")
   Future<VideoViewingRecord?> findRecordByPath(
-      String serverUrl,
-      String userId,
-      String path,
-      );
+    String serverUrl,
+    String userId,
+    String path,
+  );
 }

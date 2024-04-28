@@ -20,6 +20,7 @@ import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
+import 'package:alist/util/video_player_util.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/file_details_dialog.dart';
 import 'package:alist/widget/file_list_item_view.dart';
@@ -127,7 +128,7 @@ class _RecentsScreenState extends State<RecentsScreen>
         thumbnail: record.thumb,
         time: FileUtils.getReformatTime(createTime, ""),
         sizeDesc: FileUtils.formatBytes(record.size),
-        onTap: () => _onFileTap(context, record),
+        onTap: () => _onFileTap(context, record, false),
         onMoreIconButtonTap: () => _showBottomMenuDialog(context, record),
       ),
     );
@@ -146,13 +147,14 @@ class _RecentsScreenState extends State<RecentsScreen>
     });
   }
 
-  void _onFileTap(BuildContext context, FileViewingRecord file) {
+  void _onFileTap(
+      BuildContext context, FileViewingRecord file, bool fromDialog) {
     FileType fileType = FileUtils.getFileType(false, file.name);
     _fileViewingRecord(file);
 
     switch (fileType) {
       case FileType.video:
-        _gotoVideoPlayer(file);
+        _gotoVideoPlayer(context, file, fromDialog);
         break;
       case FileType.audio:
         _gotoAudioPlayer(file);
@@ -274,7 +276,7 @@ class _RecentsScreenState extends State<RecentsScreen>
                     sizeDesc: FileUtils.formatBytes(record.size),
                     onTap: () {
                       Navigator.pop(context);
-                      _onFileTap(context, record);
+                      _onFileTap(context, record, true);
                     },
                   ),
                   const Divider(),
@@ -283,7 +285,7 @@ class _RecentsScreenState extends State<RecentsScreen>
                     title: Text(Intl.recentsScreen_menu_open.tr),
                     onTap: () {
                       Navigator.pop(context);
-                      _onFileTap(context, record);
+                      _onFileTap(context, record, true);
                     },
                   ),
                   ListTile(
@@ -485,7 +487,8 @@ class _RecentsScreenState extends State<RecentsScreen>
     );
   }
 
-  void _gotoVideoPlayer(FileViewingRecord file) async {
+  void _gotoVideoPlayer(
+      BuildContext context, FileViewingRecord file, bool showSelector) async {
     SmartDialog.showLoading();
     var files = await _loadFilesPrepare(
         file.path.substringBeforeLast("/")!, file.path, FileType.video);
@@ -511,13 +514,11 @@ class _RecentsScreenState extends State<RecentsScreen>
           ),
         )
         .toList();
-    Get.toNamed(
-      NamedRouter.videoPlayer,
-      arguments: {
-        "videos": videos,
-        "index": index,
-      },
-    );
+    if (showSelector) {
+      VideoPlayerUtil.selectThePlayerToPlay(Get.context!, videos, index);
+    } else {
+      VideoPlayerUtil.go(videos, index);
+    }
   }
 
   void _gotoAudioPlayer(FileViewingRecord file) async {

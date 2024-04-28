@@ -22,6 +22,7 @@ import 'package:alist/util/named_router.dart';
 import 'package:alist/util/proxy.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
+import 'package:alist/util/video_player_util.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/overflow_text.dart';
 import 'package:extended_image/extended_image.dart';
@@ -32,9 +33,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:path/path.dart' as path;
 
 typedef OnDownloadManagerMenuClickCallback = Function(
     DownloadManagerMenuId menuId);
@@ -69,7 +70,7 @@ class DownloadManagerScreen extends StatelessWidget {
             )
           : ListView.separated(
               itemBuilder: (context, index) =>
-                  Obx(() => _buildDownloadItem(controller, index)),
+                  Obx(() => _buildDownloadItem(context, controller, index)),
               separatorBuilder: (context, index) => const Divider(),
               itemCount: controller._downloadList.length,
             ),
@@ -96,7 +97,8 @@ class DownloadManagerScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDownloadItem(DownloadManagerController controller, int index) {
+  Widget _buildDownloadItem(
+      BuildContext context, DownloadManagerController controller, int index) {
     var downloadItem = controller._downloadList[index];
     String? thumbnail = FileUtils.getCompleteThumbnail(downloadItem.thumbnail);
     String icon = FileUtils.getFileIcon(false, downloadItem.name);
@@ -106,6 +108,23 @@ class DownloadManagerScreen extends StatelessWidget {
                 (controller.shareDirectoryPath != null &&
                     !downloadItem.savedPath.value
                         .startsWith(controller.shareDirectoryPath!)));
+
+    GestureLongPressCallback? onLongPress;
+    if (FileUtils.getFileType(false, downloadItem.name) == FileType.video) {
+      onLongPress = () {
+        var video = VideoItem(
+          name: downloadItem.name,
+          localPath: downloadItem.savedPath.value,
+          remotePath: downloadItem.remotePath ?? "",
+          sign: downloadItem.sign ?? "",
+          size: downloadItem.contentLength ?? 0,
+          thumb: downloadItem.thumbnail,
+          modifiedMilliseconds: 0,
+        );
+        VideoPlayerUtil.selectThePlayerToPlay(Get.context!, [video], 0);
+      };
+    }
+
     Widget content = ListTile(
       leading: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -120,6 +139,7 @@ class DownloadManagerScreen extends StatelessWidget {
       subtitle: OverflowText(text: downloadItem.status.value),
       trailing: _buildTrailing(controller, downloadItem),
       onTap: () => controller.onTap(downloadItem),
+      onLongPress: onLongPress,
     );
     return Slidable(
       key: Key(downloadItem.id.toString()),
@@ -547,8 +567,7 @@ class DownloadManagerController extends GetxController {
             modifiedMilliseconds: 0,
           );
         }).toList();
-        Get.toNamed(NamedRouter.videoPlayer,
-            arguments: {"videos": videos, "index": index});
+        VideoPlayerUtil.go(videos, index);
         break;
       case FileType.audio:
         var audios = files.map((e) {
@@ -734,49 +753,54 @@ class DownloadManagerController extends GetxController {
     }
 
     SmartDialog.showLoading();
-    if (Platform.isAndroid) {
-      if (await AlistPlugin.isScopedStorage()) {
-        await AlistPlugin.saveFileToLocal(
-            downloadItem.name, downloadItem.savedPath.value);
-        SmartDialog.showToast(Intl.downloadManagerScreen_tips_saved.tr);
-        _showTipsWhenFirstSaved();
-      } else {
-        PermissionStatus permissionStatus = await Permission.storage.request();
-        if (permissionStatus.isGranted) {
-          String downloadDir = await AlistPlugin.getExternalDownloadDir();
-          var savedPath = path.join(downloadDir,
-              downloadItem.name.replaceAll(" ", "-").replaceAll("/", "_"));
-          savedPath = _savedPathRename(savedPath);
-          File file = File(downloadItem.savedPath.value);
-          file.parent.create(recursive: true);
-          file.copy(savedPath);
+    try {
+      if (Platform.isAndroid) {
+        if (await AlistPlugin.isScopedStorage()) {
+          await AlistPlugin.saveFileToLocal(
+              downloadItem.name, downloadItem.savedPath.value);
           SmartDialog.showToast(Intl.downloadManagerScreen_tips_saved.tr);
           _showTipsWhenFirstSaved();
         } else {
-          SmartDialog.showToast(Intl.galleryScreen_storagePermissionDenied.tr);
+          PermissionStatus permissionStatus =
+              await Permission.storage.request();
+          if (permissionStatus.isGranted) {
+            String downloadDir = await AlistPlugin.getExternalDownloadDir();
+            var savedPath = path.join(downloadDir,
+                downloadItem.name.replaceAll(" ", "-").replaceAll("/", "_"));
+            savedPath = _savedPathRename(savedPath);
+            File file = File(downloadItem.savedPath.value);
+            file.parent.create(recursive: true);
+            file.copy(savedPath);
+            SmartDialog.showToast(Intl.downloadManagerScreen_tips_saved.tr);
+            _showTipsWhenFirstSaved();
+          } else {
+            SmartDialog.showToast(
+                Intl.galleryScreen_storagePermissionDenied.tr);
+          }
         }
+      } else if (Platform.isIOS || Platform.isMacOS) {
+        final directory = await getApplicationDocumentsDirectory();
+        var savedPath = path.join(directory.path,
+            downloadItem.name.replaceAll(" ", "-").replaceAll("/", "_"));
+        if (downloadItem.savedPath.value != savedPath) {
+          savedPath = _savedPathRename(savedPath);
+
+          await File(downloadItem.savedPath.value).rename(savedPath);
+          downloadItem.savedPath.value = savedPath;
+
+          AlistDatabaseController databaseController = Get.find();
+          FileDownloadRecordRecordDao downloadRecordRecordDao =
+              databaseController.downloadRecordRecordDao;
+
+          await downloadRecordRecordDao.updateLocalPath(
+              downloadItem.id, savedPath);
+        }
+        SmartDialog.showToast(Intl.downloadManagerScreen_tips_saved.tr);
+        _showTipsWhenFirstSaved();
       }
-    } else if (Platform.isIOS || Platform.isMacOS) {
-      final directory = await getApplicationDocumentsDirectory();
-      var savedPath = path.join(directory.path,
-          downloadItem.name.replaceAll(" ", "-").replaceAll("/", "_"));
-      if (downloadItem.savedPath.value != savedPath) {
-        savedPath = _savedPathRename(savedPath);
-
-        await File(downloadItem.savedPath.value).rename(savedPath);
-        downloadItem.savedPath.value = savedPath;
-
-        AlistDatabaseController databaseController = Get.find();
-        FileDownloadRecordRecordDao downloadRecordRecordDao =
-            databaseController.downloadRecordRecordDao;
-
-        await downloadRecordRecordDao.updateLocalPath(
-            downloadItem.id, savedPath);
-      }
-      SmartDialog.showToast(Intl.downloadManagerScreen_tips_saved.tr);
-      _showTipsWhenFirstSaved();
+    } finally {
+      SmartDialog.dismiss(status: SmartStatus.loading);
     }
-    SmartDialog.dismiss(status: SmartStatus.loading);
   }
 
   String _savedPathRename(String savedPath) {

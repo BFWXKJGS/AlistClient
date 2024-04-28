@@ -17,6 +17,7 @@ import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/util/named_router.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
+import 'package:alist/util/video_player_util.dart';
 import 'package:alist/util/widget_utils.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:alist/widget/file_list_item_view.dart';
@@ -339,13 +340,7 @@ class FileSearchController extends GetxController {
           ),
         )
         .toList();
-    Get.toNamed(
-      NamedRouter.videoPlayer,
-      arguments: {
-        "videos": videos,
-        "index": index,
-      },
-    );
+    VideoPlayerUtil.go(videos, index);
   }
 
   void _gotoAudioPlayer(String path, FileSearchRespContent file) async {

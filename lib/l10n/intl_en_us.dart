@@ -8,6 +8,7 @@ const translationsEnUS = {
   "screenName_about": "About",
   "screenName_recents": "Recents",
   "screenName_uploadingFiles": "File upload",
+  "screenName_playerSettings": "Video player",
   "screenName_favorite": "Favorite",
   "screenName_cacheManagement": "Cache Management",
   "loginScreen_label_username": "Username",
@@ -26,6 +27,7 @@ const translationsEnUS = {
   "settingsScreen_item_privacyPolicy": "Privacy Policy",
   "settingsScreen_item_downloads": "Download Manager",
   "settingsScreen_item_cacheManagement": "Cache Management",
+  "settingsScreen_item_videoPlayer": "VideoPlayer",
   "photo_load_failed": "Failed to load photo",
   "wechat": "WeChat",
   "alipay": "Alipay",
@@ -227,4 +229,5 @@ const translationsEnUS = {
   "cacheManagement_audioCache": "Audio Cache",
   "cacheManagement_otherCache": "Other cache",
   "cacheManagement_tips_clearing_cache": "Clearing cache...",
+  "playerSettings_player_in_use": "Player in use",
 };

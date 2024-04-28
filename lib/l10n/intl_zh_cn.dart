@@ -10,6 +10,7 @@ const translationsZhCN = {
   "screenName_favorite": "收藏",
   "screenName_cacheManagement": "缓存管理",
   "screenName_uploadingFiles": "文件上传",
+  "screenName_playerSettings": "视频播放器",
   "loginScreen_label_username": "用户名",
   "loginScreen_label_password": "密码",
   "loginScreen_label_serverUrl": "服务器地址",
@@ -26,6 +27,7 @@ const translationsZhCN = {
   "settingsScreen_item_privacyPolicy": "隐私政策",
   "settingsScreen_item_downloads": "下载管理",
   "settingsScreen_item_cacheManagement": "缓存管理",
+  "settingsScreen_item_videoPlayer": "视频播放器",
   "photo_load_failed": "图片加载失败",
   "wechat": "微信",
   "alipay": "支付宝",
@@ -166,7 +168,8 @@ const translationsZhCN = {
   "downloadManagerScreen_tips_saved": "已保存",
   "downloadManagerScreen_tips_saved_first_ios":
       "该文件已保存，请打开\"文件APP\"，到\"我的iPhone\"-\"ALClient\"查看",
-  "downloadManagerScreen_tips_saved_first_android": "该文件已保存，请打开文件管理器，到“下载”目录中查看",
+  "downloadManagerScreen_tips_saved_first_android":
+      "该文件已保存，请打开文件管理器，到“下载”目录中查看",
   "downloadManagerScreen_status_waiting": "等待中...",
   "downloadManagerScreen_status_downloading": "下载中...",
   "downloadManagerScreen_status_finish": "下载完毕",
@@ -215,4 +218,5 @@ const translationsZhCN = {
   "cacheManagement_audioCache": "音频缓存",
   "cacheManagement_otherCache": "其他缓存",
   "cacheManagement_tips_clearing_cache": "缓存清理中...",
+  "playerSettings_player_in_use": "当前播放器",
 };
