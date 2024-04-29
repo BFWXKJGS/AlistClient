@@ -4,10 +4,13 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import com.github.alist.bean.VideoItem
 import com.github.alist.client.BuildConfig
@@ -15,7 +18,6 @@ import com.github.alist.client.R
 import com.github.alist.utils.FlutterMethods
 import com.github.alist.utils.GsonUtils
 import com.github.alist.widget.VisibleChangeListenerImageView
-import com.shuyu.gsyvideoplayer.GSYBaseActivityDetail
 import com.shuyu.gsyvideoplayer.GSYVideoManager
 import com.shuyu.gsyvideoplayer.builder.GSYVideoOptionBuilder
 import com.shuyu.gsyvideoplayer.listener.GSYSampleCallBack
@@ -27,15 +29,8 @@ import com.shuyu.gsyvideoplayer.utils.OrientationUtils
 import com.shuyu.gsyvideoplayer.video.NormalGSYVideoPlayer
 import tv.danmaku.ijk.media.exo2.Exo2PlayerManager
 
-class PlayerActivity : GSYBaseActivityDetail<NormalGSYVideoPlayer>(), GSYVideoProgressListener {
-    private lateinit var videoPlayer: NormalGSYVideoPlayer
-    private lateinit var btnPrevious: View
-    private lateinit var btnNext: View
-    private lateinit var layoutTop: View
-    private lateinit var layoutBottom: View
-    private lateinit var bottomProgressbar: View
-    private lateinit var btnBack: View
-    private lateinit var btnPlayStart: VisibleChangeListenerImageView
+class PlayerActivity : AppCompatActivity(), GSYVideoProgressListener {
+    private lateinit var playerWrapper: PlayerWrapper
     private var videosStr = "[]"
     private var headersStr = "{}"
     private var playerType = ""
@@ -47,6 +42,10 @@ class PlayerActivity : GSYBaseActivityDetail<NormalGSYVideoPlayer>(), GSYVideoPr
     private val windowInsetsControllerCompat by lazy {
         WindowInsetsControllerCompat(window, window.decorView)
     }
+    private lateinit var gsyVideoPlayer: NormalGSYVideoPlayer
+    private lateinit var orientationUtils: OrientationUtils
+    private var isPause = false
+    private var isPlay = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,7 +57,6 @@ class PlayerActivity : GSYBaseActivityDetail<NormalGSYVideoPlayer>(), GSYVideoPr
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_player)
-        findViews()
         initViews()
 
         if (index >= 0 && videos.size > index) {
@@ -94,36 +92,13 @@ class PlayerActivity : GSYBaseActivityDetail<NormalGSYVideoPlayer>(), GSYVideoPr
         outState.putInt("index", index)
     }
 
-    private fun findViews() {
-        videoPlayer = findViewById(R.id.video_player)
-        btnPrevious = videoPlayer.findViewById(R.id.btn_previous)
-        layoutTop = videoPlayer.findViewById(R.id.layout_top)
-        layoutBottom = videoPlayer.findViewById(R.id.layout_bottom)
-        bottomProgressbar = videoPlayer.findViewById(R.id.bottom_progressbar)
-        btnBack = videoPlayer.findViewById(R.id.back)
-        btnNext = videoPlayer.findViewById(R.id.btn_next)
-        btnPlayStart = videoPlayer.findViewById(R.id.start)
-    }
-
     private fun initViews() {
-        videoPlayer.setGSYVideoProgressListener(this)
-        orientationUtils = OrientationUtils(this, videoPlayer)
+        gsyVideoPlayer = findViewById(R.id.video_player)
+        playerWrapper = PlayerWrapper(gsyVideoPlayer)
+        playerWrapper.initViews(false)
+        gsyVideoPlayer.setGSYVideoProgressListener(this)
+        orientationUtils = OrientationUtils(this, gsyVideoPlayer)
         orientationUtils.isEnable = false
-
-        if (videos.size > 1) {
-            btnPlayStart.onVisibleChangeListener = {
-                btnPrevious.visibility = it
-                btnNext.visibility = it
-            }
-        }
-        btnPrevious.setOnClickListener {
-            saveCurrentTime()
-            playPrevious()
-        }
-        btnNext.setOnClickListener {
-            saveCurrentTime()
-            playNext()
-        }
 
         val gsyVideoOption = GSYVideoOptionBuilder()
         gsyVideoOption
@@ -131,7 +106,7 @@ class PlayerActivity : GSYBaseActivityDetail<NormalGSYVideoPlayer>(), GSYVideoPr
             .setRotateViewAuto(true)
             .setLockLand(false)
             .setAutoFullWithSize(true)
-            .setShowFullAnimation(true)
+            .setShowFullAnimation(false)
             .setMapHeadData(headers)
             .setNeedLockFull(true)
             .setVideoAllCallBack(object : GSYSampleCallBack() {
@@ -152,47 +127,52 @@ class PlayerActivity : GSYBaseActivityDetail<NormalGSYVideoPlayer>(), GSYVideoPr
 
                 override fun onEnterFullscreen(url: String?, vararg objects: Any?) {
                     super.onEnterFullscreen(url, *objects)
-                    Debuger.printfError("***** onEnterFullscreen **** ");
+                    Debuger.printfError("***** onEnterFullscreen **** ${playerWrapper.btnPrevious.isVisible}")
                 }
 
                 override fun onQuitFullscreen(url: String, vararg objects: Any) {
                     super.onQuitFullscreen(url, *objects)
                     Debuger.printfError("***** onQuitFullscreen **** " + objects[0]) //title
                     Debuger.printfError("***** onQuitFullscreen **** " + objects[1]) //当前非全屏player
-                    if (orientationUtils != null) {
-                        orientationUtils.backToProtVideo()
-                    }
-                    videoPlayer.post {
+                    orientationUtils.backToProtVideo()
+                    gsyVideoPlayer.post {
                         windowInsetsControllerCompat.show(WindowInsetsCompat.Type.statusBars())
                         windowInsetsControllerCompat.show(WindowInsetsCompat.Type.navigationBars())
                     }
-                    btnBack.setOnClickListener {
+                    playerWrapper.btnBack.setOnClickListener {
                         finish()
                     }
                 }
-            }).setLockClickListener { _, lock ->
-                if (orientationUtils != null) {
-                    //配合下方的onConfigurationChanged
-                    orientationUtils.isEnable = !lock
-                }
-            }.build(videoPlayer)
 
-        videoPlayer.fullscreenButton.setOnClickListener { //直接横屏
+                override fun onPlayError(url: String?, vararg objects: Any?) {
+                    super.onPlayError(url, *objects)
+                    if (totalTime > 0) {
+                        gsyVideoPlayer.seekOnStart = currentTime
+                        gsyVideoPlayer.currentPlayer.seekOnStart = currentTime
+                    }
+                    Debuger.printfError("***** onPlayError ****")
+                }
+            }).setLockClickListener { _, lock ->
+                orientationUtils.isEnable = !lock
+            }.build(gsyVideoPlayer)
+
+        gsyVideoPlayer.fullscreenButton.setOnClickListener { //直接横屏
             orientationUtils.resolveByClick()
-            //第一个true是否需要隐藏actionbar，第二个true是否需要隐藏statusbar
-            videoPlayer.startWindowFullscreen(this@PlayerActivity, true, true)
+            gsyVideoPlayer.startWindowFullscreen(this@PlayerActivity, true, true)?.let {
+                PlayerWrapper(it as NormalGSYVideoPlayer).initViews(true)
+            }
         }
 
-        ViewCompat.setOnApplyWindowInsetsListener(videoPlayer) { _, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(gsyVideoPlayer) { _, insets ->
             val navigationBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
             val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            layoutTop.updateLayoutParams<MarginLayoutParams> {
+            playerWrapper.layoutTop.updateLayoutParams<MarginLayoutParams> {
                 topMargin = statusBars.top
             }
-            layoutBottom.updateLayoutParams<MarginLayoutParams> {
+            playerWrapper.layoutBottom.updateLayoutParams<MarginLayoutParams> {
                 bottomMargin = navigationBars.bottom
             }
-            bottomProgressbar.updateLayoutParams<MarginLayoutParams> {
+            playerWrapper.bottomProgressbar.updateLayoutParams<MarginLayoutParams> {
                 bottomMargin = navigationBars.bottom
             }
             insets
@@ -221,28 +201,35 @@ class PlayerActivity : GSYBaseActivityDetail<NormalGSYVideoPlayer>(), GSYVideoPr
 
     private fun startPlay(index: Int, video: VideoItem) {
         val playUrl = if (video.localPath.isNullOrEmpty()) video.url else video.localPath
-        videoPlayer.setUp(playUrl, false, video.name.substringBeforeLast("."))
+        gsyVideoPlayer.currentPlayer.setUp(playUrl, false, video.name.substringBeforeLast("."))
         FlutterMethods.findVideoRecordByPath(video.remotePath) { record ->
             Debuger.printfLog("seekOnStart=${record.videoCurrentPosition}")
-            videoPlayer.seekOnStart = record.videoCurrentPosition ?: 0L
-            videoPlayer.startPlayLogic()
+            gsyVideoPlayer.currentPlayer.seekOnStart = record.videoCurrentPosition ?: 0L
+            gsyVideoPlayer.currentPlayer.startPlayLogic()
         }
+        val currentPlayer = playerWrapper.videoPlayer.currentPlayer as NormalGSYVideoPlayer
+        playerWrapper.tvTitle.text = video.name.substringBeforeLast(".")
+        currentPlayer.titleTextView.text = video.name.substringBeforeLast(".")
 
         if (index == 0) {
-            btnPrevious.alpha = 0.5f
+            playerWrapper.btnPrevious.alpha = 0.5f
+            currentPlayer.findViewById<View>(R.id.btn_previous).alpha = 0.5f
         } else {
-            btnPrevious.alpha = 1f
+            playerWrapper.btnPrevious.alpha = 1f
+            currentPlayer.findViewById<View>(R.id.btn_previous).alpha = 1f
         }
 
         if (index == videos.lastIndex) {
-            btnNext.alpha = 0.5f
+            playerWrapper.btnNext.alpha = 0.5f
+            currentPlayer.findViewById<View>(R.id.btn_next).alpha = 0.5f
         } else {
-            btnNext.alpha = 1f
+            playerWrapper.btnNext.alpha = 1f
+            currentPlayer.findViewById<View>(R.id.btn_next).alpha = 1f
         }
     }
 
     override fun onPause() {
-        videoPlayer.currentPlayer.onVideoPause()
+        gsyVideoPlayer.currentPlayer.onVideoPause()
         super.onPause()
         isPause = true
         saveCurrentTime()
@@ -262,7 +249,7 @@ class PlayerActivity : GSYBaseActivityDetail<NormalGSYVideoPlayer>(), GSYVideoPr
     }
 
     override fun onResume() {
-        videoPlayer.currentPlayer.onVideoResume(false)
+        gsyVideoPlayer.currentPlayer.onVideoResume(false)
         super.onResume()
         isPause = false
     }
@@ -270,24 +257,22 @@ class PlayerActivity : GSYBaseActivityDetail<NormalGSYVideoPlayer>(), GSYVideoPr
     override fun onDestroy() {
         super.onDestroy()
         if (isPlay) {
-            videoPlayer.currentPlayer.release()
+            gsyVideoPlayer.currentPlayer.release()
         }
-        if (orientationUtils != null) orientationUtils.releaseListener()
+        orientationUtils.releaseListener()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         //如果旋转了就全屏
         if (isPlay && !isPause) {
-            videoPlayer.onConfigurationChanged(this, newConfig, orientationUtils, true, true)
+            gsyVideoPlayer.onConfigurationChanged(this, newConfig, orientationUtils, true, true)
         }
     }
 
 
     override fun onBackPressed() {
-        if (orientationUtils != null) {
-            orientationUtils.backToProtVideo()
-        }
+        orientationUtils.backToProtVideo()
         if (GSYVideoManager.backFromWindowFull(this)) {
             return
         }
@@ -295,25 +280,6 @@ class PlayerActivity : GSYBaseActivityDetail<NormalGSYVideoPlayer>(), GSYVideoPr
     }
 
 
-    override fun getGSYVideoPlayer() = videoPlayer
-
-    override fun getGSYVideoOptionBuilder(): GSYVideoOptionBuilder {
-        //内置封面可参考SampleCoverVideo
-        return GSYVideoOptionBuilder()
-            .setCacheWithPlay(true)
-            .setVideoTitle(" ")
-            .setIsTouchWiget(true)
-            .setRotateViewAuto(false)
-            .setLockLand(false)
-            .setShowFullAnimation(false)
-            .setNeedLockFull(true)
-            .setSeekRatio(1f)
-    }
-
-    override fun clickForFullScreen() {
-    }
-
-    override fun getDetailOrientationRotateAuto() = true
     override fun onProgress(p0: Long, p1: Long, currentTime: Long, totalTime: Long) {
         if (totalTime <= 0) {
             return
@@ -321,5 +287,57 @@ class PlayerActivity : GSYBaseActivityDetail<NormalGSYVideoPlayer>(), GSYVideoPr
 
         this.totalTime = totalTime
         this.currentTime = currentTime
+    }
+
+    inner class PlayerWrapper(val videoPlayer: NormalGSYVideoPlayer) {
+        lateinit var btnPrevious: View
+            private set
+        lateinit var btnNext: View
+            private set
+        lateinit var layoutTop: View
+            private set
+        lateinit var layoutBottom: View
+            private set
+        lateinit var bottomProgressbar: View
+            private set
+        lateinit var tvTitle: TextView
+            private set
+        lateinit var btnBack: View
+            private set
+        private lateinit var btnPlayStart: VisibleChangeListenerImageView
+
+        fun initViews(isLand: Boolean) {
+            findViews()
+
+            if (videos.size > 1) {
+                btnPlayStart.onVisibleChangeListener = {
+                    btnPrevious.visibility = it
+                    btnNext.visibility = it
+                }
+            }
+            if (isLand && btnPlayStart.isVisible) {
+                btnPrevious.visibility = View.VISIBLE
+                btnNext.visibility = View.VISIBLE
+            }
+            btnPrevious.setOnClickListener {
+                saveCurrentTime()
+                playPrevious()
+            }
+            btnNext.setOnClickListener {
+                saveCurrentTime()
+                playNext()
+            }
+        }
+
+        private fun findViews() {
+            layoutTop = videoPlayer.findViewById(R.id.layout_top)
+            layoutBottom = videoPlayer.findViewById(R.id.layout_bottom)
+            bottomProgressbar = videoPlayer.findViewById(R.id.bottom_progressbar)
+            tvTitle = videoPlayer.findViewById(R.id.title)
+            btnBack = videoPlayer.findViewById(R.id.back)
+            btnPrevious = videoPlayer.findViewById(R.id.btn_previous)
+            btnNext = videoPlayer.findViewById(R.id.btn_next)
+            btnPlayStart = videoPlayer.findViewById(R.id.start)
+        }
     }
 }
