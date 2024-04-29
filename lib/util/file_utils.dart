@@ -7,6 +7,7 @@ import 'package:alist/util/constant.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:flustars/flustars.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -249,19 +250,32 @@ class FileUtils {
       return null;
     }
 
-    var encodedPath = Uri.encodeFull(path);
-    var encodeBasePath = Uri.encodeFull(user.basePath ?? "");
-    if (encodeBasePath.startsWith("//")) {
-      encodeBasePath = encodeBasePath.substring(1);
+    var encodedPath = _pathEncodeFull(path);
+    var encodeBasePath = _pathEncodeFull(user.basePath ?? "");
+    if (encodedPath.endsWith("/")) {
+      encodedPath = encodedPath.substring(0, encodedPath.length - 1);
     }
 
-    var filePath =
-        encodeBasePath.endsWith("/") ? encodedPath.substring(1) : encodedPath;
-    String url = "${user.serverUrl}d$encodeBasePath$filePath";
+    String url = "${user.serverUrl}d$encodeBasePath$encodedPath";
     if (sign != null && sign.isNotEmpty) {
       url = "$url?sign=$sign";
     }
     return url;
+  }
+
+  static String _pathEncodeFull(String uri) {
+    if (uri.isEmpty || uri == "/") {
+      return uri;
+    }
+
+    var encodedUri = "";
+    for (var value in uri.split("/")) {
+      if (value.isNotEmpty) {
+        encodedUri += Uri.encodeComponent(value);
+        encodedUri += "/";
+      }
+    }
+    return encodedUri;
   }
 
   static void copyFileLink(String path, String? sign) async {
