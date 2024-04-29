@@ -9,6 +9,9 @@ abstract class FileViewingRecordDao {
   @update
   Future<int> updateRecord(FileViewingRecord record);
 
+  @update
+  Future<int> updateRecords(List<FileViewingRecord> record);
+
   @delete
   Future<int> deleteRecord(FileViewingRecord record);
 

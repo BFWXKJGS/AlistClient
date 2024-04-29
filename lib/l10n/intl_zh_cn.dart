@@ -219,4 +219,5 @@ const translationsZhCN = {
   "cacheManagement_otherCache": "其他缓存",
   "cacheManagement_tips_clearing_cache": "缓存清理中...",
   "playerSettings_player_in_use": "当前播放器",
+  "tips_request_raw_url_failed": "获取播放链接失败",
 };

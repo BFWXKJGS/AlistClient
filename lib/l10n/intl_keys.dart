@@ -214,4 +214,5 @@ class Intl {
   static const String cacheManagement_otherCache = "cacheManagement_otherCache";
   static const String cacheManagement_tips_clearing_cache = "cacheManagement_tips_clearing_cache";
   static const String playerSettings_player_in_use = "playerSettings_player_in_use";
+  static const String tips_request_raw_url_failed = "tips_request_raw_url_failed";
 }

@@ -57,6 +57,7 @@ class _RecentsScreenState extends State<RecentsScreen>
     _userStreamSubscription = _userController.user.stream.listen((event) {
       if (_currentUser?.serverUrl != event.serverUrl ||
           _currentUser?.username != event.username) {
+        _list.value = [];
         _currentUser = event;
         _recordListSubscription?.cancel();
         _queryRecents();
@@ -142,7 +143,10 @@ class _RecentsScreenState extends State<RecentsScreen>
     _recordListSubscription = _databaseController.fileViewingRecordDao
         .recordList(user.serverUrl, user.username)
         .listen((list) {
-      _list.value = list ?? [];
+      var newList = list ?? [];
+      var originalList = _list.value;
+      _tryQueryThumbs(originalList, newList);
+      _list.value = newList;
       _loading.value = false;
     });
   }
@@ -609,5 +613,96 @@ class _RecentsScreenState extends State<RecentsScreen>
           provider: file.provider,
           createTime: DateTime.now().millisecondsSinceEpoch),
     );
+  }
+
+  // 对比之前的列表，查询新增的记录的缩略图并更新
+  void _tryQueryThumbs(List<FileViewingRecord> originalList,
+      List<FileViewingRecord> newList) async {
+    // 记录当前的user，切换用户时终止查询
+    var currentUser = _userController.user.value;
+
+    var originListSet = originalList.map((e) => e.remotePath).toSet();
+    Set<String> needQueryPaths = {};
+
+    if (originListSet.isNotEmpty) {
+      for (var element in newList) {
+        if (!originListSet.contains(element.remotePath)) {
+          needQueryPaths.add(element.remotePath.substringBeforeLast("/")!);
+        }
+      }
+    } else {
+      needQueryPaths =
+          newList.map((e) => e.remotePath.substringBeforeLast("/")!).toSet();
+    }
+
+    for (var path in needQueryPaths) {
+      var user = _userController.user.value;
+      if (currentUser != user) {
+        // 切换用户、终止查询
+        return;
+      }
+
+      var filePassword = await _databaseController.filePasswordDao
+          .findPasswordByPath(user.serverUrl, user.username, path);
+      String? password;
+      if (filePassword != null) {
+        password = filePassword.password;
+      }
+      var body = {
+        "path": path,
+        "password": password ?? "",
+        "page": 1,
+        "per_page": 0,
+        "refresh": false
+      };
+      await DioUtils.instance.requestNetwork<FileListRespEntity>(
+          Method.post, "fs/list", cancelToken: _cancelToken, params: body,
+          onSuccess: (result) {
+        var user = _userController.user.value;
+        if (currentUser != user) {
+          // 切换用户、终止操作
+          return;
+        }
+        updateThumbs(path, result?.content);
+      }, onError: (code, mess) {});
+    }
+  }
+
+  void updateThumbs(String parent, List<FileListRespContent>? files) {
+    if (files == null) {
+      return;
+    }
+    var filesMap = <String, FileListRespContent>{};
+    for (var file in files) {
+      filesMap[file.name] = file;
+    }
+
+    var list = _list.value;
+    var needUpdateRecords = <FileViewingRecord>[];
+    for (var i = 0; i < list.length; i++) {
+      var value = list[i];
+      if (value.remotePath.substringBeforeLast("/") == parent) {
+        FileListRespContent? newFile = filesMap[value.name];
+        if (newFile != null &&
+            newFile.thumb.isNotEmpty &&
+            newFile.thumb != value.thumb) {
+          var newRecord = FileViewingRecord(
+              id: value.id,
+              serverUrl: value.serverUrl,
+              userId: value.userId,
+              remotePath: value.remotePath,
+              name: value.name,
+              path: value.path,
+              size: value.size,
+              sign: value.sign,
+              thumb: newFile.thumb,
+              modified: value.modified,
+              provider: value.provider,
+              createTime: value.createTime);
+          needUpdateRecords.add(newRecord);
+        }
+      }
+    }
+    _databaseController.fileViewingRecordDao.updateRecords(needUpdateRecords);
   }
 }

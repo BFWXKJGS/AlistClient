@@ -725,6 +725,12 @@ class _$FileViewingRecordDao extends FileViewingRecordDao {
   }
 
   @override
+  Future<int> updateRecords(List<FileViewingRecord> record) {
+    return _fileViewingRecordUpdateAdapter.updateListAndReturnChangedRows(
+        record, OnConflictStrategy.abort);
+  }
+
+  @override
   Future<int> deleteRecord(FileViewingRecord record) {
     return _fileViewingRecordDeletionAdapter.deleteAndReturnChangedRows(record);
   }
@@ -873,6 +879,12 @@ class _$FavoriteDao extends FavoriteDao {
   @override
   Future<int> updateRecord(Favorite favorite) {
     return _favoriteUpdateAdapter.updateAndReturnChangedRows(
+        favorite, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> updateRecords(List<Favorite> favorite) {
+    return _favoriteUpdateAdapter.updateListAndReturnChangedRows(
         favorite, OnConflictStrategy.abort);
   }
 

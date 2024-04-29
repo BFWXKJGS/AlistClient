@@ -1,7 +1,10 @@
 import 'dart:io';
 
+import 'package:alist/entity/file_info_resp_entity.dart';
 import 'package:alist/entity/player_resolve_info_entity.dart';
 import 'package:alist/generated/images.dart';
+import 'package:alist/l10n/intl_keys.dart';
+import 'package:alist/net/dio_utils.dart';
 import 'package:alist/screen/video_player_screen.dart';
 import 'package:alist/util/alist_plugin.dart';
 import 'package:alist/util/constant.dart';
@@ -12,6 +15,7 @@ import 'package:alist/util/string_utils.dart';
 import 'package:alist/widget/player_selector_dialog.dart';
 import 'package:flustars/flustars.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -88,10 +92,12 @@ class VideoPlayerUtil {
     if (localPath != null && localPath != "") {
       var packageName = videoPlayerRouter.substringBeforeLast("/")!;
       if (Platform.isAndroid) {
+        // 安卓传递本地文件路径使用FileProvider提供给外部播放器播发
         var activity = videoPlayerRouter.substringAfterLast("/")!;
         return AlistPlugin.playVideoWithExternalPlayer(
             packageName, activity, localPath);
       } else {
+        // ios使用本地服务提供url给外部播放器
         ProxyServer proxyServer = Get.find();
         await proxyServer.start();
         var videoUrl = proxyServer.makeFileUri(File(localPath)).toString();
@@ -116,6 +122,17 @@ class VideoPlayerUtil {
 
       var packageName = videoPlayerRouter.substringBeforeLast("/")!;
       if (Platform.isIOS) {
+        if (packageName.startsWith("nplayer-")) {
+          // nplayer 不支持302跳转播放
+          var rawUrl = await requestRawUrl(remotePath);
+          if (rawUrl != null) {
+            var uri = Uri.parse("$packageName$rawUrl");
+            return launchUrl(uri);
+          } else {
+            SmartDialog.showToast(Intl.tips_request_raw_url_failed.tr);
+            return false;
+          }
+        }
         var uri = Uri.parse("$packageName$videoUrl");
         return launchUrl(uri);
       } else {
@@ -195,6 +212,7 @@ class VideoPlayerUtil {
             players: externalPlayerList,
             onPlayerClick: (info) {
               var isInternal = info.label.contains("AList Client");
+              Navigator.of(context).pop();
 
               if (isInternal) {
                 String? playerType;
@@ -209,10 +227,21 @@ class VideoPlayerUtil {
                 _playUrlWithExternalPlayer(videoPlayerRouter, item.provider,
                     item.localPath, item.remotePath, item.sign);
               }
-
-              Navigator.of(context).pop();
             },
           );
         });
+  }
+
+  static Future<String?> requestRawUrl(String path) async {
+    var params = {"path": path, "password": ""};
+    String? rawUrl;
+    SmartDialog.showLoading();
+    await DioUtils.instance.requestNetwork<FileInfoRespEntity>(
+        Method.post, "fs/get",
+        params: params, onSuccess: (detail) {
+      rawUrl = detail?.rawUrl;
+    }, onError: (code, msg) {});
+    SmartDialog.dismiss(status: SmartStatus.loading);
+    return rawUrl;
   }
 }

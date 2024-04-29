@@ -230,4 +230,5 @@ const translationsEnUS = {
   "cacheManagement_otherCache": "Other cache",
   "cacheManagement_tips_clearing_cache": "Clearing cache...",
   "playerSettings_player_in_use": "Player in use",
+  "tips_request_raw_url_failed": "Failed to get playback link",
 };

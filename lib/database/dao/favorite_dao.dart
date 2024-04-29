@@ -9,6 +9,9 @@ abstract class FavoriteDao {
   @update
   Future<int> updateRecord(Favorite favorite);
 
+  @update
+  Future<int> updateRecords(List<Favorite> favorite);
+
   @delete
   Future<int> deleteRecord(Favorite favorite);
 
