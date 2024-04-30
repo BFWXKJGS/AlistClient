@@ -32,6 +32,7 @@ import java.io.File
 
 class AlistPlugin(private val activity: Activity, private val scope: CoroutineScope) :
     FlutterPlugin, MethodChannel.MethodCallHandler {
+    private val requestCodeLaunchExternalPlayer = 1
 
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
@@ -131,7 +132,7 @@ class AlistPlugin(private val activity: Activity, private val scope: CoroutineSc
                     intent.setDataAndType(Uri.parse(url), "video/*")
                 }
                 try {
-                    activity.startActivity(intent)
+                    activity.startActivityForResult(intent, requestCodeLaunchExternalPlayer)
                     result.success(true)
                 } catch (e: ActivityNotFoundException) {
                     result.success(false)
@@ -276,6 +277,12 @@ class AlistPlugin(private val activity: Activity, private val scope: CoroutineSc
             result.success(isInstalled)
         } catch (exc: PackageManager.NameNotFoundException) {
             result.success(false)
+        }
+    }
+
+    fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == requestCodeLaunchExternalPlayer) {
+            FlutterMethods.onPayerDestroyed()
         }
     }
 }

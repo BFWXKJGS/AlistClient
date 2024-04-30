@@ -2,6 +2,9 @@ package com.github.alist.activity
 
 import android.content.res.Configuration
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.Message
 import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.TextView
@@ -27,7 +30,9 @@ import com.shuyu.gsyvideoplayer.player.PlayerFactory
 import com.shuyu.gsyvideoplayer.utils.Debuger
 import com.shuyu.gsyvideoplayer.utils.OrientationUtils
 import com.shuyu.gsyvideoplayer.video.NormalGSYVideoPlayer
+import com.shuyu.gsyvideoplayer.video.base.GSYVideoView
 import tv.danmaku.ijk.media.exo2.Exo2PlayerManager
+import kotlin.math.abs
 
 class PlayerActivity : AppCompatActivity(), GSYVideoProgressListener {
     private lateinit var playerWrapper: PlayerWrapper
@@ -46,6 +51,17 @@ class PlayerActivity : AppCompatActivity(), GSYVideoProgressListener {
     private lateinit var orientationUtils: OrientationUtils
     private var isPause = false
     private var isPlay = true
+
+    private val messageRecordWatchTime = 1
+    private val handler = object : Handler(Looper.getMainLooper()) {
+        override fun handleMessage(msg: Message) {
+            if (msg.what == messageRecordWatchTime) {
+                saveCurrentTime()
+                // 每30s记录一次播放进度
+                sendEmptyMessageDelayed(messageRecordWatchTime, 30 * 1000)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -115,6 +131,17 @@ class PlayerActivity : AppCompatActivity(), GSYVideoProgressListener {
                     //开始播放了才能旋转和全屏
                     orientationUtils.isEnable = true
                     isPlay = true
+                    handler.removeMessages(messageRecordWatchTime)
+                    // 延时 30 秒记录一次播放进度
+                    handler.sendEmptyMessageDelayed(messageRecordWatchTime, 30 * 1000)
+                }
+
+                override fun onComplete(url: String?, vararg objects: Any?) {
+                    super.onComplete(url, *objects)
+                    handler.removeMessages(messageRecordWatchTime)
+                    if (totalTime > 0 && abs(totalTime - currentTime) <= 1000) {
+                        handler.sendEmptyMessage(messageRecordWatchTime)
+                    }
                 }
 
                 override fun onAutoComplete(url: String?, vararg objects: Any?) {
@@ -232,6 +259,7 @@ class PlayerActivity : AppCompatActivity(), GSYVideoProgressListener {
         gsyVideoPlayer.currentPlayer.onVideoPause()
         super.onPause()
         isPause = true
+        handler.removeMessages(messageRecordWatchTime)
         saveCurrentTime()
     }
 
@@ -252,6 +280,12 @@ class PlayerActivity : AppCompatActivity(), GSYVideoProgressListener {
         gsyVideoPlayer.currentPlayer.onVideoResume(false)
         super.onResume()
         isPause = false
+        if (gsyVideoPlayer.currentPlayer.currentState == GSYVideoView.CURRENT_STATE_PLAYING
+            || gsyVideoPlayer.currentPlayer.currentState == GSYVideoView.CURRENT_STATE_PLAYING_BUFFERING_START
+            || gsyVideoPlayer.currentPlayer.currentState == GSYVideoView.CURRENT_STATE_PREPAREING
+        ) {
+            handler.sendEmptyMessageDelayed(messageRecordWatchTime, 10)
+        }
     }
 
     override fun onDestroy() {
