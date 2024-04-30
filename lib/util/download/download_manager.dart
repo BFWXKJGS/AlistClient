@@ -330,10 +330,10 @@ class DownloadManager {
       if (dirs != null) {
         downloadDir = dirs;
       } else {
-        downloadDir = await getTemporaryDirectory();
+        downloadDir = await acquireDownloadDirectory();
       }
     } else {
-      downloadDir = await getTemporaryDirectory();
+      downloadDir = await acquireDownloadDirectory();
     }
     String subPath = userController.user().baseUrl.md5String();
     final username = userController.user().username;
@@ -343,6 +343,13 @@ class DownloadManager {
     if (!await downloadDir.exists()) {
       await downloadDir.create(recursive: true);
     }
+    return downloadDir;
+  }
+
+  static Future<Directory> acquireDownloadDirectory() async {
+    Directory downloadDir = await getTemporaryDirectory();
+    downloadDir = Directory("${downloadDir.path}/Downloads");
+    await downloadDir.create();
     return downloadDir;
   }
 

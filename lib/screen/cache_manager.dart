@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:alist/l10n/intl_keys.dart';
+import 'package:alist/util/download/download_manager.dart';
 import 'package:alist/widget/alist_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -60,6 +61,7 @@ class CacheManagerController extends GetxController {
 
   final Set<String> _imageCachePaths = {};
   final Set<String> _audioCachePaths = {};
+  String _downloadDir = "";
 
   @override
   void onInit() {
@@ -69,6 +71,7 @@ class CacheManagerController extends GetxController {
 
   void _calculateCacheFilesSize() async {
     var temporaryDirectory = await getTemporaryDirectory();
+    _downloadDir = (await DownloadManager.acquireDownloadDirectory()).path;
     if (isClosed) {
       return;
     }
@@ -100,6 +103,8 @@ class CacheManagerController extends GetxController {
         } else if (_checkIsAudioPath(path)) {
           _audioCacheSize += filesSize;
           audioCacheSizeStr.value = _formatBytes(_audioCacheSize);
+        } else if (path.startsWith(_downloadDir)) {
+          // do nothing
         } else {
           _otherCacheSize += filesSize;
           debugPrint(entity.path);
@@ -214,6 +219,7 @@ class CacheManagerController extends GetxController {
     var excludePaths = <String>[];
     excludePaths.addAll(_imageCachePaths);
     excludePaths.addAll(_audioCachePaths);
+    excludePaths.add(_downloadDir);
     await _deleteFilesByDirectory(temporaryDirectory,
         excludePaths: excludePaths);
 
