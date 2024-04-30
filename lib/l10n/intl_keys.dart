@@ -33,6 +33,7 @@ class Intl {
   static const String alipay = "alipay";
   static const String playerSkin_tips_playVideoFailed = "playerSkin_tips_playVideoFailed";
   static const String playerSkin_rate = "playerSkin_rate";
+  static const String playerSkin_audioTrack = "playerSkin_audioTrack";
   static const String videoPlayerScreen_tips_playNext = "videoPlayerScreen_tips_playNext";
   static const String tips_logout = "tips_logout";
   static const String logout = "logout";

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -19,6 +20,7 @@ typedef OnPlayProgressChange = Function(int currentPostion, int duration);
 typedef PlayNextCallback = Function();
 typedef PlayPreviousCallback = Function();
 typedef OnRateMenuTap = Function(Rate);
+typedef AudioTrackCheckedCallback = Function(int);
 
 /// Default Panel Widget
 class AlistPlayerSkin extends StatefulWidget {
@@ -437,20 +439,31 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
 
             if (_audioTracks != null && _audioTracks!.length > 1)
               IconButton(
-                icon: const Text(
-                  "音轨",
-                  style: TextStyle(color: Colors.white),
+                icon: Text(
+                  Intl.playerSkin_audioTrack.tr,
+                  style: const TextStyle(color: Colors.white),
                 ),
                 onPressed: () {
                   if (_locked) {
                     return;
                   }
                   _hideTimer?.cancel();
-                  var nextAudioTrackIndex =
-                      (_audioTrackIndex + 1) % _audioTracks!.length;
-                  _player.selectTrack(
-                      _audioTracks![nextAudioTrackIndex].trackIndex ?? 0);
-                  _audioTrackIndex = nextAudioTrackIndex;
+
+                  var dialogTag = "AudioTracSelectorDialog";
+                  SmartDialog.show(
+                      builder: (context) {
+                        return AudioTracSelectorDialog(
+                          audioTracks: _audioTracks!,
+                          index: _audioTrackIndex,
+                          callback: (audioTrackIndex) {
+                            _audioTrackIndex = audioTrackIndex;
+                            _player.selectTrack(
+                                _audioTracks![audioTrackIndex].trackIndex ?? 0);
+                            SmartDialog.dismiss(tag: dialogTag);
+                          },
+                        );
+                      },
+                      tag: dialogTag);
                 },
               ),
 
@@ -1286,6 +1299,60 @@ class HorizontalRateMenuDialog extends StatelessWidget {
             Row(children: widgets)
           ],
         ),
+      ),
+    );
+  }
+}
+
+class AudioTracSelectorDialog extends StatelessWidget {
+  const AudioTracSelectorDialog({
+    super.key,
+    required this.audioTracks,
+    required this.index,
+    required this.callback,
+  });
+
+  final List<AVPTrackInfo> audioTracks;
+  final int index;
+  final AudioTrackCheckedCallback callback;
+
+  @override
+  Widget build(BuildContext context) {
+    List<Widget> widgets = [];
+    for (var i = 0; i < audioTracks.length; i++) {
+      Widget widget = GestureDetector(
+        onTap: () {
+          if (index != i) {
+            callback(i);
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.only(left: 5, right: 20),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Checkbox(
+                  value: index == i,
+                  onChanged: (checked) {
+                    if (checked == true) {
+                      callback(i);
+                    }
+                  }),
+              Text("${Intl.playerSkin_audioTrack.tr}：${i + 1}")
+            ],
+          ),
+        ),
+      );
+      widgets.add(widget);
+    }
+    return Container(
+      decoration: BoxDecoration(
+          color: context.theme.colorScheme.background,
+          borderRadius: const BorderRadius.all(Radius.circular(10))),
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: widgets,
       ),
     );
   }

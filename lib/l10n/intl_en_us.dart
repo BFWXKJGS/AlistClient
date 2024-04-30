@@ -33,6 +33,7 @@ const translationsEnUS = {
   "alipay": "Alipay",
   "playerSkin_tips_playVideoFailed": "Play failed, click retry",
   "playerSkin_rate": "Rate",
+  "playerSkin_audioTrack": "Track",
   "videoPlayerScreen_tips_playNext": "Autoplay next",
   "tips_logout": "Do you need to logout？",
   "logout": "Logout",
