@@ -255,8 +255,12 @@ class FileUtils {
     if (encodedPath.endsWith("/")) {
       encodedPath = encodedPath.substring(0, encodedPath.length - 1);
     }
+    encodedPath = "$encodeBasePath$encodedPath";
+    if(!encodeBasePath.startsWith("/")){
+      encodedPath = "/$encodedPath";
+    }
 
-    String url = "${user.serverUrl}d$encodeBasePath$encodedPath";
+    String url = "${user.serverUrl}d$encodedPath";
     if (sign != null && sign.isNotEmpty) {
       url = "$url?sign=$sign";
     }
