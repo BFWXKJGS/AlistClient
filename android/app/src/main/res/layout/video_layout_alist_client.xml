@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/black">
@@ -17,10 +18,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentStart="true"
-        android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
         android:background="#000000"
         android:scaleType="fitCenter" />
@@ -127,38 +126,52 @@
         android:visibility="invisible" />
 
     <LinearLayout
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true">
 
         <ImageView
             android:id="@+id/btn_previous"
-            android:padding="15dp"
-            android:layout_marginEnd="20dp"
-            android:visibility="gone"
-            android:src="@drawable/audio_service_skip_previous"
-            android:layout_width="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_height="wrap_content"/>
+            style="@style/ExoStyledControls.Button.Center.Previous" />
 
-        <com.github.alist.widget.VisibleChangeListenerImageView
+        <View
+            android:id="@+id/btn_rewind"
+            style="@style/ExoStyledControls.Button.Center.RewWithAmount"
+            tools:ignore="PrivateResource" />
+
+        <ImageView
             android:id="@+id/start"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
             android:layout_gravity="center_vertical"
+            android:layout_marginHorizontal="12dp"
             android:src="@drawable/video_click_play_selector" />
+
+        <View
+            android:id="@+id/btn_ffwd"
+            style="@style/ExoStyledControls.Button.Center.FfwdWithAmount"
+            tools:ignore="PrivateResource" />
 
         <ImageView
             android:id="@+id/btn_next"
-            android:padding="15dp"
-            android:visibility="gone"
-            android:layout_marginStart="20dp"
-            android:src="@drawable/audio_service_skip_next"
-            android:layout_width="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_height="wrap_content"/>
+            style="@style/ExoStyledControls.Button.Center.Next" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_playing_at_double_speed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="30dp"
+        android:background="#70333333"
+        android:paddingHorizontal="5dp"
+        android:paddingVertical="2dp"
+        android:textSize="16sp"
+        android:text="@string/playing_at_double_speed"
+        android:textColor="@android:color/white"
+        android:visibility="invisible"
+        tools:visibility="visible" />
 
 
     <ImageView

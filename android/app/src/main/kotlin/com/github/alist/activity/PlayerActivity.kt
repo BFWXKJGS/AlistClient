@@ -13,6 +13,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import com.github.alist.bean.VideoItem
@@ -20,7 +21,7 @@ import com.github.alist.client.BuildConfig
 import com.github.alist.client.R
 import com.github.alist.utils.FlutterMethods
 import com.github.alist.utils.GsonUtils
-import com.github.alist.widget.VisibleChangeListenerImageView
+import com.github.alist.widget.AlistClientVideoPlayer
 import com.shuyu.gsyvideoplayer.GSYVideoManager
 import com.shuyu.gsyvideoplayer.builder.GSYVideoOptionBuilder
 import com.shuyu.gsyvideoplayer.listener.GSYSampleCallBack
@@ -47,7 +48,7 @@ class PlayerActivity : AppCompatActivity(), GSYVideoProgressListener {
     private val windowInsetsControllerCompat by lazy {
         WindowInsetsControllerCompat(window, window.decorView)
     }
-    private lateinit var gsyVideoPlayer: NormalGSYVideoPlayer
+    private lateinit var gsyVideoPlayer: AlistClientVideoPlayer
     private lateinit var orientationUtils: OrientationUtils
     private var isPause = false
     private var isPlay = true
@@ -111,7 +112,7 @@ class PlayerActivity : AppCompatActivity(), GSYVideoProgressListener {
     private fun initViews() {
         gsyVideoPlayer = findViewById(R.id.video_player)
         playerWrapper = PlayerWrapper(gsyVideoPlayer)
-        playerWrapper.initViews(false)
+        playerWrapper.initViews()
         gsyVideoPlayer.setGSYVideoProgressListener(this)
         orientationUtils = OrientationUtils(this, gsyVideoPlayer)
         orientationUtils.isEnable = false
@@ -186,7 +187,7 @@ class PlayerActivity : AppCompatActivity(), GSYVideoProgressListener {
         gsyVideoPlayer.fullscreenButton.setOnClickListener { //直接横屏
             orientationUtils.resolveByClick()
             gsyVideoPlayer.startWindowFullscreen(this@PlayerActivity, true, true)?.let {
-                PlayerWrapper(it as NormalGSYVideoPlayer).initViews(true)
+                PlayerWrapper(it as AlistClientVideoPlayer).initViews()
             }
         }
 
@@ -323,7 +324,7 @@ class PlayerActivity : AppCompatActivity(), GSYVideoProgressListener {
         this.currentTime = currentTime
     }
 
-    inner class PlayerWrapper(val videoPlayer: NormalGSYVideoPlayer) {
+    inner class PlayerWrapper(val videoPlayer: AlistClientVideoPlayer) {
         lateinit var btnPrevious: View
             private set
         lateinit var btnNext: View
@@ -338,21 +339,13 @@ class PlayerActivity : AppCompatActivity(), GSYVideoProgressListener {
             private set
         lateinit var btnBack: View
             private set
-        private lateinit var btnPlayStart: VisibleChangeListenerImageView
+        private lateinit var btnPlayStart: View
 
-        fun initViews(isLand: Boolean) {
+        fun initViews() {
             findViews()
+            videoPlayer.btnPrevious.alpha = if (index > 0) 1f else 0.5f
+            videoPlayer.btnNext.alpha = if (index >= videos.lastIndex) 0.5f else 1f
 
-            if (videos.size > 1) {
-                btnPlayStart.onVisibleChangeListener = {
-                    btnPrevious.visibility = it
-                    btnNext.visibility = it
-                }
-            }
-            if (isLand && btnPlayStart.isVisible) {
-                btnPrevious.visibility = View.VISIBLE
-                btnNext.visibility = View.VISIBLE
-            }
             btnPrevious.setOnClickListener {
                 saveCurrentTime()
                 playPrevious()
@@ -360,6 +353,10 @@ class PlayerActivity : AppCompatActivity(), GSYVideoProgressListener {
             btnNext.setOnClickListener {
                 saveCurrentTime()
                 playNext()
+            }
+            videoPlayer.setOnLongClickListener {
+
+                true
             }
         }
 

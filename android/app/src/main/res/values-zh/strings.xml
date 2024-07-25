@@ -2,4 +2,5 @@
 <resources>
     <string name="downloading_notification_title">文件下载中...</string>
     <string name="downloading_notification_content">文件下载正在后台中...</string>
+    <string name="playing_at_double_speed">倍速播放中</string>
 </resources>

@@ -2,4 +2,5 @@
 <resources>
     <string name="downloading_notification_title">Downloading...</string>
     <string name="downloading_notification_content">Files download is in the background.</string>
+    <string name="playing_at_double_speed">Playing at double speed</string>
 </resources>
