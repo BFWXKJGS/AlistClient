@@ -20,7 +20,7 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class VideoPlayerUtil {
-  static void go(List<VideoItem> videos, int index) async {
+  static void go(List<VideoItem> videos, int index, String? password) async {
     var videoPlayerRouter =
         SpUtil.getString(AlistConstant.videoPlayerRouter) ?? "";
 
@@ -31,7 +31,7 @@ class VideoPlayerUtil {
       // 交给设置的外部的视频播放器处理
       var item = videos[index];
       var playResult = await _playUrlWithExternalPlayer(videoPlayerRouter,
-          item.provider, item.localPath, item.remotePath, item.sign);
+          item.provider, item.localPath, item.remotePath, item.sign, password);
       if (!playResult) {
         // 遇到 Activity Not Found 错误，说明原外部播放器软件已被卸载
         SpUtil.remove(AlistConstant.videoPlayerRouter);
@@ -88,7 +88,8 @@ class VideoPlayerUtil {
       String? provider,
       String? localPath,
       String remotePath,
-      String? sign) async {
+      String? sign,
+      String? password) async {
     if (localPath != null && localPath != "") {
       var packageName = videoPlayerRouter.substringBeforeLast("/")!;
       if (Platform.isAndroid) {
@@ -124,7 +125,7 @@ class VideoPlayerUtil {
       if (Platform.isIOS) {
         if (packageName.startsWith("nplayer-")) {
           // nplayer 不支持302跳转播放
-          var rawUrl = await requestRawUrl(remotePath);
+          var rawUrl = await requestRawUrl(remotePath, password);
           if (rawUrl != null) {
             var uri = Uri.parse("$packageName$rawUrl");
             return launchUrl(uri);
@@ -195,8 +196,8 @@ class VideoPlayerUtil {
     return playerList;
   }
 
-  static void selectThePlayerToPlay(
-      BuildContext context, List<VideoItem> videos, int index) async {
+  static void selectThePlayerToPlay(BuildContext context,
+      List<VideoItem> videos, int index, String? password) async {
     List<ExternalPlayerEntity> externalPlayerList =
         await loadPlayerResoleInfoList();
 
@@ -225,15 +226,15 @@ class VideoPlayerUtil {
                 var videoPlayerRouter = "${info.packageName}/${info.activity}";
                 var item = videos[index];
                 _playUrlWithExternalPlayer(videoPlayerRouter, item.provider,
-                    item.localPath, item.remotePath, item.sign);
+                    item.localPath, item.remotePath, item.sign, password);
               }
             },
           );
         });
   }
 
-  static Future<String?> requestRawUrl(String path) async {
-    var params = {"path": path, "password": ""};
+  static Future<String?> requestRawUrl(String path, String? password) async {
+    var params = {"path": path, "password": password ?? ""};
     String? rawUrl;
     SmartDialog.showLoading();
     await DioUtils.instance.requestNetwork<FileInfoRespEntity>(

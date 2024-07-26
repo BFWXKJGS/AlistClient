@@ -40,6 +40,7 @@ class _FileListNavigatorState extends State<FileListNavigator>
               path: arguments?["path"],
               sortBy: arguments?["sortBy"],
               sortByUp: arguments?["sortByUp"],
+              backupPassword: arguments?["backupPassword"],
               isRootStack: false,
             ),
           );

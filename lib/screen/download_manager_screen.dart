@@ -121,7 +121,7 @@ class DownloadManagerScreen extends StatelessWidget {
           thumb: downloadItem.thumbnail,
           modifiedMilliseconds: 0,
         );
-        VideoPlayerUtil.selectThePlayerToPlay(Get.context!, [video], 0);
+        VideoPlayerUtil.selectThePlayerToPlay(Get.context!, [video], 0, null);
       };
     }
 
@@ -567,7 +567,7 @@ class DownloadManagerController extends GetxController {
             modifiedMilliseconds: 0,
           );
         }).toList();
-        VideoPlayerUtil.go(videos, index);
+        VideoPlayerUtil.go(videos, index, null);
         break;
       case FileType.audio:
         var audios = files.map((e) {

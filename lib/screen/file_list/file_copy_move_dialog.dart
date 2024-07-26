@@ -8,6 +8,7 @@ import 'package:alist/net/dio_utils.dart';
 import 'package:alist/router.dart';
 import 'package:alist/screen/file_list/director_password_dialog.dart';
 import 'package:alist/screen/file_list/mkdir_dialog.dart';
+import 'package:alist/util/file_password_helper.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/focus_node_utils.dart';
 import 'package:alist/util/named_router.dart';
@@ -271,10 +272,10 @@ class FileCopyMoveController extends GetxController {
 
   Future<void> _loadFilesPrepare(User user, String path) async {
     // query file's password from database.
-    var filePassword = await _databaseController.filePasswordDao
+    var filePassword = await FilePasswordHelper()
         .findPasswordByPath(user.serverUrl, user.username, path);
     if (filePassword != null) {
-      _password = filePassword.password;
+      _password = filePassword;
     }
     if (!isClosed) {
       _loadFilesWhileWidgetReady();

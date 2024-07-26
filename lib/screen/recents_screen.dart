@@ -14,10 +14,12 @@ import 'package:alist/screen/pdf_reader_screen.dart';
 import 'package:alist/screen/video_player_screen.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/download/download_manager.dart';
+import 'package:alist/util/file_password_helper.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/util/named_router.dart';
+import 'package:alist/util/nature_sort.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/util/video_player_util.dart';
@@ -259,13 +261,14 @@ class _RecentsScreenState extends State<RecentsScreen>
     var user = _userController.user.value;
     Favorite? favorite = await _databaseController.favoriteDao
         .findByPath(user.serverUrl, user.username, record.path);
+    var modified = DateTime.fromMillisecondsSinceEpoch(record.modified);
     if (!mounted) {
       return;
     }
 
-    var modified = DateTime.fromMillisecondsSinceEpoch(record.modified);
     showModalBottomSheet(
         context: context,
+        isScrollControlled: true,
         builder: (context) {
           return Padding(
             padding: const EdgeInsets.only(top: 20),
@@ -425,15 +428,14 @@ class _RecentsScreenState extends State<RecentsScreen>
     FileType fileType,
   ) async {
     final userController = Get.find<UserController>();
-    final databaseController = Get.find<AlistDatabaseController>();
     final user = userController.user.value;
 
     // query file's password from database.
-    var filePassword = await databaseController.filePasswordDao
+    var filePassword = await FilePasswordHelper()
         .findPasswordByPath(user.serverUrl, user.username, folderPath);
     String? password;
     if (filePassword != null) {
-      password = filePassword.password;
+      password = filePassword;
     }
     return await _loadFiles(folderPath, filePath, password, fileType);
   }
@@ -460,7 +462,7 @@ class _RecentsScreenState extends State<RecentsScreen>
           ?.map((e) => _fileResp2VO(folderPath, data.provider, e))
           .where((element) => element.type == fileType)
           .toList();
-      files?.sort((a, b) => a.name.compareTo(b.name));
+      files?.sort((a, b) => NaturalSort.compare(a.name, b.name));
       result = files;
     }, onError: (code, msg) {
       SmartDialog.showToast(msg);
@@ -518,10 +520,16 @@ class _RecentsScreenState extends State<RecentsScreen>
           ),
         )
         .toList();
+    final userController = Get.find<UserController>();
+    final user = userController.user.value;
+    // query file's password from database.
+    var filePassword = await FilePasswordHelper()
+        .findPasswordByPath(user.serverUrl, user.username, file.path);
     if (showSelector) {
-      VideoPlayerUtil.selectThePlayerToPlay(Get.context!, videos, index);
+      VideoPlayerUtil.selectThePlayerToPlay(
+          Get.context!, videos, index, filePassword);
     } else {
-      VideoPlayerUtil.go(videos, index);
+      VideoPlayerUtil.go(videos, index, filePassword);
     }
   }
 
@@ -642,11 +650,11 @@ class _RecentsScreenState extends State<RecentsScreen>
         return;
       }
 
-      var filePassword = await _databaseController.filePasswordDao
+      var filePassword = await FilePasswordHelper()
           .findPasswordByPath(user.serverUrl, user.username, path);
       String? password;
       if (filePassword != null) {
-        password = filePassword.password;
+        password = filePassword;
       }
       var body = {
         "path": path,

@@ -14,10 +14,12 @@ import 'package:alist/screen/pdf_reader_screen.dart';
 import 'package:alist/screen/video_player_screen.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/download/download_manager.dart';
+import 'package:alist/util/file_password_helper.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/util/named_router.dart';
+import 'package:alist/util/nature_sort.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/util/video_player_util.dart';
@@ -409,16 +411,11 @@ class _FavoriteScreenState extends State<FavoriteScreen>
     String filePath,
     FileType fileType,
   ) async {
-    final userController = Get.find<UserController>();
-    final databaseController = Get.find<AlistDatabaseController>();
-    final user = userController.user.value;
-
     // query file's password from database.
-    var filePassword = await databaseController.filePasswordDao
-        .findPasswordByPath(user.serverUrl, user.username, folderPath);
+    var filePassword = await FilePasswordHelper().fastFindPassword(folderPath);
     String? password;
     if (filePassword != null) {
-      password = filePassword.password;
+      password = filePassword;
     }
     return await _loadFiles(folderPath, filePath, password, fileType);
   }
@@ -445,7 +442,7 @@ class _FavoriteScreenState extends State<FavoriteScreen>
           ?.map((e) => _fileResp2VO(folderPath, data.provider, e))
           .where((element) => element.type == fileType)
           .toList();
-      files?.sort((a, b) => a.name.compareTo(b.name));
+      files?.sort((a, b) => NaturalSort.compare(a.name, b.name));
       result = files;
     }, onError: (code, msg) {
       SmartDialog.showToast(msg);
@@ -503,12 +500,14 @@ class _FavoriteScreenState extends State<FavoriteScreen>
           ),
         )
         .toList();
+    var password = await FilePasswordHelper().fastFindPassword(file.path);
     if (showSelector) {
       if (context.mounted) {
-        VideoPlayerUtil.selectThePlayerToPlay(Get.context!, videos, index);
+        VideoPlayerUtil.selectThePlayerToPlay(
+            Get.context!, videos, index, password);
       }
     } else {
-      VideoPlayerUtil.go(videos, index);
+      VideoPlayerUtil.go(videos, index, password);
     }
   }
 
@@ -604,11 +603,11 @@ class _FavoriteScreenState extends State<FavoriteScreen>
         return;
       }
 
-      var filePassword = await _databaseController.filePasswordDao
+      var filePassword = await FilePasswordHelper()
           .findPasswordByPath(user.serverUrl, user.username, path);
       String? password;
       if (filePassword != null) {
-        password = filePassword.password;
+        password = filePassword;
       }
       var body = {
         "path": path,

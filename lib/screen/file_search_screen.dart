@@ -11,10 +11,12 @@ import 'package:alist/screen/file_reader_screen.dart';
 import 'package:alist/screen/gallery_screen.dart';
 import 'package:alist/screen/pdf_reader_screen.dart';
 import 'package:alist/screen/video_player_screen.dart';
+import 'package:alist/util/file_password_helper.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/util/named_router.dart';
+import 'package:alist/util/nature_sort.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:alist/util/video_player_util.dart';
@@ -251,11 +253,11 @@ class FileSearchController extends GetxController {
     final user = userController.user.value;
 
     // query file's password from database.
-    var filePassword = await databaseController.filePasswordDao
+    var filePassword = await FilePasswordHelper()
         .findPasswordByPath(user.serverUrl, user.username, folderPath);
     String? password;
     if (filePassword != null) {
-      password = filePassword.password;
+      password = filePassword;
     }
     return await _loadFiles(folderPath, filePath, password, fileType);
   }
@@ -282,7 +284,7 @@ class FileSearchController extends GetxController {
           ?.map((e) => _fileResp2VO(folderPath, data.provider, e))
           .where((element) => (fileType == null || element.type == fileType))
           .toList();
-      files?.sort((a, b) => a.name.compareTo(b.name));
+      files?.sort((a, b) => NaturalSort.compare(a.name, b.name));
       result = files;
     }, onError: (code, msg) {
       SmartDialog.showToast(msg);
@@ -340,7 +342,8 @@ class FileSearchController extends GetxController {
           ),
         )
         .toList();
-    VideoPlayerUtil.go(videos, index);
+    var filePassword = await FilePasswordHelper().fastFindPassword(path);
+    VideoPlayerUtil.go(videos, index, filePassword);
   }
 
   void _gotoAudioPlayer(String path, FileSearchRespContent file) async {

@@ -27,6 +27,7 @@ import 'package:alist/screen/video_player_screen.dart';
 import 'package:alist/util/alist_plugin.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/download/download_manager.dart';
+import 'package:alist/util/file_password_helper.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/file_utils.dart';
 import 'package:alist/util/focus_node_utils.dart';
@@ -69,6 +70,7 @@ class FileListScreen extends StatefulWidget {
     this.path,
     this.sortBy,
     this.sortByUp,
+    this.backupPassword,
     this.isRootStack = false,
   });
 
@@ -76,6 +78,7 @@ class FileListScreen extends StatefulWidget {
   final MenuId? sortBy;
   final bool? sortByUp;
   final bool isRootStack;
+  final String? backupPassword;
 
   @override
   State<FileListScreen> createState() => _FileListScreenState();
@@ -97,7 +100,8 @@ class _FileListScreenState extends State<FileListScreen>
   dio.CancelToken? _cancelToken;
   String? _pageName;
   String? _password;
-  bool _queryPassword = false;
+
+  bool _queryPassword = true;
   bool _passwordRetrying = false;
   String path = "";
   bool _forceRefresh = false;
@@ -146,7 +150,7 @@ class _FileListScreenState extends State<FileListScreen>
             _currentUser?.serverUrl != event.serverUrl) {
           _currentUser = event;
 
-          _queryPassword = false;
+          _queryPassword = true;
           _password = null;
           _refreshController.requestRefresh();
           setState(() {
@@ -163,12 +167,12 @@ class _FileListScreenState extends State<FileListScreen>
   Future<void> _loadFiles() async {
     // query file's password from database.
     if (_queryPassword) {
-      var user = _userController.user.value;
-      var filePassword = await _databaseController.filePasswordDao
-          .findPasswordByPath(user.serverUrl, user.username, path);
+      var filePassword = await FilePasswordHelper()
+          .fastFindPassword(path, backupPassword: widget.backupPassword);
       if (filePassword != null) {
-        _password = filePassword.password;
+        _password = filePassword;
       }
+      _queryPassword = false;
     }
     return _loadFilesInner();
   }
@@ -463,7 +467,8 @@ class _FileListScreenState extends State<FileListScreen>
           arguments: {
             "path": file.path,
             "sortBy": _menuAnchorController.sortBy.value,
-            "sortByUp": _menuAnchorController.sortByUp.value
+            "sortByUp": _menuAnchorController.sortByUp.value,
+            "backupPassword": _password ?? ""
           },
           preventDuplicates: false,
           id: stackId,
@@ -1015,9 +1020,10 @@ class _FileListScreenState extends State<FileListScreen>
         videos.indexWhere((element) => element.remotePath == file.path);
 
     if (showSelector) {
-      VideoPlayerUtil.selectThePlayerToPlay(Get.context!, videos, index);
+      VideoPlayerUtil.selectThePlayerToPlay(
+          Get.context!, videos, index, _password);
     } else {
-      VideoPlayerUtil.go(videos, index);
+      VideoPlayerUtil.go(videos, index, _password);
     }
   }
 

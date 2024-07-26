@@ -5,6 +5,7 @@ import 'package:alist/net/intercept.dart';
 import 'package:alist/util/alist_plugin.dart';
 import 'package:alist/util/constant.dart';
 import 'package:alist/util/download/download_manager.dart';
+import 'package:alist/util/file_password_helper.dart';
 import 'package:alist/util/global.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
@@ -36,6 +37,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> init() async {
     AlistPlugin.setupChannel();
     await _databaseController.init();
+    FilePasswordHelper().setFilePasswordDao(_databaseController.filePasswordDao);
     await SpUtil.getInstance();
     await JustAudioBackground.init(
       androidNotificationChannelId: 'com.github.alist.client.audio',
