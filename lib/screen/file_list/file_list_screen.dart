@@ -33,6 +33,7 @@ import 'package:alist/util/focus_node_utils.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/markdown_utils.dart';
 import 'package:alist/util/named_router.dart';
+import 'package:alist/util/nature_sort.dart';
 import 'package:alist/util/proxy.dart';
 import 'package:alist/util/string_utils.dart';
 import 'package:alist/util/user_controller.dart';
@@ -612,7 +613,7 @@ class _FileListScreenState extends State<FileListScreen>
         var result = 0;
         switch (_menuAnchorController.sortBy.value) {
           case MenuId.fileName:
-            result = a.name.compareTo(b.name);
+            result = NaturalSort.compare(a.name, b.name);
             break;
           case MenuId.fileType:
             result = a.typeInt.compareTo(b.typeInt);
