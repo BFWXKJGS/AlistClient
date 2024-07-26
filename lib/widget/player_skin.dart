@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:alist/generated/images.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/widget/slider.dart';
@@ -114,6 +115,7 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
   bool _locked = false;
   double _rate = 1.0;
   String _rateStr = "1.0x";
+  bool _longPressRating = false;
 
   double _seekPos = -1.0;
   StreamSubscription? _currentPosSubs;
@@ -563,6 +565,10 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       onWillPop: !_locked && (!_fullscreen || _isPad)
           ? null
           : () async {
+              if (_isPad && Platform.isIOS) {
+                return true;
+              }
+
               if (_fullscreen && !_isPad) {
                 _exitFullScreen();
                 return false;
@@ -654,6 +660,9 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
       onHorizontalDragUpdate: _onHorizontalDragUpdate(),
       onHorizontalDragEnd: _onHorizontalDragEnd(),
       onHorizontalDragCancel: _onHorizontalDragCancel(),
+      onLongPress: _onLongPressStart(),
+      onLongPressUp: _onLongPressEnd(),
+      onLongPressCancel: _onLongPressEnd(),
       child: AbsorbPointer(
         absorbing: _hideStuff,
         child: Column(
@@ -691,6 +700,12 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
             dragCurrentPos: _dragCurrentPosition,
             duration: _duration,
           ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 50,
+          child: LongPressRatingWidget(longPressRating: _longPressRating),
         ),
       ],
     );
@@ -981,6 +996,35 @@ class AlistPlayerSkinState extends State<AlistPlayerSkin> {
         },
       ),
     );
+  }
+
+  GestureLongPressCallback? _onLongPressStart() {
+    return _locked
+        ? null
+        : () {
+            if (_fullscreen &&
+                _playing &&
+                _duration.inMilliseconds > 0 &&
+                _rate < 2.0) {
+              setState(() {
+                _longPressRating = true;
+              });
+              _player.setRate(2.0);
+            }
+          };
+  }
+
+  GestureLongPressUpCallback? _onLongPressEnd() {
+    return _locked
+        ? null
+        : () {
+            if (_longPressRating) {
+              setState(() {
+                _longPressRating = false;
+              });
+              _player.setRate(_rate);
+            }
+          };
   }
 }
 
@@ -1355,5 +1399,95 @@ class AudioTracSelectorDialog extends StatelessWidget {
         children: widgets,
       ),
     );
+  }
+}
+
+class LongPressRatingWidget extends StatelessWidget {
+  final bool longPressRating;
+
+  const LongPressRatingWidget({super.key, required this.longPressRating});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!longPressRating) {
+      return const SizedBox();
+    } else {
+      return Center(
+        child: Container(
+          decoration: const BoxDecoration(
+              color: Color(0x70333333),
+              borderRadius: BorderRadius.all(Radius.circular(2))),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const LongPressRatingIcon(),
+              const SizedBox(width: 3),
+              Text(
+                Intl.playerSkin_playing_at_double_speed.tr,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              )
+            ],
+          ),
+        ),
+      );
+    }
+  }
+}
+
+class LongPressRatingIcon extends StatefulWidget {
+  const LongPressRatingIcon({super.key});
+
+  @override
+  State<LongPressRatingIcon> createState() => _LongPressRatingIconState();
+}
+
+class _LongPressRatingIconState extends State<LongPressRatingIcon>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    // Create animation controller
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300), // Animation duration
+    );
+
+    // Define opacity animation
+    _animation = Tween<double>(begin: 0, end: 1).animate(_controller);
+
+    // Add status listener for looping
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _controller.reverse(); // Reverse animation when completed
+      } else if (status == AnimationStatus.dismissed) {
+        _controller
+            .forward(); // Forward animation when dismissed (initial state)
+      }
+    });
+
+    // Start animation
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          return Opacity(
+            opacity: _animation.value,
+            child: Image.asset(Images.iconFfwd),
+          );
+        });
   }
 }

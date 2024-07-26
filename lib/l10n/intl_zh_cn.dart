@@ -34,6 +34,7 @@ const translationsZhCN = {
   "playerSkin_tips_playVideoFailed": "播放失败，点我重试",
   "playerSkin_rate": "倍速",
   "playerSkin_audioTrack": "音轨",
+  "playerSkin_playing_at_double_speed": "倍速播放中",
   "videoPlayerScreen_tips_playNext": "将自动播放下一个",
   "tips_logout": "您需要退出登录吗？",
   "logout": "退出登录",

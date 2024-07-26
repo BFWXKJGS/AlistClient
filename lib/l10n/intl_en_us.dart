@@ -34,6 +34,7 @@ const translationsEnUS = {
   "playerSkin_tips_playVideoFailed": "Play failed, click retry",
   "playerSkin_rate": "Rate",
   "playerSkin_audioTrack": "Track",
+  "playerSkin_playing_at_double_speed": "Playing at double speed",
   "videoPlayerScreen_tips_playNext": "Autoplay next",
   "tips_logout": "Do you need to logout？",
   "logout": "Logout",

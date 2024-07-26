@@ -20,6 +20,7 @@ class Images {
   static const String icNplayer = 'assets/images/ic_nplayer.png';
   static const String icVlc = 'assets/images/ic_vlc.png';
   static const String iconArrowRight = 'assets/images/icon_arrow_right.png';
+  static const String iconFfwd = 'assets/images/icon_ffwd.png';
   static const String loginScreenAccount = 'assets/images/login_screen_account.png';
   static const String loginScreenPassword = 'assets/images/login_screen_password.png';
   static const String loginScreenServerUrl = 'assets/images/login_screen_server_url.png';
