@@ -1,5 +1,7 @@
 package com.github.alist.widget;
 
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Outline;
 import android.util.AttributeSet;
@@ -18,14 +20,14 @@ import com.shuyu.gsyvideoplayer.video.base.GSYBaseVideoPlayer;
 
 public class AlistClientVideoPlayer extends NormalGSYVideoPlayer {
     private GestureDetectorCompat gestureDetector;
-    private VideoPlayerGestureListener gestureListener;
     protected View btnPrevious;
     protected View btnNext;
     protected View btnRewind;
     protected View btnFfwd;
-    private View tvPlayingAtDoubleSpeed;
+    private View llPlayingAtDoubleSpeed;
     protected boolean isEnableSeek;
     private boolean isLongPressing;
+    private ValueAnimator ffwdIconAnimator;
 
     public AlistClientVideoPlayer(Context context, Boolean fullFlag) {
         super(context, fullFlag);
@@ -42,16 +44,21 @@ public class AlistClientVideoPlayer extends NormalGSYVideoPlayer {
     @Override
     protected void init(Context context) {
         super.init(context);
-        gestureListener = new VideoPlayerGestureListener();
+        VideoPlayerGestureListener gestureListener = new VideoPlayerGestureListener();
         gestureDetector = new GestureDetectorCompat(context, gestureListener);
         gestureDetector.setIsLongpressEnabled(true);
-        tvPlayingAtDoubleSpeed = findViewById(R.id.tv_playing_at_double_speed);
+        llPlayingAtDoubleSpeed = findViewById(R.id.ll_playing_at_double_speed);
         btnPrevious = findViewById(R.id.btn_previous);
         btnNext = findViewById(R.id.btn_next);
         btnRewind = findViewById(R.id.btn_rewind);
         btnFfwd = findViewById(R.id.btn_ffwd);
         btnRewind.setVisibility(View.INVISIBLE);
         btnFfwd.setVisibility(View.INVISIBLE);
+
+        View ivPlayingAtDoubleSpeed = findViewById(R.id.iv_playing_at_double_speed);
+        ffwdIconAnimator = ObjectAnimator.ofFloat(ivPlayingAtDoubleSpeed, "alpha", 1f, 0f);
+        ffwdIconAnimator.setRepeatMode(ValueAnimator.REVERSE);
+        ffwdIconAnimator.setRepeatCount(ValueAnimator.INFINITE);
         btnRewind.setOnClickListener(v -> {
             if (getDuration() > 0L) {
                 long targetPosition =
@@ -66,14 +73,14 @@ public class AlistClientVideoPlayer extends NormalGSYVideoPlayer {
                 getGSYVideoManager().seekTo(targetPosition);
             }
         });
-        tvPlayingAtDoubleSpeed.setOutlineProvider(new ViewOutlineProvider() {
+        llPlayingAtDoubleSpeed.setOutlineProvider(new ViewOutlineProvider() {
             @Override
             public void getOutline(View view, Outline outline) {
                 int radius = dp2Px(2);
                 outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), radius);
             }
         });
-        tvPlayingAtDoubleSpeed.setClipToOutline(true);
+        llPlayingAtDoubleSpeed.setClipToOutline(true);
     }
 
     private int dp2Px(int dp) {
@@ -98,12 +105,27 @@ public class AlistClientVideoPlayer extends NormalGSYVideoPlayer {
     }
 
     @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if (llPlayingAtDoubleSpeed.getVisibility() == View.VISIBLE) {
+            ffwdIconAnimator.start();
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        ffwdIconAnimator.cancel();
+    }
+
+    @Override
     public boolean onTouch(View v, MotionEvent event) {
         if (v.getId() == R.id.surface_container && this.mIfCurrentIsFullscreen && !this.mLockCurScreen) {
             if ((event.getActionMasked() == MotionEvent.ACTION_UP || event.getActionMasked() == MotionEvent.ACTION_CANCEL) && isLongPressing) {
                 isLongPressing = false;
-                tvPlayingAtDoubleSpeed.setVisibility(View.INVISIBLE);
-                setSpeedPlaying(1, false);
+                llPlayingAtDoubleSpeed.setVisibility(View.INVISIBLE);
+                ffwdIconAnimator.cancel();
+                setSpeedPlaying(1, true);
             }
             gestureDetector.onTouchEvent(event);
         }
@@ -241,8 +263,9 @@ public class AlistClientVideoPlayer extends NormalGSYVideoPlayer {
         public void onLongPress(@NonNull MotionEvent e) {
             isLongPressing = true;
             if (getDuration() > 0) {
-                setSpeedPlaying(2, false);
-                tvPlayingAtDoubleSpeed.setVisibility(View.VISIBLE);
+                setSpeedPlaying(2, true);
+                llPlayingAtDoubleSpeed.setVisibility(View.VISIBLE);
+                ffwdIconAnimator.start();
             }
         }
     }

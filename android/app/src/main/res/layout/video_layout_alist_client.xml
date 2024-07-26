@@ -158,20 +158,34 @@
             style="@style/ExoStyledControls.Button.Center.Next" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tv_playing_at_double_speed"
+    <LinearLayout
+        android:id="@+id/ll_playing_at_double_speed"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="30dp"
         android:background="#70333333"
-        android:paddingHorizontal="5dp"
-        android:paddingVertical="2dp"
-        android:textSize="16sp"
-        android:text="@string/playing_at_double_speed"
-        android:textColor="@android:color/white"
+        android:orientation="horizontal"
         android:visibility="invisible"
-        tools:visibility="visible" />
+        tools:visibility="visible"
+        android:paddingHorizontal="5dp"
+        android:paddingVertical="2dp">
+
+        <ImageView
+            android:id="@+id/iv_playing_at_double_speed"
+            android:src="@drawable/ic_ffwd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/tv_playing_at_double_speed"
+            android:layout_width="wrap_content"
+            android:layout_marginStart="3dp"
+            android:layout_height="wrap_content"
+            android:text="@string/playing_at_double_speed"
+            android:textColor="@android:color/white"
+            android:textSize="16sp" />
+    </LinearLayout>
 
 
     <ImageView
