@@ -110,7 +110,7 @@ class _FileListScreenState extends State<FileListScreen>
   User? _currentUser;
   StreamSubscription? _userStreamSubscription;
   final RefreshController _refreshController =
-      RefreshController(initialRefresh: true);
+      RefreshController(initialRefresh: false);
 
   @override
   void initState() {
@@ -161,10 +161,12 @@ class _FileListScreenState extends State<FileListScreen>
         }
       });
     }
-    LogUtil.d("initState", tag: tag);
+    LogUtil.d("initState ${DateTime.now().millisecondsSinceEpoch}", tag: tag);
+    _loadFiles();
   }
 
   Future<void> _loadFiles() async {
+    LogUtil.d("_loadFiles ${DateTime.now().millisecondsSinceEpoch}", tag: tag);
     // query file's password from database.
     if (_queryPassword) {
       var filePassword = await FilePasswordHelper()
