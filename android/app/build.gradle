@@ -21,6 +21,12 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
+def keyAlias = localProperties.getProperty('keyAlias')
+def keyPassword = localProperties.getProperty('keyPassword')
+def storeFile = localProperties.getProperty('storeFile')
+def storePassword = localProperties.getProperty('storePassword')
+def hasStoreFile = storeFile != null && storeFile != ''
+
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
@@ -60,20 +66,26 @@ android {
     }
 
     signingConfigs {
-        release {
-            keyAlias rootProject.ext.keyAlias
-            keyPassword rootProject.ext.keyPassword
-            storeFile file('Alist.jks')
-            storePassword rootProject.ext.storePassword
+        if (hasStoreFile) {
+            release {
+                keyAlias rootProject.ext.keyAlias
+                keyPassword rootProject.ext.keyPassword
+                storeFile file(storeFile)
+                storePassword rootProject.ext.storePassword
+            }
         }
     }
 
     buildTypes {
-        debug {
-            signingConfig signingConfigs.release
+        if (hasStoreFile) {
+            debug {
+                signingConfig signingConfigs.release
+            }
         }
         release {
-            signingConfig signingConfigs.release
+            if (hasStoreFile) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
