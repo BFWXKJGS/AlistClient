@@ -5,6 +5,10 @@
 ## AppStore
 ![banner](https://raw.githubusercontent.com/BFWXKJGS/AlistClient/main/github/appstore.png)
 
+## Android（蓝奏云下载）
+https://wwxv.lanzoul.com/b002uv0t2b
+密码：alist
+
 ## Android
 ![banner](https://raw.githubusercontent.com/BFWXKJGS/AlistClient/main/github/android_github.png)
 
