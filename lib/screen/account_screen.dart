@@ -136,6 +136,7 @@ class AccountScreenController extends GetxController {
             Text(sprintf(Intl.deleteAccountDialog_content.tr, [item.userId])),
         actions: [
           TextButton(
+            autofocus: true,
             onPressed: () {
               SmartDialog.dismiss();
             },

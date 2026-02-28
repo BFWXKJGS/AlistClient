@@ -19,6 +19,7 @@ import 'package:alist/widget/alist_scaffold.dart';
 import 'package:dio/dio.dart';
 import 'package:floor/floor.dart';
 import 'package:flustars/flustars.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -50,8 +51,7 @@ class LoginScreen extends StatelessWidget {
               child: LoginScreenContainer(),
             ),
           ),
-          Obx(() =>
-              Positioned(
+          Obx(() => Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
@@ -67,18 +67,15 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget buildServerUrlBottomBar(BuildContext context,
-      List<String> bottomBarTypes, bool visible) {
+  Widget buildServerUrlBottomBar(
+      BuildContext context, List<String> bottomBarTypes, bool visible) {
     if (!visible) {
       return const SizedBox();
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      color: Theme
-          .of(context)
-          .colorScheme
-          .surfaceVariant,
+      color: Theme.of(context).colorScheme.surfaceVariant,
       child: Row(
         children: [
           for (var value1 in bottomBarTypes)
@@ -89,7 +86,7 @@ class LoginScreen extends StatelessWidget {
                   style: ButtonStyle(
                       padding: MaterialStateProperty.all(EdgeInsets.zero),
                       minimumSize:
-                      MaterialStateProperty.all(const Size(0, 30))),
+                          MaterialStateProperty.all(const Size(0, 30))),
                   onPressed: () =>
                       loginScreenController.appendServerUrlText(value1),
                   child: Text(value1),
@@ -168,10 +165,7 @@ class LoginScreenContainer extends StatelessWidget {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: Theme
-                  .of(context)
-                  .colorScheme
-                  .secondary,
+              backgroundColor: Theme.of(context).colorScheme.secondary,
             ),
             onPressed: () {
               var address = loginScreenController.addressController.text.trim();
@@ -199,12 +193,20 @@ class LoginScreenContainer extends StatelessWidget {
             loginScreenController.ignoreSSLError.value = checked ?? false;
           },
         ),
-        GestureDetector(
-          onTap: () {
-            loginScreenController.ignoreSSLError.value =
-            !loginScreenController.ignoreSSLError.value;
-          },
-          child: Text(Intl.loginScreen_checkbox_ignoreSSLError.tr),
+        Flexible(
+          child: TextButton(
+            style: TextButton.styleFrom(
+              minimumSize: const Size(0, 36),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              alignment: Alignment.centerLeft,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            onPressed: () {
+              loginScreenController.ignoreSSLError.value =
+                  !loginScreenController.ignoreSSLError.value;
+            },
+            child: Text(Intl.loginScreen_checkbox_ignoreSSLError.tr),
+          ),
         ),
       ],
     );
@@ -214,14 +216,14 @@ class LoginScreenContainer extends StatelessWidget {
 class LoginInputDecoration extends InputDecoration {
   LoginInputDecoration({required String hintText, required String labelText})
       : super(
-    hintText: hintText,
-    border: const OutlineInputBorder(),
-    isCollapsed: true,
-    label: Text(labelText),
-    isDense: true,
-    contentPadding:
-    const EdgeInsets.symmetric(horizontal: 11, vertical: 12),
-  );
+          hintText: hintText,
+          border: const OutlineInputBorder(),
+          isCollapsed: true,
+          label: Text(labelText),
+          isDense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 11, vertical: 12),
+        );
 }
 
 class LoginScreenController extends GetxController with WidgetsBindingObserver {
@@ -249,23 +251,19 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
     ignoreSSLError.value =
         SpUtil.getBool(AlistConstant.ignoreSSLError) ?? false;
 
-    addressController.text = userController
-        .user()
-        .serverUrl;
-    String username = userController
-        .user()
-        .username ?? "";
+    addressController.text = userController.user().serverUrl;
+    String username = userController.user().username ?? "";
     if ("guest" != username) {
       usernameController.text = username;
     }
-    passwordController.text = userController
-        .user()
-        .password ?? "";
+    passwordController.text = userController.user().password ?? "";
     bool isAgreePrivacyPolicy =
         SpUtil.getBool(AlistConstant.isAgreePrivacyPolicy) ?? false;
     if (!isAgreePrivacyPolicy) {
       Future.delayed(const Duration(microseconds: 200))
           .then((value) => _showAgreementDialog());
+    } else {
+      _focusAddressField();
     }
     WidgetsBinding.instance.addObserver(this);
     addressFocusNode.addListener(() {
@@ -278,10 +276,7 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
     super.didChangeMetrics();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       if (Get.context != null) {
-        keyboardHeight.value = MediaQuery
-            .of(Get.context!)
-            .viewInsets
-            .bottom;
+        keyboardHeight.value = MediaQuery.of(Get.context!).viewInsets.bottom;
       }
     });
   }
@@ -289,19 +284,23 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
   @override
   void onClose() {
     WidgetsBinding.instance.removeObserver(this);
+    _cancelToken.cancel();
+    addressFocusNode.dispose();
+    addressController.dispose();
+    usernameController.dispose();
+    passwordController.dispose();
+    twofaController.dispose();
     super.onClose();
   }
 
   static int currentTimeMillis() {
-    return DateTime
-        .now()
-        .millisecondsSinceEpoch;
+    return DateTime.now().millisecondsSinceEpoch;
   }
 
   Future<void> _login(String address,
       {bool ignoreDavCheck = false,
-        required LoginSuccessCallback onSuccess,
-        required LoginFailureCallback onFailure}) async {
+      required LoginSuccessCallback onSuccess,
+      required LoginFailureCallback onFailure}) async {
     if (address.isEmpty) {
       SmartDialog.showToast(Intl.loginScreen_tips_serverUrlError.tr);
       return;
@@ -355,7 +354,7 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
         'otp_code': twofaCode,
       },
       options:
-      Options(followRedirects: false, headers: {AlistConstant.noAuth: 1}),
+          Options(followRedirects: false, headers: {AlistConstant.noAuth: 1}),
       cancelToken: _cancelToken,
       onSuccess: (data) {
         var user = User(
@@ -431,35 +430,34 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
         msg: "checking...", backDismiss: false, clickMaskDismiss: false);
     DioUtils.instance.requestNetwork<MyInfoResp>(Method.get, "me",
         options:
-        Options(followRedirects: false, headers: {AlistConstant.noAuth: 1}),
+            Options(followRedirects: false, headers: {AlistConstant.noAuth: 1}),
         onSuccess: (data) {
-          if (data?.disabled == true) {
-            SmartDialog.showToast(
-                Intl.loginScreen_tips_guestAccountDisabled.tr);
-          } else {
-            _doAfterEnterVisitorMode(
-              baseUrl,
-              address,
-              data?.username,
-              data?.basePath,
-              useDemoServer: useDemoServer,
-            );
-          }
-          SmartDialog.dismiss();
-        }, onError: (code, message) {
-          if (code == 301) {
-            var baseUrl = message.substringBeforeLast("api/me")!;
-            addressController.text = baseUrl;
-            _enterVisitorMode(baseUrl, useDemoServer: useDemoServer);
-            return;
-          }
-          SmartDialog.showToast(message);
-          SmartDialog.dismiss();
-        });
+      if (data?.disabled == true) {
+        SmartDialog.showToast(Intl.loginScreen_tips_guestAccountDisabled.tr);
+      } else {
+        _doAfterEnterVisitorMode(
+          baseUrl,
+          address,
+          data?.username,
+          data?.basePath,
+          useDemoServer: useDemoServer,
+        );
+      }
+      SmartDialog.dismiss();
+    }, onError: (code, message) {
+      if (code == 301) {
+        var baseUrl = message.substringBeforeLast("api/me")!;
+        addressController.text = baseUrl;
+        _enterVisitorMode(baseUrl, useDemoServer: useDemoServer);
+        return;
+      }
+      SmartDialog.showToast(message);
+      SmartDialog.dismiss();
+    });
   }
 
-  void _doAfterEnterVisitorMode(String baseUrl, String address,
-      String? username, String? basePath,
+  void _doAfterEnterVisitorMode(
+      String baseUrl, String address, String? username, String? basePath,
       {bool useDemoServer = false}) {
     SpUtil.putBool(AlistConstant.ignoreSSLError, ignoreSSLError.value);
     var user = User(
@@ -486,24 +484,21 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
         content: Text(Intl.guestModeDialog_content.tr),
         actions: [
           TextButton(
+            autofocus: true,
             onPressed: () {
               SmartDialog.dismiss();
             },
             child: Text(
               Intl.guestModeDialog_btn_cancel.tr,
-              style: TextStyle(color: Theme
-                  .of(context)
-                  .colorScheme
-                  .secondary),
+              style: TextStyle(color: Theme.of(context).colorScheme.secondary),
             ),
           ),
           TextButton(
             onPressed: () {
               SmartDialog.dismiss();
               Future.delayed(Duration.zero).then(
-                    (value) =>
-                    _enterVisitorMode(Global.demoServerBaseUrl,
-                        useDemoServer: true),
+                (value) => _enterVisitorMode(Global.demoServerBaseUrl,
+                    useDemoServer: true),
               );
             },
             child: Text(Intl.guestModeDialog_btn_ok.tr),
@@ -578,39 +573,37 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
       builder: (context) {
         return AlertDialog(
           title: Text(Intl.privacyDialog_title.tr),
-          content: RichText(
-              text: TextSpan(children: [
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RichText(
+                  text: TextSpan(children: [
                 TextSpan(
                     text: Intl.privacyDialog_content_part1.tr,
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .bodyMedium),
+                    style: Theme.of(context).textTheme.bodyMedium),
                 TextSpan(
                     text: Intl.privacyDialog_link.tr,
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: Theme
-                        .of(context)
-                        .colorScheme
-                        .primary),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.primary),
                     recognizer: TapGestureRecognizer()
-                      ..onTap = () async {
-                        SmartDialog.dismiss();
-                        await _goPrivacyPolicyPage();
-                        _showAgreementDialog();
-                      }),
+                      ..onTap = () => _openPrivacyPolicyFromAgreementDialog()),
                 TextSpan(
                     text: Intl.privacyDialog_content_part2.tr,
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .bodyMedium),
+                    style: Theme.of(context).textTheme.bodyMedium),
               ])),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: _openPrivacyPolicyFromAgreementDialog,
+                  child: Text(Intl.privacyDialog_link.tr),
+                ),
+              ),
+            ],
+          ),
           actions: [
             TextButton(
+                autofocus: true,
                 onPressed: () {
                   SmartDialog.dismiss();
                   exit(0);
@@ -621,6 +614,7 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
                 SmartDialog.dismiss();
                 _testNetwork();
                 SpUtil.putBool(AlistConstant.isAgreePrivacyPolicy, true);
+                _focusAddressField();
               },
               child: Text(Intl.privacyDialog_btn_ok.tr),
             )
@@ -628,6 +622,12 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
         );
       },
     );
+  }
+
+  Future<void> _openPrivacyPolicyFromAgreementDialog() async {
+    SmartDialog.dismiss();
+    await _goPrivacyPolicyPage();
+    _showAgreementDialog();
   }
 
   Future<void> _goPrivacyPolicyPage() async {
@@ -642,6 +642,18 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
       NamedRouter.web,
       arguments: {"url": url},
     );
+  }
+
+  void _focusAddressField() {
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (isClosed) {
+        return;
+      }
+      addressFocusNode.requestFocus();
+    });
   }
 
   void _showType2FACodeDialog(BuildContext context) {
@@ -660,11 +672,12 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
                 isCollapsed: true,
                 isDense: true,
                 contentPadding:
-                EdgeInsets.symmetric(horizontal: 11, vertical: 12),
+                    EdgeInsets.symmetric(horizontal: 11, vertical: 12),
               ),
             ),
             actions: [
               TextButton(
+                  autofocus: true,
                   onPressed: () {
                     twofaController.text = "";
                     SmartDialog.dismiss();
@@ -672,10 +685,7 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
                   child: Text(
                     Intl.twofaCodeDialog_btn_cancel.tr,
                     style: TextStyle(
-                        color: Theme
-                            .of(context)
-                            .colorScheme
-                            .secondary),
+                        color: Theme.of(context).colorScheme.secondary),
                   )),
               TextButton(
                   onPressed: () {
@@ -705,8 +715,7 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
     var offset = addressController.selection.baseOffset;
     var originalText = addressController.text;
     addressController.text =
-    "${originalText.substring(0, offset)}$text${originalText.substring(
-        offset)}";
+        "${originalText.substring(0, offset)}$text${originalText.substring(offset)}";
     addressController.selection =
         TextSelection.fromPosition(TextPosition(offset: offset + text.length));
   }
@@ -718,6 +727,7 @@ class LoginScreenController extends GetxController with WidgetsBindingObserver {
         content: Text(Intl.davTipsDialog_content.tr),
         actions: [
           TextButton(
+            autofocus: true,
             onPressed: () {
               SmartDialog.dismiss();
             },

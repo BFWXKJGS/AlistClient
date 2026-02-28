@@ -41,24 +41,27 @@ class AlistScaffold extends StatelessWidget {
                   end: Alignment.bottomCenter,
                 ),
               ),
-        child: Scaffold(
-          backgroundColor: isDarkMode ? null : Colors.transparent,
-          resizeToAvoidBottomInset: resizeToAvoidBottomInset ?? true,
-          appBar: !showAppbar
-              ? null
-              : AppBar(
-                  leading: canPop
-                      ? GestureDetector(
-                          onDoubleTap: onLeadingDoubleTap,
-                          child: const BackButton(),
-                        )
-                      : null,
-                  automaticallyImplyLeading: false,
-                  backgroundColor: isDarkMode ? null : Colors.transparent,
-                  title: appbarTitle,
-                  actions: appbarActions,
-                ),
-          body: SafeArea(child: body),
+        child: FocusTraversalGroup(
+          policy: ReadingOrderTraversalPolicy(),
+          child: Scaffold(
+            backgroundColor: isDarkMode ? null : Colors.transparent,
+            resizeToAvoidBottomInset: resizeToAvoidBottomInset ?? true,
+            appBar: !showAppbar
+                ? null
+                : AppBar(
+                    leading: canPop
+                        ? GestureDetector(
+                            onDoubleTap: onLeadingDoubleTap,
+                            child: const BackButton(),
+                          )
+                        : null,
+                    automaticallyImplyLeading: false,
+                    backgroundColor: isDarkMode ? null : Colors.transparent,
+                    title: appbarTitle,
+                    actions: appbarActions,
+                  ),
+            body: SafeArea(child: body),
+          ),
         ));
   }
 }

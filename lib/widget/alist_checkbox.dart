@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 class AlistCheckBox extends StatelessWidget {
   final bool? value;
@@ -22,8 +23,13 @@ class AlistCheckBox extends StatelessWidget {
           // materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           onChanged: onChanged,
         ),
-        GestureDetector(
-          onTap: onChanged == null
+        TextButton(
+          style: TextButton.styleFrom(
+            minimumSize: const Size(0, 36),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          onPressed: onChanged == null
               ? null
               : () {
                   onChanged!(!(value ?? false));

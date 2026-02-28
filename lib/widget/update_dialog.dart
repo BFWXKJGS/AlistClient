@@ -43,6 +43,7 @@ class UpdateDialog extends StatelessWidget {
       ),
       actions: [
         TextButton(
+          autofocus: true,
           onPressed: () {
             controller.onDialogCancel(appVersion);
             SmartDialog.dismiss();
@@ -71,7 +72,8 @@ class UpdateDialogController extends GetxController {
     } else if (Platform.isAndroid) {
       bool isGooglePlayInstalled =
           await AlistPlugin.isAppInstall("com.android.vending");
-      if (isGooglePlayInstalled && appVersion.android.googlePlayUrl.isNotEmpty) {
+      if (isGooglePlayInstalled &&
+          appVersion.android.googlePlayUrl.isNotEmpty) {
         AlistPlugin.launchApp("com.android.vending",
             uri: appVersion.android.googlePlayUrl);
       } else {

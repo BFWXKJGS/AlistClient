@@ -92,11 +92,11 @@ class FileSearchScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                GestureDetector(
-                  onTap: () => Get.back(),
+                TextButton(
+                  onPressed: () => Get.back(),
                   child: Padding(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                     child: Text(Intl.fileSearchScreen_cancel.tr),
                   ),
                 )

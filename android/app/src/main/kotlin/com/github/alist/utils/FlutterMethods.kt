@@ -51,8 +51,8 @@ object FlutterMethods {
         )
     }
 
-    fun onPayerDestroyed() {
-        channel.invokeMethod("onPayerDestroyed", "")
+    fun onPayerDestroyed(completed: Boolean = false) {
+        channel.invokeMethod("onPayerDestroyed", mutableMapOf("completed" to completed))
     }
 
     fun addFileViewingRecord(video: VideoItem) {

@@ -55,4 +55,10 @@ class NamedRouter {
 
   // player settings
   static const playerSettings = "/playerSettings";
+
+  // projector config
+  static const projectorConfig = "/projectorConfig";
+
+  // projector player
+  static const projectorPlayer = "/projectorPlayer";
 }

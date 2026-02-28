@@ -80,7 +80,9 @@ class AlistPlugin {
       List<Map<String, String?>> videos,
       int index,
       Map<String, String>? headers,
-      String? playerType) async {
+      String? playerType,
+      {bool finishOnComplete = false,
+      int? autoCloseAfterSeconds}) async {
     String? headersStr = headers != null ? jsonEncode(headers) : null;
 
     var result =
@@ -88,7 +90,9 @@ class AlistPlugin {
       "videos": jsonEncode(videos),
       "index": index,
       "headers": headersStr,
-      "playerType": playerType
+      "playerType": playerType,
+      "finishOnComplete": finishOnComplete,
+      "autoCloseAfterSeconds": autoCloseAfterSeconds,
     });
     return result == true;
   }

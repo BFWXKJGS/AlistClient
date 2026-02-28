@@ -63,6 +63,7 @@ class _FileRenameDialogState extends State<FileRenameDialog> {
       ),
       actions: [
         TextButton(
+          autofocus: true,
           onPressed: widget.onCancel,
           child: Text(Intl.fileRenameDialog_btn_cancel.tr),
         ),

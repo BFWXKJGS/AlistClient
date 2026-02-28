@@ -3,6 +3,7 @@ import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/router.dart';
 import 'package:alist/util/log_utils.dart';
 import 'package:alist/util/named_router.dart';
+import 'package:alist/util/projector_remote_navigation.dart';
 import 'package:alist/util/proxy.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:flustars/flustars.dart';
@@ -49,20 +50,29 @@ class MyApp extends StatelessWidget {
     Get.put(AlistDatabaseController());
     Get.put(UserController());
     Get.put(ProxyServer());
+    final mediaQuery = MediaQuery.of(context);
+    final isAndroid = defaultTargetPlatform == TargetPlatform.android;
 
-    return MediaQuery(
-      data: MediaQuery.of(context).copyWith(textScaleFactor: 1),
-      child: RefreshConfiguration(
-          headerBuilder: () {
-            return ClassicHeader(
-              idleText: Intl.pullRefresh_idleRefreshText.tr,
-              releaseText: Intl.pullRefresh_canRefreshText.tr,
-              refreshingText: Intl.pullRefresh_refreshingText.tr,
-              completeText: Intl.pullRefresh_refreshCompleteText.tr,
-              failedText: Intl.pullRefresh_refreshFailedText.tr,
-            );
-          },
-          child: smartDialogInit(context, widget)),
+    return ProjectorRemoteNavigation(
+      child: MediaQuery(
+        data: mediaQuery.copyWith(
+          textScaleFactor: 1,
+          navigationMode: isAndroid
+              ? NavigationMode.directional
+              : mediaQuery.navigationMode,
+        ),
+        child: RefreshConfiguration(
+            headerBuilder: () {
+              return ClassicHeader(
+                idleText: Intl.pullRefresh_idleRefreshText.tr,
+                releaseText: Intl.pullRefresh_canRefreshText.tr,
+                refreshingText: Intl.pullRefresh_refreshingText.tr,
+                completeText: Intl.pullRefresh_refreshCompleteText.tr,
+                failedText: Intl.pullRefresh_refreshFailedText.tr,
+              );
+            },
+            child: smartDialogInit(context, widget)),
+      ),
     );
   }
 

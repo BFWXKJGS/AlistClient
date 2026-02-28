@@ -12,6 +12,8 @@ import 'package:alist/screen/home_screen.dart';
 import 'package:alist/screen/login_screen.dart';
 import 'package:alist/screen/pdf_reader_screen.dart';
 import 'package:alist/screen/player_settings_screen.dart';
+import 'package:alist/screen/projector/projector_config_screen.dart';
+import 'package:alist/screen/projector/projector_player_screen.dart';
 import 'package:alist/screen/settings_screen.dart';
 import 'package:alist/screen/splash_screen.dart';
 import 'package:alist/screen/uploading_files_screen.dart';
@@ -31,20 +33,41 @@ class AlistRouter {
     GetPage(name: NamedRouter.fileList, page: () => FileListWrapper()),
     GetPage(name: NamedRouter.settings, page: () => const SettingsScreen()),
     GetPage(
-        name: NamedRouter.videoPlayer, page: () => const VideoPlayerScreen()),
-    GetPage(
-        name: NamedRouter.audioPlayer, page: () => AudioPlayerScreen()),
+      name: NamedRouter.videoPlayer,
+      page: () => const VideoPlayerScreen(),
+    ),
+    GetPage(name: NamedRouter.audioPlayer, page: () => AudioPlayerScreen()),
     GetPage(name: NamedRouter.donate, page: () => const DonateScreen()),
     GetPage(name: NamedRouter.about, page: () => const AboutScreen()),
     GetPage(name: NamedRouter.gallery, page: () => GalleryScreen()),
     GetPage(name: NamedRouter.fileReader, page: () => FileReaderScreen()),
     GetPage(name: NamedRouter.web, page: () => const WebScreen()),
     GetPage(name: NamedRouter.pdfReader, page: () => PdfReaderScreen()),
-    GetPage(name: NamedRouter.uploadingFiles, page: () => const UploadingFilesScreen()),
+    GetPage(
+      name: NamedRouter.uploadingFiles,
+      page: () => const UploadingFilesScreen(),
+    ),
     GetPage(name: NamedRouter.account, page: () => const AccountScreen()),
-    GetPage(name: NamedRouter.downloadManager, page: () => DownloadManagerScreen()),
+    GetPage(
+      name: NamedRouter.downloadManager,
+      page: () => DownloadManagerScreen(),
+    ),
     GetPage(name: NamedRouter.fileSearch, page: () => FileSearchScreen()),
-    GetPage(name: NamedRouter.cacheManager, page: () => const CacheManagerScreen()),
-    GetPage(name: NamedRouter.playerSettings, page: () => const PlayerSettingsScreen()),
+    GetPage(
+      name: NamedRouter.cacheManager,
+      page: () => const CacheManagerScreen(),
+    ),
+    GetPage(
+      name: NamedRouter.playerSettings,
+      page: () => const PlayerSettingsScreen(),
+    ),
+    GetPage(
+      name: NamedRouter.projectorConfig,
+      page: () => const ProjectorConfigScreen(),
+    ),
+    GetPage(
+      name: NamedRouter.projectorPlayer,
+      page: () => const ProjectorPlayerScreen(),
+    ),
   ];
 }

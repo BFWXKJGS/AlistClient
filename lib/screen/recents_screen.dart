@@ -399,6 +399,7 @@ class _RecentsScreenState extends State<RecentsScreen>
             content: Text(Intl.downloadManager_downloadTipDialog_content.tr),
             actions: [
               TextButton(
+                autofocus: true,
                 onPressed: () {
                   SmartDialog.dismiss();
                 },

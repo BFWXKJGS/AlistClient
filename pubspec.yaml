@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.1+13
+version: 1.1.5+14
 
 environment:
   sdk: '>=2.19.6 <3.0.0'
@@ -99,6 +99,8 @@ dependencies:
   flutter_staggered_grid_view: 0.7.0
 
 dependency_overrides:
+  flutter_document_picker:
+    path: third_party/flutter_document_picker
   win32: 5.0.0
   sqflite_common: 2.5.0
   sqflite: 2.3.0

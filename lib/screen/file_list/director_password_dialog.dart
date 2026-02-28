@@ -55,8 +55,13 @@ class _DirectorPasswordDialogState extends State<DirectorPasswordDialog> {
                       _isRememberPassword = checked ?? false;
                     });
                   }),
-              GestureDetector(
-                onTap: () {
+              TextButton(
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, 36),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: () {
                   setState(() {
                     _isRememberPassword = !_isRememberPassword;
                   });
@@ -69,6 +74,7 @@ class _DirectorPasswordDialogState extends State<DirectorPasswordDialog> {
       ),
       actions: [
         TextButton(
+            autofocus: true,
             onPressed: () {
               SmartDialog.dismiss();
             },

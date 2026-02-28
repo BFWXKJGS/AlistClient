@@ -1,12 +1,12 @@
 buildscript {
-    ext.kotlin_version = '1.9.10'
+    ext.kotlin_version = '1.9.24'
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.2.0'
+        classpath 'com.android.tools.build:gradle:8.6.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -21,8 +21,35 @@ allprojects {
 }
 
 rootProject.buildDir = '../build'
-subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
+// AGP 8+ requires namespace. Some older Flutter plugins still declare only
+// AndroidManifest package; backfill namespace from manifest when missing.
+subprojects { subproject ->
+    if (subproject.name == 'app') {
+        subproject.buildDir = "${rootProject.buildDir}/app"
+    }
+    subproject.plugins.withId('com.android.library') {
+        def androidExt = subproject.extensions.findByName('android')
+        if (androidExt != null && androidExt.hasProperty('namespace')) {
+            def currentNs = androidExt.namespace
+            if (currentNs != null && !currentNs.toString().trim().isEmpty()) {
+                return
+            }
+            def manifestFile = subproject.file('src/main/AndroidManifest.xml')
+            if (manifestFile.exists()) {
+                def pkg = new XmlSlurper().parse(manifestFile).'@package'?.text()
+                if (pkg != null && !pkg.trim().isEmpty()) {
+                    androidExt.namespace = pkg
+                    return
+                }
+            }
+            androidExt.namespace = subproject.group.toString()
+        }
+    }
+    subproject.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions {
+            jvmTarget = '1.8'
+        }
+    }
 }
 subprojects {
     project.evaluationDependsOn(':app')

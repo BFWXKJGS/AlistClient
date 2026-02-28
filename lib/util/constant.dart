@@ -33,6 +33,16 @@ class AlistConstant {
   static const String videoPlayerName = 'videoPlayerName';
   static const String videoPlayerRouter = 'videoPlayerRouter';
   static const String playerType = 'playerType';
+  static const String projectorTraversalMode = 'projectorTraversalMode';
+  static const String projectorImageStaySeconds = 'projectorImageStaySeconds';
+  static const String projectorVideoStaySeconds = 'projectorVideoStaySeconds';
+  static const String projectorAudioStaySeconds = 'projectorAudioStaySeconds';
+  static const String projectorPreloadCount = 'projectorPreloadCount';
+  static const String projectorVideoStayInfinite = 'projectorVideoStayInfinite';
+  static const String projectorAudioStayInfinite = 'projectorAudioStayInfinite';
+  static const String projectorImageOnly = 'projectorImageOnly';
+  static const String projectorNativePlayerCompleted =
+      'projectorNativePlayerCompleted';
 
   static const String locale = 'locale';
 }

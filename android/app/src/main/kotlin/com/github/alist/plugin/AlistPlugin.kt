@@ -14,6 +14,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import com.github.alist.DownloadingNotificationService
 import com.github.alist.activity.PlayerActivity
 import com.github.alist.utils.FlutterMethods
@@ -33,6 +34,7 @@ import java.io.File
 class AlistPlugin(private val activity: Activity, private val scope: CoroutineScope) :
     FlutterPlugin, MethodChannel.MethodCallHandler {
     private val requestCodeLaunchExternalPlayer = 1
+    private val requestCodeLaunchInternalPlayer = 2
 
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
@@ -67,13 +69,24 @@ class AlistPlugin(private val activity: Activity, private val scope: CoroutineSc
             }
 
             "onDownloadingStart" -> {
-                context.startService(Intent(context, DownloadingNotificationService::class.java))
-                result.success(null)
+                try {
+                    ContextCompat.startForegroundService(
+                        context,
+                        Intent(context, DownloadingNotificationService::class.java)
+                    )
+                    result.success(null)
+                } catch (e: Exception) {
+                    result.error("-1", "failed to start downloading service: ${e.message}", null)
+                }
             }
 
             "onDownloadingEnd" -> {
-                context.stopService(Intent(context, DownloadingNotificationService::class.java))
-                result.success(null)
+                try {
+                    context.stopService(Intent(context, DownloadingNotificationService::class.java))
+                    result.success(null)
+                } catch (e: Exception) {
+                    result.error("-1", "failed to stop downloading service: ${e.message}", null)
+                }
             }
 
             "saveFileToLocal" -> {
@@ -97,13 +110,20 @@ class AlistPlugin(private val activity: Activity, private val scope: CoroutineSc
                 val index = call.argument<Int>("index")
                 val headers = call.argument<String?>("headers")
                 val playerType = call.argument<String>("playerType")
+                val finishOnComplete = call.argument<Boolean>("finishOnComplete") ?: false
+                val autoCloseAfterSeconds = call.argument<Int?>("autoCloseAfterSeconds")
 
                 val intent = Intent(activity, PlayerActivity::class.java)
                 intent.putExtra("videos", videos)
                 intent.putExtra("index", index)
                 intent.putExtra("headers", headers)
                 intent.putExtra("playerType", playerType)
-                activity.startActivity(intent)
+                intent.putExtra("finishOnComplete", finishOnComplete)
+                if (autoCloseAfterSeconds != null && autoCloseAfterSeconds > 0) {
+                    intent.putExtra("autoCloseAfterSeconds", autoCloseAfterSeconds)
+                }
+                activity.startActivityForResult(intent, requestCodeLaunchInternalPlayer)
+                result.success(true)
             }
 
             "playVideoWithExternalPlayer" -> {
@@ -273,7 +293,7 @@ class AlistPlugin(private val activity: Activity, private val scope: CoroutineSc
 
         try {
             val packageInfo = context.packageManager.getPackageInfo(packageName, 0)
-            val isInstalled = packageInfo.applicationInfo.enabled
+            val isInstalled = packageInfo.applicationInfo?.enabled ?: false
             result.success(isInstalled)
         } catch (exc: PackageManager.NameNotFoundException) {
             result.success(false)
@@ -283,6 +303,11 @@ class AlistPlugin(private val activity: Activity, private val scope: CoroutineSc
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == requestCodeLaunchExternalPlayer) {
             FlutterMethods.onPayerDestroyed()
+            return
+        }
+        if (requestCode == requestCodeLaunchInternalPlayer) {
+            val completed = data?.getBooleanExtra("projectorCompleted", false) ?: false
+            FlutterMethods.onPayerDestroyed(completed)
         }
     }
 }

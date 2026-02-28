@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/table/file_viewing_record.dart';
 import 'package:alist/database/table/video_viewing_record.dart';
+import 'package:alist/util/constant.dart';
 import 'package:alist/util/proxy.dart';
 import 'package:alist/util/user_controller.dart';
+import 'package:flustars/flustars.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
@@ -71,6 +73,10 @@ class MethodCallHandler {
         }
         return "";
       case "onPayerDestroyed":
+        final args = call.arguments;
+        final completed = args is Map && args["completed"] == true;
+        await SpUtil.putBool(
+            AlistConstant.projectorNativePlayerCompleted, completed);
         ProxyServer proxyServer = Get.find();
         proxyServer.stop();
         return "";

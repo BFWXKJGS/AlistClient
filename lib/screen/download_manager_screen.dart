@@ -844,6 +844,7 @@ class DownloadManagerController extends GetxController {
                   : Intl.downloadManagerScreen_tips_saved_first_ios.tr),
               actions: [
                 TextButton(
+                  autofocus: true,
                   onPressed: () {
                     SpUtil.putBool(AlistConstant.isFirstTimeSaveToLocal, false);
                     SmartDialog.dismiss();

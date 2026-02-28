@@ -235,6 +235,7 @@ class _FileReaderContainerState extends State<_FileReaderContainer> {
         content: Text(Intl.installPermissionDialog_content.tr),
         actions: [
           TextButton(
+              autofocus: true,
               onPressed: () {
                 SmartDialog.dismiss();
               },

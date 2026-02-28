@@ -63,6 +63,7 @@ class _MkdirDialogState extends State<MkdirDialog> {
       ),
       actions: [
         TextButton(
+          autofocus: true,
           onPressed: widget.onCancel,
           child: Text(Intl.mkdirDialog_cancel.tr),
         ),

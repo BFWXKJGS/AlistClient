@@ -412,7 +412,9 @@ class DownloadManager {
         _runningTasks.addFirst(task);
         _waitingTasks.remove(task);
         if (Platform.isAndroid) {
-          AlistPlugin.onDownloadingStart();
+          unawaited(AlistPlugin.onDownloadingStart().catchError((error) {
+            LogUtil.e("onDownloadingStart failed: $error");
+          }));
         }
         break;
       case DownloadTaskStatus.paused:
@@ -443,7 +445,9 @@ class DownloadManager {
           _stopListenProgress();
 
           if (Platform.isAndroid) {
-            AlistPlugin.onDownloadingEnd();
+            unawaited(AlistPlugin.onDownloadingEnd().catchError((error) {
+              LogUtil.e("onDownloadingEnd failed: $error");
+            }));
           }
         }
         break;

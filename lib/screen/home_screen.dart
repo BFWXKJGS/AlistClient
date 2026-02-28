@@ -45,50 +45,53 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        children: <Widget>[
-          FileListNavigator(
-            isInFileListStack: _currentPage == 0,
-          ),
-          const RecentsScreen(),
-          const FavoriteScreen(),
-          const SettingsScreen(),
-        ],
-      ),
-      bottomNavigationBar: AlistBottomNavigationBar(
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.folder_rounded),
-            label: Intl.screenName_home.tr,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.timelapse_rounded),
-            label: Intl.screenName_recents.tr,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.star_rounded),
-            label: Intl.screenName_favorite.tr,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.settings_rounded),
-            label: Intl.screenName_settings.tr,
-          )
-        ],
-        currentIndex: _currentPage,
-        type: BottomNavigationBarType.fixed,
-        onTap: (int idx) => _pageController.jumpToPage(idx),
-        onLongPress: (int idx) {
-          LogUtil.d("onDoubleTap: $idx");
-          if (idx == 0 && _currentPage == 0) {
-            Get.until((route) => route.isFirst,
-                id: AlistRouter.fileListRouterStackId);
-          } else {
-            _pageController.jumpToPage(idx);
-          }
-        },
+    return FocusTraversalGroup(
+      policy: ReadingOrderTraversalPolicy(),
+      child: Scaffold(
+        body: PageView(
+          controller: _pageController,
+          physics: const NeverScrollableScrollPhysics(),
+          children: <Widget>[
+            FileListNavigator(
+              isInFileListStack: _currentPage == 0,
+            ),
+            const RecentsScreen(),
+            const FavoriteScreen(),
+            const SettingsScreen(),
+          ],
+        ),
+        bottomNavigationBar: AlistBottomNavigationBar(
+          items: <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.folder_rounded),
+              label: Intl.screenName_home.tr,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.timelapse_rounded),
+              label: Intl.screenName_recents.tr,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.star_rounded),
+              label: Intl.screenName_favorite.tr,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.settings_rounded),
+              label: Intl.screenName_settings.tr,
+            )
+          ],
+          currentIndex: _currentPage,
+          type: BottomNavigationBarType.fixed,
+          onTap: (int idx) => _pageController.jumpToPage(idx),
+          onLongPress: (int idx) {
+            LogUtil.d("onDoubleTap: $idx");
+            if (idx == 0 && _currentPage == 0) {
+              Get.until((route) => route.isFirst,
+                  id: AlistRouter.fileListRouterStackId);
+            } else {
+              _pageController.jumpToPage(idx);
+            }
+          },
+        ),
       ),
     );
   }

@@ -7,7 +7,6 @@ import 'package:alist/util/constant.dart';
 import 'package:alist/util/file_type.dart';
 import 'package:alist/util/user_controller.dart';
 import 'package:flustars/flustars.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -137,6 +136,11 @@ class FileUtils {
       case "vob":
       case "flv":
       case "ts":
+      case "webm":
+      case "m2ts":
+      case "mts":
+      case "m3u8":
+      case "ogv":
         return FileType.video;
       case "doc":
       case "docx":
@@ -257,7 +261,7 @@ class FileUtils {
       encodedPath = encodedPath.substring(0, encodedPath.length - 1);
     }
     encodedPath = "$encodeBasePath$encodedPath";
-    if(!encodeBasePath.startsWith("/")){
+    if (!encodeBasePath.startsWith("/")) {
       encodedPath = "/$encodedPath";
     }
 

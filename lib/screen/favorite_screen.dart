@@ -383,6 +383,7 @@ class _FavoriteScreenState extends State<FavoriteScreen>
             content: Text(Intl.downloadManager_downloadTipDialog_content.tr),
             actions: [
               TextButton(
+                autofocus: true,
                 onPressed: () {
                   SmartDialog.dismiss();
                 },

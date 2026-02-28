@@ -252,6 +252,7 @@ class _FileListScreenState extends State<FileListScreen>
   @override
   void dispose() {
     super.dispose();
+    _menuAnchorController.dispose();
     _userStreamSubscription?.cancel();
     _cancelToken?.cancel();
     Log.d("dispose", tag: tag);
@@ -285,6 +286,14 @@ class _FileListScreenState extends State<FileListScreen>
               SmartDialog.show(builder: (context) {
                 return const ConfigFileNameMaxLinesDialog();
               });
+            } else if (menu.menuId == MenuId.projector) {
+              Get.toNamed(
+                NamedRouter.projectorConfig,
+                arguments: {
+                  "path": path,
+                  "backupPassword": _password ?? "",
+                },
+              );
             }
             break;
           case MenuGroupId.sort:
@@ -849,6 +858,7 @@ class _FileListScreenState extends State<FileListScreen>
             ),
             actions: [
               TextButton(
+                autofocus: true,
                 onPressed: () {
                   SmartDialog.dismiss();
                 },
@@ -1048,6 +1058,7 @@ class _FileListScreenState extends State<FileListScreen>
             content: Text(Intl.downloadManager_downloadTipDialog_content.tr),
             actions: [
               TextButton(
+                autofocus: true,
                 onPressed: () {
                   SmartDialog.dismiss();
                 },
