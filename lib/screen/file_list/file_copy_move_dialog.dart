@@ -203,6 +203,7 @@ class FileCopyMoveDialog extends StatelessWidget {
               Get.toNamed(
                 NamedRouter.fileList,
                 arguments: {"path": path},
+                preventDuplicates: false,
                 id: AlistRouter.fileListCopyMoveRouterStackId,
               );
             },
@@ -397,6 +398,7 @@ class FileCopyMoveController extends GetxController {
         Get.toNamed(
           NamedRouter.fileList,
           arguments: {"path": req.path},
+          preventDuplicates: false,
           id: AlistRouter.fileListCopyMoveRouterStackId,
         );
       },
