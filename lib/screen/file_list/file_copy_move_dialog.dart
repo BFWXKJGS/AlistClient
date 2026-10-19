@@ -2,6 +2,7 @@ import 'package:alist/database/alist_database_controller.dart';
 import 'package:alist/database/table/file_password.dart';
 import 'package:alist/entity/file_list_resp_entity.dart';
 import 'package:alist/entity/copy_move_req.dart';
+import 'package:alist/entity/file_remove_req.dart';
 import 'package:alist/entity/mkdir_req.dart';
 import 'package:alist/l10n/intl_keys.dart';
 import 'package:alist/net/dio_utils.dart';
@@ -203,6 +204,7 @@ class FileCopyMoveDialog extends StatelessWidget {
               Get.toNamed(
                 NamedRouter.fileList,
                 arguments: {"path": path},
+                preventDuplicates: false,
                 id: AlistRouter.fileListCopyMoveRouterStackId,
               );
             },
@@ -397,6 +399,7 @@ class FileCopyMoveController extends GetxController {
         Get.toNamed(
           NamedRouter.fileList,
           arguments: {"path": req.path},
+          preventDuplicates: false,
           id: AlistRouter.fileListCopyMoveRouterStackId,
         );
       },
@@ -408,10 +411,114 @@ class FileCopyMoveController extends GetxController {
   }
 
   void httpCopyMove() {
+    _sendCopyMoveRequest(overwrite: false, conflictNames: const []);
+  }
+
+  void _showOverwriteConfirmDialog(List<String> conflictNames) {
+    SmartDialog.show(
+      clickMaskDismiss: false,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(Intl.fileCopyMoveDialog_overwriteTitle.tr),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isCopy
+                    ? Intl.fileCopyMoveDialog_overwriteCopyMsg.tr
+                    : Intl.fileCopyMoveDialog_overwriteMoveMsg.tr,
+              ),
+              const SizedBox(height: 10),
+              Container(
+                constraints: const BoxConstraints(maxHeight: 200),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: conflictNames.length,
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 1),
+                  itemBuilder: (context, index) => Text(
+                    conflictNames[index],
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => SmartDialog.dismiss(),
+              child: Text(Intl.fileCopyMoveDialog_cancel.tr),
+            ),
+            TextButton(
+              onPressed: () {
+                SmartDialog.dismiss();
+                _overwriteAndRetry(conflictNames);
+              },
+              child: Text(Intl.fileCopyMoveDialog_overwriteConfirm.tr),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Conflicts the user has already confirmed. The server reports only the
+  // first conflicting name per request, so on old servers (which ignore the
+  // overwrite field) this set prevents prompting twice for the same name.
+  final Set<String> _confirmedConflicts = {};
+
+  // User confirmed overwriting [newConflicts]: delete those destination items
+  // (required by servers that ignore the overwrite field) and retry the whole
+  // copy/move with overwrite:true (newer servers skip the precheck).
+  void _overwriteAndRetry(List<String> newConflicts) {
+    _confirmedConflicts.addAll(newConflicts);
+
+    FileRemoveReq removeReq = FileRemoveReq();
+    removeReq.dir = path;
+    removeReq.names = newConflicts;
+
+    SmartDialog.showLoading();
+    DioUtils.instance.requestNetwork(
+      Method.post,
+      "fs/remove",
+      params: removeReq.toJson(),
+      onSuccess: (data) {
+        SmartDialog.dismiss();
+        _sendCopyMoveRequest(
+          overwrite: true,
+          conflictNames: _confirmedConflicts.toList(),
+        );
+      },
+      onError: (code, msg) {
+        SmartDialog.dismiss();
+        SmartDialog.showToast(msg);
+      },
+    );
+  }
+
+  // Matches the server-side conflict error:
+  //   "file [<name>] exists"
+  // AList (>= v3.42.0) and OpenList return this with HTTP 403 from the
+  // fs/copy / fs/move precheck, including for folders.
+  //
+  // We do not pre-check conflicts with fs/list: the listing can disagree with
+  // the server precheck because of directory cache or driver differences, and
+  // refresh:true cannot always fix that. Instead we submit the request and
+  // react to the authoritative server error, asking the user whether to
+  // overwrite the reported item.
+  static final RegExp _fileExistsRegExp =
+      RegExp(r'^\s*file\s*\[(.*)\]\s+exists\s*$', caseSensitive: false);
+
+  void _sendCopyMoveRequest({
+    required bool overwrite,
+    required List<String> conflictNames,
+  }) {
     CopyMoveReq req = CopyMoveReq();
     req.srcDir = originalFolder;
     req.dstDir = path;
     req.names = names;
+    req.overwrite = overwrite;
     String url = isCopy ? "fs/copy" : "fs/move";
 
     SmartDialog.showLoading();
@@ -425,8 +532,21 @@ class FileCopyMoveController extends GetxController {
       }
       Get.back(result: {"result": true});
     }, onError: (code, msg) {
-      SmartDialog.showToast(msg);
       SmartDialog.dismiss();
+      final match = _fileExistsRegExp.firstMatch(msg);
+      final conflictName = match?.group(1);
+      // Only treat it as a conflict for an item we are actually moving.
+      // - First request (overwrite:false): ask before doing anything.
+      // - Retry (overwrite:true) on a server that ignores the field: only ask
+      //   again when the server reports a different, not-yet-confirmed name.
+      if (code == 403 &&
+          conflictName != null &&
+          names.contains(conflictName) &&
+          (!overwrite || !conflictNames.contains(conflictName))) {
+        _showOverwriteConfirmDialog([conflictName]);
+      } else {
+        SmartDialog.showToast(msg);
+      }
     });
   }
 }

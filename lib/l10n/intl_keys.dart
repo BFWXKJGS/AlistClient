@@ -124,6 +124,10 @@ class Intl {
   static const String fileCopyMoveDialog_move = "fileCopyMoveDialog_move";
   static const String fileCopyMoveDialog_copySuccess = "fileCopyMoveDialog_copySuccess";
   static const String fileCopyMoveDialog_moveSuccess = "fileCopyMoveDialog_moveSuccess";
+  static const String fileCopyMoveDialog_overwriteTitle = "fileCopyMoveDialog_overwriteTitle";
+  static const String fileCopyMoveDialog_overwriteCopyMsg = "fileCopyMoveDialog_overwriteCopyMsg";
+  static const String fileCopyMoveDialog_overwriteMoveMsg = "fileCopyMoveDialog_overwriteMoveMsg";
+  static const String fileCopyMoveDialog_overwriteConfirm = "fileCopyMoveDialog_overwriteConfirm";
   static const String mkdirDialog_title = "mkdirDialog_title";
   static const String mkdirDialog_hint = "mkdirDialog_hint";
   static const String mkdirDialog_cancel = "mkdirDialog_cancel";

@@ -9,6 +9,7 @@ class CopyMoveReq {
 	@JSONField(name: "dst_dir")
 	late String dstDir;
 	late List<String> names;
+	bool overwrite = false;
 
 	CopyMoveReq();
 

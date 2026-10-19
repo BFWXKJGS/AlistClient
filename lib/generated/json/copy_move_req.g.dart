@@ -16,6 +16,10 @@ CopyMoveReq $CopyMoveReqFromJson(Map<String, dynamic> json) {
   if (names != null) {
     copyMoveReq.names = names;
   }
+  final bool? overwrite = jsonConvert.convert<bool>(json['overwrite']);
+  if (overwrite != null) {
+    copyMoveReq.overwrite = overwrite;
+  }
   return copyMoveReq;
 }
 
@@ -24,6 +28,7 @@ Map<String, dynamic> $CopyMoveReqToJson(CopyMoveReq entity) {
   data['src_dir'] = entity.srcDir;
   data['dst_dir'] = entity.dstDir;
   data['names'] = entity.names;
+  data['overwrite'] = entity.overwrite;
   return data;
 }
 
@@ -32,10 +37,12 @@ extension CopyMoveReqExtension on CopyMoveReq {
     String? srcDir,
     String? dstDir,
     List<String>? names,
+    bool? overwrite,
   }) {
     return CopyMoveReq()
       ..srcDir = srcDir ?? this.srcDir
       ..dstDir = dstDir ?? this.dstDir
-      ..names = names ?? this.names;
+      ..names = names ?? this.names
+      ..overwrite = overwrite ?? this.overwrite;
   }
 }
