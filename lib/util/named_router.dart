@@ -55,4 +55,7 @@ class NamedRouter {
 
   // player settings
   static const playerSettings = "/playerSettings";
+
+  // server-side copy/move tasks
+  static const serverTasks = "/serverTasks";
 }

@@ -407,6 +407,24 @@ class FileCopyMoveController extends GetxController {
     );
   }
 
+  void _showTaskStartedSnackBar() {
+    Get.snackbar(
+      isCopy
+          ? Intl.serverTasksScreen_taskStartedCopy.tr
+          : Intl.serverTasksScreen_taskStartedMove.tr,
+      Intl.serverTasksScreen_viewTasks.tr,
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 5),
+      mainButton: TextButton(
+        onPressed: () {
+          if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
+          Get.toNamed(NamedRouter.serverTasks);
+        },
+        child: Text(Intl.serverTasksScreen_viewTasks.tr),
+      ),
+    );
+  }
+
   void httpCopyMove() {
     CopyMoveReq req = CopyMoveReq();
     req.srcDir = originalFolder;
@@ -418,12 +436,21 @@ class FileCopyMoveController extends GetxController {
     DioUtils.instance.requestNetwork(Method.post, url, params: req.toJson(),
         onSuccess: (data) {
       SmartDialog.dismiss();
-      if (isCopy) {
+      // Cross-storage copy/move runs as a server-side background task. Both
+      // AList (fs/copy) and OpenList (fs/copy, fs/move) return the created
+      // tasks in data["tasks"]; same-storage operations finish immediately
+      // and return no tasks.
+      final backgroundTask = data is Map &&
+          data["tasks"] is List &&
+          (data["tasks"] as List).isNotEmpty;
+      Get.back(result: {"result": true});
+      if (backgroundTask) {
+        _showTaskStartedSnackBar();
+      } else if (isCopy) {
         SmartDialog.showToast(Intl.fileCopyMoveDialog_copySuccess.tr);
       } else {
         SmartDialog.showToast(Intl.fileCopyMoveDialog_moveSuccess.tr);
       }
-      Get.back(result: {"result": true});
     }, onError: (code, msg) {
       SmartDialog.showToast(msg);
       SmartDialog.dismiss();

@@ -91,6 +91,7 @@ class _SettingsContainerState extends State<_SettingsContainer>
           case MenuId.account:
           case MenuId.cacheManager:
           case MenuId.playerSettings:
+          case MenuId.serverTasks:
             Get.toNamed(settingsMenu.route!);
             break;
           case MenuId.privacyPolicy:
@@ -129,7 +130,9 @@ class _SettingsContainerState extends State<_SettingsContainer>
       horizontalTitleGap: 2,
       tileColor: Theme.of(context).colorScheme.background.withAlpha(125),
       minVerticalPadding: 15,
-      leading: Image.asset(settingsMenu.icon),
+      leading: settingsMenu.materialIcon != null
+          ? Icon(settingsMenu.materialIcon, size: 24)
+          : Image.asset(settingsMenu.icon),
       title: Text(settingsMenu.name),
       trailing: Image.asset(
         Images.iconArrowRight,
@@ -149,6 +152,12 @@ class _SettingsContainerState extends State<_SettingsContainer>
           name: Intl.settingsScreen_item_downloads.tr,
           icon: Images.settingsScreenDownload,
           route: NamedRouter.downloadManager),
+      SettingsMenu(
+          menuId: MenuId.serverTasks,
+          name: Intl.settingsScreen_item_serverTasks.tr,
+          icon: "",
+          materialIcon: Icons.sync_alt,
+          route: NamedRouter.serverTasks),
       SettingsMenu(
           menuId: MenuId.cacheManager,
           name: Intl.settingsScreen_item_cacheManagement.tr,
@@ -211,12 +220,14 @@ class _SettingsContainerState extends State<_SettingsContainer>
 class SettingsMenu {
   final String name;
   final String icon;
+  final IconData? materialIcon;
   final String? route;
   final MenuId menuId;
 
   SettingsMenu({
     required this.name,
     required this.icon,
+    this.materialIcon,
     this.route,
     required this.menuId,
   });
@@ -230,5 +241,6 @@ enum MenuId {
   privacyPolicy,
   about,
   cacheManager,
-  playerSettings
+  playerSettings,
+  serverTasks
 }
